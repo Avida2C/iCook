@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   SendIcon,
   HeartIcon,
@@ -12,7 +11,6 @@ import {
   ServingIcon,
   BookmarkIcon,
   BookmarkFillIcon,
-  BackIcon,
 } from "@/components/app/icons";
 import RecipeThumbnail from "@/components/app/RecipeThumbnail";
 import {
@@ -159,7 +157,6 @@ export default function RecipeDetailScreen({
 }: {
   recipeId?: string;
 }) {
-  const router = useRouter();
   const recipe =
     CATALOG_RECIPES.find((r) => r.id === recipeId) ?? CATALOG_RECIPES[0];
   const { isSaved, toggleSave } = useSavedRecipes();
@@ -171,13 +168,6 @@ export default function RecipeDetailScreen({
 
   return (
     <div className="page">
-      <div className="subhead">
-        <button type="button" onClick={() => router.back()} aria-label="Back">
-          <BackIcon className="size-6 text-ink" />
-        </button>
-        <span className="section-title truncate">{recipe.name}</span>
-      </div>
-
       <div className="list-stack py-2">
         {/* Hero */}
         <div className="relative h-56 w-full overflow-hidden">

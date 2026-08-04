@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { BackIcon } from "@/components/app/icons";
 
 type Option = { id: string; label: string };
 type Group = { title: string; options: Option[] };
@@ -70,7 +68,6 @@ function Toggle({
 }
 
 export default function SettingsNotificationsScreen() {
-  const router = useRouter();
   const [state, setState] = useState<Record<string, boolean>>({});
   const [allOff, setAllOff] = useState(true);
 
@@ -79,13 +76,6 @@ export default function SettingsNotificationsScreen() {
 
   return (
     <div className="flex min-h-full flex-col bg-app">
-      <div className="flex items-center gap-4 bg-surface px-4 py-2 shadow-sm">
-        <button type="button" onClick={() => router.back()} aria-label="Back">
-          <BackIcon className="size-6 text-ink" />
-        </button>
-        <span className="text-base font-bold text-ink">Notifications</span>
-      </div>
-
       <form
         className="flex flex-col gap-6 bg-surface p-2.5"
         onSubmit={(e) => e.preventDefault()}

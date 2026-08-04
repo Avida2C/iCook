@@ -1,9 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
-  BackIcon,
   HeartIcon,
   CommentIcon,
   ShareIcon,
@@ -94,18 +92,10 @@ const POSTS: Record<
 };
 
 export default function PostDetailScreen({ postId }: { postId: string }) {
-  const router = useRouter();
   const post = POSTS[postId] ?? POSTS["1"];
 
   return (
     <div className="page">
-      <div className="subhead">
-        <button type="button" onClick={() => router.back()} aria-label="Back">
-          <BackIcon className="size-6 text-ink" />
-        </button>
-        <span className="section-title">Post</span>
-      </div>
-
       <article className="feed-card flex flex-col gap-3">
         <div className="flex gap-3">
           <Link href="/user" className="avatar">

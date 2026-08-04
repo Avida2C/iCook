@@ -1,8 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { BackIcon } from "@/components/app/icons";
 import {
   APP_NAME,
   APP_SUPPORT_EMAIL,
@@ -11,17 +9,8 @@ import {
 } from "@/lib/appInfo";
 
 export default function AboutScreen() {
-  const router = useRouter();
-
   return (
     <div className="page">
-      <div className="subhead">
-        <button type="button" onClick={() => router.back()} aria-label="Back">
-          <BackIcon className="size-6 text-ink" />
-        </button>
-        <span className="section-title">About</span>
-      </div>
-
       <div className="list-stack py-2">
         <section className="feed-card flex flex-col items-center gap-2 py-6 text-center">
           <p className="text-3xl font-extrabold text-brand">{APP_NAME}</p>

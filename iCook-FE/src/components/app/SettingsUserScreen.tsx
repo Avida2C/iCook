@@ -1,19 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { BackIcon, UploadIcon } from "@/components/app/icons";
-
-function SubHeader({ title }: { title: string }) {
-  const router = useRouter();
-  return (
-    <div className="flex items-center gap-4 bg-surface px-4 py-2 shadow-sm">
-      <button type="button" onClick={() => router.back()} aria-label="Back">
-        <BackIcon className="size-6 text-ink" />
-      </button>
-      <span className="text-base font-bold text-ink">{title}</span>
-    </div>
-  );
-}
+import { UploadIcon } from "@/components/app/icons";
 
 const inputClass =
   "w-full rounded-[4px] border border-line bg-app px-2 py-1.5 text-base text-ink outline-none placeholder:italic placeholder:text-muted focus:border-brand";
@@ -24,8 +11,6 @@ const buttonClass =
 export default function SettingsUserScreen() {
   return (
     <div className="flex min-h-full flex-col bg-app">
-      <SubHeader title="User Details" />
-
       <div className="flex flex-col gap-[5px]">
         {/* Avatar upload */}
         <div className="flex flex-col items-center gap-2.5 bg-surface py-5">

@@ -1,8 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { BackIcon } from "@/components/app/icons";
 import RecipeThumbnail from "@/components/app/RecipeThumbnail";
 import {
   CATALOG_RECIPES,
@@ -69,7 +67,6 @@ export default function MoreRecipesScreen({
   category?: string;
   sort?: string;
 }) {
-  const router = useRouter();
   const { savedIds } = useSavedRecipes();
   const byLoved = sort === "loved";
 
@@ -86,13 +83,6 @@ export default function MoreRecipesScreen({
 
   return (
     <div className="page">
-      <div className="subhead">
-        <button type="button" onClick={() => router.back()} aria-label="Back">
-          <BackIcon className="size-6 text-ink" />
-        </button>
-        <span className="section-title truncate">{title}</span>
-      </div>
-
       <section className="flex w-full flex-col gap-2 bg-surface px-2 pt-2 pb-4">
         <h1 className="text-xl leading-6 text-brand">{title}</h1>
         {recipes.length === 0 ? (

@@ -1,7 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { BackIcon } from "@/components/app/icons";
 import { APP_NAME, APP_SUPPORT_EMAIL, APP_VERSION } from "@/lib/appInfo";
 
 export type LegalDoc = "terms" | "privacy";
@@ -81,21 +79,14 @@ const DOCS: Record<
 };
 
 export default function LegalDocumentScreen({ doc }: { doc: LegalDoc }) {
-  const router = useRouter();
   const content = DOCS[doc];
 
   return (
     <div className="page">
-      <div className="subhead">
-        <button type="button" onClick={() => router.back()} aria-label="Back">
-          <BackIcon className="size-6 text-ink" />
-        </button>
-        <span className="section-title truncate">{content.title}</span>
-      </div>
-
       <div className="list-stack py-2">
         <section className="feed-card">
-          <p className="text-xs text-muted">Last updated {content.updated}</p>
+          <h1 className="text-lg font-bold text-ink">{content.title}</h1>
+          <p className="mt-1 text-xs text-muted">Last updated {content.updated}</p>
         </section>
 
         {content.sections.map((section) => (

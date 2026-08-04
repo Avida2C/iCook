@@ -1,9 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import {
-  BackIcon,
   ShieldIcon,
   KeyIcon,
   SmartphoneIcon,
@@ -85,7 +83,6 @@ function Card({
 }
 
 export default function SecurityScreen() {
-  const router = useRouter();
   const [twoFA, setTwoFA] = useState(true);
   const [showCodes, setShowCodes] = useState(false);
   const [codes, setCodes] = useState<string[]>(makeCodes);
@@ -112,16 +109,6 @@ export default function SecurityScreen() {
 
   return (
     <div className="flex min-h-full flex-col bg-app">
-      {/* Sub header */}
-      <div className="flex items-center gap-4 bg-surface px-4 py-2 shadow-sm">
-        <button type="button" onClick={() => router.back()} aria-label="Back">
-          <BackIcon className="size-6 text-ink" />
-        </button>
-        <span className="text-base font-bold text-ink">
-          Login &amp; Security
-        </span>
-      </div>
-
       <p className="px-4 py-3 text-base text-muted">
         Manage the ways you sign in to iCook.
       </p>
