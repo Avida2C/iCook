@@ -12,13 +12,9 @@ export default function ForgotPasswordScreen() {
       <LogoSlogan />
       <h1 className="w-full text-2xl font-bold text-brand">Forgot Password</h1>
 
-      <p className="w-full text-base text-muted">
-        Enter your email address and we will send you a link to get back into
-        your account.
-      </p>
 
       <form
-        className="flex w-full flex-col gap-[25px]"
+        className="flex w-full flex-col gap-3"
         onSubmit={(event) => event.preventDefault()}
       >
         <TextField
@@ -29,12 +25,18 @@ export default function ForgotPasswordScreen() {
           autoComplete="email"
           required
         />
+
+        <p className="auth-copy text-sm text-muted">
+          Enter your email address and we will send you a link to get back into
+          your account.
+        </p>
+
         <PrimaryButton>Send</PrimaryButton>
       </form>
 
       <Link
         href="/login"
-        className="w-full text-right text-base font-bold text-muted transition-colors hover:text-brand"
+        className="text-base font-bold text-right text-brand"
       >
         Back to Log In
       </Link>

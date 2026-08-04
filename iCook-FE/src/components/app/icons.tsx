@@ -62,6 +62,9 @@ import {
 import { BiCommentDots, BiCommentEdit } from "react-icons/bi";
 import { FcGoogle } from "react-icons/fc";
 import { FaFacebook } from "react-icons/fa6";
+import { LuCookingPot, LuChefHat, LuEggFried } from "react-icons/lu";
+
+
 
 // App bar
 export const SearchIcon = FiSearch;
@@ -129,3 +132,8 @@ export const LinkIcon = FaLink;
 // Brand / social login
 export const GoogleIcon = FcGoogle;
 export const FacebookIcon = FaFacebook;
+
+// Getting Started Page
+export const ChefHat = LuChefHat;
+export const CookingPot = LuCookingPot;
+export const EggFried = LuEggFried;

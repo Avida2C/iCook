@@ -9,7 +9,7 @@ export default function SocialLogin({ label }: { label: string }) {
         <span className="shrink-0 text-base text-muted">{label}</span>
         <span className="h-px flex-1 bg-line" />
       </div>
-      <div className="flex w-full items-center justify-between px-12 py-1">
+      <div className="flex w-full items-center justify-between px-12 py-1 pb-5">
         <button
           type="button"
           aria-label="Continue with Google"

@@ -32,10 +32,10 @@ export default function LoginScreen() {
   return (
     <AuthCard>
       <LogoSlogan />
-      <h1 className="w-full text-2xl font-bold text-brand">Log In</h1>
+      <h1 className="w-full text-3xl font-bold text-brand">Log In</h1>
 
       <form
-        className="flex w-full flex-col gap-[15px]"
+        className="flex w-full flex-col gap-4"
         onSubmit={handleSubmit}
       >
         <TextField
@@ -55,7 +55,7 @@ export default function LoginScreen() {
         />
         <Link
           href="/forgot-password"
-          className="w-full text-right text-xl font-bold text-muted transition-colors hover:text-brand"
+          className="w-full text-right text-base font-bold text-brand"
         >
           Forgot Password?
         </Link>
@@ -67,17 +67,17 @@ export default function LoginScreen() {
         <PrimaryButton>Log In</PrimaryButton>
       </form>
 
-      <p className="w-full rounded-[4px] bg-app px-3 py-2 text-center text-sm text-muted">
+      <p className="mb-6 w-full rounded-[4px] bg-app px-3 py-2 text-center text-sm text-muted">
         Demo account — {DEMO_CREDENTIALS.email} / {DEMO_CREDENTIALS.password}
       </p>
 
       <SocialLogin label="Log In with" />
 
-      <div className="flex w-full flex-col items-end gap-1 text-right">
-        <p className="text-base text-muted">Don&rsquo;t have an account?</p>
+      <div className="flex w-full flex-col items-end text-right">
+        <p className="text-sm text-muted">Don&rsquo;t have an account?</p>
         <Link
           href="/signup"
-          className="text-xl font-bold text-brand hover:underline"
+          className="text-xl font-bold text-brand"
         >
           Sign Up!
         </Link>

@@ -149,6 +149,11 @@ body {
     @apply text-base font-bold text-brand;
   }
 
+  /* Auth prose: ~32px shorter lines; keep buttons/fields full-width */
+  .auth-copy {
+    @apply max-w-[calc(100%-2rem)];
+  }
+
   /* Chrome */
   .subhead {
     @apply flex items-center gap-4 bg-surface px-4 py-2 shadow-bar;

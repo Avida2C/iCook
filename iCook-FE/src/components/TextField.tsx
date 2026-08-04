@@ -16,8 +16,8 @@ export default function TextField({
   required,
 }: TextFieldProps) {
   return (
-    <div className="flex w-full flex-col gap-2.5">
-      <label htmlFor={name} className="text-base font-bold text-muted">
+    <div className="flex w-full flex-col gap-1">
+      <label htmlFor={name} className="text-base font-semibold text-muted">
         {label}
       </label>
       <input

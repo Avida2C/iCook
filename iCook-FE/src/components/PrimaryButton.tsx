@@ -25,7 +25,8 @@ export function PrimaryButton({
   type?: "submit" | "button";
 }) {
   return (
-    <button type={type} className="btn-primary-lg">
+    <button type={type} className="btn-primary-lg
+     mb-4">
       {children}
     </button>
   );

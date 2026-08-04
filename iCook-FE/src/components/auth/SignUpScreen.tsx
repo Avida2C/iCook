@@ -43,9 +43,22 @@ export default function SignUpScreen() {
           autoComplete="email"
           required
         />
-        <p className="text-base text-ink">
-          By clicking Sign Up, you agree to our Terms and Conditions and that you
-          have read our Privacy Policy.
+        <p className="auth-copy text-xs text-muted">
+          By clicking Sign Up, you agree to our{" "}
+          <Link
+            href="/terms"
+            className="font-bold text-brand"
+          >
+            Terms and Conditions
+          </Link>{" "}
+          and that you have read our{" "}
+          <Link
+            href="/privacy"
+            className="font-bold text-brand"
+          >
+            Privacy Policy
+          </Link>
+          .
         </p>
         {error ? (
           <p role="alert" className="text-base font-bold text-brand">
@@ -58,7 +71,7 @@ export default function SignUpScreen() {
       <SocialLogin label="Sign up with" />
 
       <div className="flex w-full flex-col items-end gap-1 text-right">
-        <p className="text-base text-muted">Already have an account?</p>
+        <p className="text-sm text-muted">Already have an account?</p>
         <Link
           href="/login"
           className="text-xl font-bold text-brand hover:underline"
