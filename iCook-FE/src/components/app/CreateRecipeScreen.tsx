@@ -3,25 +3,35 @@
 import { useRouter } from "next/navigation";
 import { UploadIcon, ImageIcon } from "@/components/app/icons";
 
-const categories = ["Breakfast", "Lunch", "Snacks", "Dinner", "Desserts"];
+const categories = [
+  "Breakfast",
+  "Lunch",
+  "Dinner",
+  "Snacks",
+  "Sweets",
+  "Fruity",
+  "Toasty",
+  "Savoury",
+  "Pasta",
+];
 
 export default function CreateRecipeScreen() {
   const router = useRouter();
 
   return (
     <form
-      className="flex min-h-full flex-col justify-between bg-[#f6f7fa] pt-[5px]"
+      className="flex min-h-full flex-col justify-between bg-app pt-[5px]"
       onSubmit={(e) => e.preventDefault()}
     >
       <div className="flex flex-col gap-[5px]">
         {/* Step indicator */}
-        <div className="flex items-center justify-between bg-white px-2.5 py-1.5 text-base font-bold text-brand">
+        <div className="flex items-center justify-between bg-surface px-2.5 py-1.5 text-base font-bold text-brand">
           <span>Recipe Overview</span>
           <span>Step 1 of 5</span>
         </div>
 
         {/* Title */}
-        <div className="flex flex-col gap-2.5 bg-white p-2.5">
+        <div className="flex flex-col gap-2.5 bg-surface p-2.5">
           <div className="flex items-center justify-between">
             <span className="text-base text-black">
               Recipe Title <span className="font-bold text-brand">*</span>
@@ -33,19 +43,19 @@ export default function CreateRecipeScreen() {
           <input
             name="title"
             placeholder="Traditional Garlic Bread"
-            className="w-full rounded-[4px] border border-[#d0d6e8] bg-[#f6f7fa] px-2 py-1.5 text-base text-[#292929] outline-none placeholder:italic placeholder:text-[#d0d6e8] focus:border-brand"
+            className="w-full rounded-[4px] border border-line bg-app px-2 py-1.5 text-base text-ink outline-none placeholder:italic placeholder:text-line focus:border-brand"
           />
         </div>
 
         {/* Category */}
-        <div className="flex flex-col gap-2.5 bg-white p-2.5">
+        <div className="flex flex-col gap-2.5 bg-surface p-2.5">
           <span className="text-base text-black">
             Category <span className="font-bold text-brand">*</span>
           </span>
           <select
             name="category"
             defaultValue=""
-            className="w-full rounded-[4px] border border-[#d0d6e8] bg-[#f6f7fa] px-2 py-1.5 text-base text-[#292929] outline-none focus:border-brand"
+            className="w-full rounded-[4px] border border-line bg-app px-2 py-1.5 text-base text-ink outline-none focus:border-brand"
           >
             <option value="" disabled>
               Select a Category
@@ -59,12 +69,12 @@ export default function CreateRecipeScreen() {
         </div>
 
         {/* Upload */}
-        <div className="flex flex-col gap-2.5 bg-white p-2.5">
+        <div className="flex flex-col gap-2.5 bg-surface p-2.5">
           <button
             type="button"
-            className="flex flex-col items-center gap-2.5 rounded border-2 border-dashed border-[#d0d6e8] py-5"
+            className="flex flex-col items-center gap-2.5 rounded border-2 border-dashed border-line py-5"
           >
-            <UploadIcon className="size-24 text-[#d0d6e8]" />
+            <UploadIcon className="size-24 text-line" />
             <div className="text-center">
               <p className="text-base font-bold text-brand">
                 Click to Upload Thumbnail
@@ -84,7 +94,7 @@ export default function CreateRecipeScreen() {
       </div>
 
       {/* Buttons */}
-      <div className="flex items-center justify-between bg-white p-2.5">
+      <div className="flex items-center justify-between bg-surface p-2.5">
         <button
           type="button"
           onClick={() => router.back()}

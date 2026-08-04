@@ -16,21 +16,43 @@ const initialItems: Item[] = [
 ];
 
 const commonIngredients = [
-  "Almonds", "Black Pepper", "Basil", "Boneless Chicken", "Carrots",
-  "Cinnamon", "Dill", "Dried Thyme", "Dried Rosemary", "Eggs", "Flour",
-  "Garlic Cloves", "Honey", "Iceberg Lettuce", "Jalapeños", "Kale", "Lemon",
-  "Milk", "Nutmeg", "Olive Oil", "Parsley", "Quinoa", "Rosemary", "Salt",
-  "Sugar", "Thyme", "Ugli Fruit", "Vanilla Extract", "Walnuts", "Xanthan Gum",
-  "Yogurt", "Zucchini",
+  "Almonds",
+  "Black Pepper",
+  "Basil",
+  "Boneless Chicken",
+  "Carrots",
+  "Cinnamon",
+  "Dill",
+  "Dried Thyme",
+  "Dried Rosemary",
+  "Eggs",
+  "Flour",
+  "Garlic Cloves",
+  "Honey",
+  "Iceberg Lettuce",
+  "Jalapeños",
+  "Kale",
+  "Lemon",
+  "Milk",
+  "Nutmeg",
+  "Olive Oil",
+  "Parsley",
+  "Quinoa",
+  "Rosemary",
+  "Salt",
+  "Sugar",
+  "Thyme",
+  "Ugli Fruit",
+  "Vanilla Extract",
+  "Walnuts",
+  "Xanthan Gum",
+  "Yogurt",
+  "Zucchini",
 ];
 
 export default function HubScreen() {
-  const [tab, setTab] = useState<"pantry" | "tools">("pantry");
   const [items, setItems] = useState<Item[]>(initialItems);
   const [query, setQuery] = useState("");
-
-  const fieldClass =
-    "rounded-[2px] border border-[#d0d6e8] bg-[#f6f7fa] px-2.5 py-[5px] text-base text-[#292929] outline-none focus:border-brand";
 
   const filtered = useMemo(
     () =>
@@ -50,69 +72,68 @@ export default function HubScreen() {
   function removeItem(index: number) {
     setItems((prev) => prev.filter((_, i) => i !== index));
   }
+  function removeItemByName(name: string) {
+    setItems((prev) => prev.filter((i) => i.name !== name));
+  }
   function updateItem(index: number, key: keyof Item, value: string) {
     setItems((prev) =>
       prev.map((it, i) => (i === index ? { ...it, [key]: value } : it)),
     );
   }
 
-  return (
-    <div className="flex min-h-full flex-col bg-white">
-      {/* Tabs */}
-      <div className="flex shadow-sm">
-        {(["pantry", "tools"] as const).map((t) => {
-          const active = tab === t;
-          return (
-            <button
-              key={t}
-              type="button"
-              onClick={() => setTab(t)}
-              className={`flex-1 py-4 text-center text-base font-bold ${
-                active
-                  ? "text-[#1a1a1a] shadow-[inset_0_-2px_0_0_#f76365]"
-                  : "text-[#666]"
-              }`}
-            >
-              {t === "pantry" ? "PANTRY" : "COOKING TOOLS"}
-            </button>
-          );
-        })}
-      </div>
+  const addedNames = useMemo(
+    () => new Set(items.map((i) => i.name.toLowerCase())),
+    [items],
+  );
 
-      {tab === "tools" ? (
-        <div className="grid flex-1 place-items-center p-10 text-center text-muted">
-          Cooking tools coming soon.
-        </div>
-      ) : (
-        <div className="flex flex-col gap-2.5 px-2.5 py-3">
-          {/* Selected ingredients */}
-          <div className="flex flex-col border-b-2 border-brand pb-2.5">
-            <div className="flex gap-[15px] p-[5px] text-base font-bold text-brand">
-              <span className="flex-1">Ingredient</span>
-              <span className="w-[59px]">Amount</span>
-              <span className="w-[78px]">Unit</span>
-              <span className="w-8" />
-            </div>
-            <div className="flex max-h-[220px] flex-col gap-2.5 overflow-y-auto py-2.5">
-              {items.map((item, i) => (
-                <div key={`${item.name}-${i}`} className="flex items-center gap-2.5">
+  return (
+    <div className="page-fill">
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden py-2">
+        {/* My ingredients */}
+        <section className="flex min-h-0 flex-1 flex-col gap-2">
+          <div className="flex items-center justify-between px-3">
+            <h2 className="section-title">My Ingredients</h2>
+            <span className="text-xs text-muted">{items.length} items</span>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-2 px-3 text-xs font-bold text-ink-secondary">
+            <span className="min-w-0 flex-1">Ingredient</span>
+            <span className="w-16 text-center">Amount</span>
+            <span className="w-[4.5rem] text-center">Unit</span>
+            <span className="w-8" />
+          </div>
+
+          <div className="list-stack min-h-0 flex-1 overflow-y-auto overscroll-contain px-0">
+            {items.length === 0 ? (
+              <p className="feed-card text-center text-sm text-muted">
+                No ingredients yet — add some below.
+              </p>
+            ) : (
+              items.map((item, i) => (
+                <div
+                  key={`${item.name}-${i}`}
+                  className="feed-card flex items-center gap-2"
+                >
                   <input
                     aria-label="Ingredient"
-                    className={`min-w-0 flex-1 ${fieldClass}`}
+                    className="field min-w-0 flex-1 !px-2.5 !py-2 text-sm"
                     value={item.name}
                     onChange={(e) => updateItem(i, "name", e.target.value)}
+                    placeholder="Ingredient"
                   />
                   <input
                     aria-label="Amount"
-                    className={`w-[59px] font-bold ${fieldClass}`}
+                    className="field w-16 shrink-0 !px-2 !py-2 text-center text-sm font-bold"
                     value={item.amount}
                     onChange={(e) => updateItem(i, "amount", e.target.value)}
+                    placeholder="0"
                   />
                   <input
                     aria-label="Unit"
-                    className={`w-[78px] font-bold ${fieldClass}`}
+                    className="field w-[4.5rem] shrink-0 !px-2 !py-2 text-center text-sm font-bold"
                     value={item.unit}
                     onChange={(e) => updateItem(i, "unit", e.target.value)}
+                    placeholder="unit"
                   />
                   <button
                     type="button"
@@ -120,51 +141,66 @@ export default function HubScreen() {
                     onClick={() => removeItem(i)}
                     className="shrink-0 text-brand"
                   >
-                    <MinusCircleIcon className="size-7" />
+                    <MinusCircleIcon className="size-6" />
                   </button>
                 </div>
-              ))}
-              {items.length === 0 ? (
-                <p className="px-1 text-base text-muted">
-                  No ingredients yet — add some below.
-                </p>
-              ) : null}
+              ))
+            )}
+          </div>
+        </section>
+
+        {/* Add ingredients */}
+        <section className="flex max-h-[42%] min-h-0 shrink-0 flex-col gap-2 border-t border-line bg-surface pt-3">
+          <h2 className="section-title px-3">Add Ingredients</h2>
+
+          <div className="px-3">
+            <div className="search-field">
+              <SearchIcon className="size-5 shrink-0 text-brand" />
+              <input
+                className="flex-1 bg-transparent text-sm text-ink outline-none placeholder:italic placeholder:text-muted"
+                placeholder="Search ingredients"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                aria-label="Search ingredients"
+              />
             </div>
           </div>
 
-          {/* Search */}
-          <div className="flex items-center justify-between gap-2 rounded-[4px] border border-[#d0d6e8] bg-[#f6f7fa] px-2.5 py-[5px]">
-            <input
-              className="flex-1 bg-transparent text-base italic text-[#292929] outline-none placeholder:text-[#d0d6e8]"
-              placeholder="Search Ingredients"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              aria-label="Search ingredients"
-            />
-            <SearchIcon className="size-5 text-brand" />
-          </div>
-
-          {/* Common ingredients */}
-          <ul className="flex max-h-[260px] flex-col overflow-y-auto">
-            {filtered.map((name) => (
-              <li key={name}>
-                <button
-                  type="button"
-                  onClick={() => addItem(name)}
-                  className="w-full border-b border-[#d0d6e8] px-[15px] py-1 text-left text-base text-[#292929] hover:bg-[#f6f7fa]"
-                >
-                  {name}
-                </button>
-              </li>
-            ))}
+          <ul className="min-h-0 flex-1 overflow-y-auto">
+            {filtered.map((name) => {
+              const added = addedNames.has(name.toLowerCase());
+              return (
+                <li key={name}>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      added ? removeItemByName(name) : addItem(name)
+                    }
+                    aria-pressed={added}
+                    className="flex w-full items-center gap-2 border-b border-line px-3 py-2.5 text-left transition-colors hover:bg-app"
+                  >
+                    <span className="min-w-0 flex-1 truncate text-sm text-ink">
+                      {name}
+                    </span>
+                    <span
+                      className={`shrink-0 text-xs font-bold ${
+                        added ? "text-brand" : "text-muted"
+                      }`}
+                    >
+                      {added ? "Added" : "Add"}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
             {filtered.length === 0 ? (
-              <li className="px-[15px] py-2 text-base text-muted">
+              <li className="px-3 py-3 text-sm text-muted">
                 No matches for &ldquo;{query}&rdquo;.
               </li>
             ) : null}
           </ul>
-        </div>
-      )}
+        </section>
+      </div>
     </div>
   );
 }

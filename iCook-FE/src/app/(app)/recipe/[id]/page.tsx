@@ -5,6 +5,11 @@ export const metadata: Metadata = {
   title: "Recipe · iCook",
 };
 
-export default function RecipePage() {
-  return <RecipeDetailScreen />;
+export default async function RecipePage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  return <RecipeDetailScreen recipeId={id} />;
 }

@@ -43,7 +43,7 @@ export default function SignUpScreen() {
           autoComplete="email"
           required
         />
-        <p className="text-base text-[#292929]">
+        <p className="text-base text-ink">
           By clicking Sign Up, you agree to our Terms and Conditions and that you
           have read our Privacy Policy.
         </p>

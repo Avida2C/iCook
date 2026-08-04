@@ -15,11 +15,11 @@ export default function CreateScreen() {
   const [showGuidelines, setShowGuidelines] = useState(false);
 
   return (
-    <div className="min-h-full bg-white p-[10px]">
+    <div className="min-h-full bg-surface p-[10px]">
       <div className="flex flex-col gap-5 py-5">
         <div className="flex flex-col gap-[5px]">
           <h1 className="text-base font-bold text-brand">Let&rsquo;s Create!</h1>
-          <p className="text-base text-[#292929]">
+          <p className="text-base text-ink">
             Select an option to get started. You&rsquo;ll be guided
             step-by-step!
           </p>
@@ -48,7 +48,7 @@ export default function CreateScreen() {
             aria-expanded={showGuidelines}
             className="flex w-full items-center justify-between gap-2 text-left"
           >
-            <span className="text-base font-bold text-[#292929]">
+            <span className="text-base font-bold text-ink">
               View General Guidelines
             </span>
             <ChevronRightIcon

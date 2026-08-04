@@ -3,17 +3,18 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { SearchIcon, CloseIcon } from "@/components/app/icons";
+import RecipeThumbnail from "@/components/app/RecipeThumbnail";
 
 const recentSearches = ["Ravioli", "Pancakes", "Courtney Henry", "Quick dinners"];
 
 const searchable = [
-  { type: "Recipe", name: "Traditional Ravioli", href: "/recipe/1", emoji: "🥟" },
-  { type: "Recipe", name: "Blueberry Pancakes", href: "/recipe/1", emoji: "🥞" },
-  { type: "Recipe", name: "Raspberry Cheesecake", href: "/recipe/1", emoji: "🍰" },
-  { type: "Recipe", name: "Pasta Salad", href: "/recipe/1", emoji: "🥗" },
-  { type: "Recipe", name: "Pork Roast", href: "/recipe/1", emoji: "🍖" },
-  { type: "Creator", name: "Courtney Henry", href: "/user", emoji: "👩‍🍳" },
-  { type: "Creator", name: "Eleanor Pena", href: "/user", emoji: "🧑‍🍳" },
+  { type: "Recipe", name: "Traditional Ravioli", href: "/recipe/1" },
+  { type: "Recipe", name: "Blueberry Pancakes", href: "/recipe/1" },
+  { type: "Recipe", name: "Raspberry Cheesecake", href: "/recipe/1" },
+  { type: "Recipe", name: "Pasta Salad", href: "/recipe/1" },
+  { type: "Recipe", name: "Pork Roast", href: "/recipe/1" },
+  { type: "Creator", name: "Courtney Henry", href: "/user" },
+  { type: "Creator", name: "Eleanor Pena", href: "/user" },
 ];
 
 export default function SearchOverlay({
@@ -70,12 +71,12 @@ export default function SearchOverlay({
 
       {/* Sheet — ~40% of the screen, slides from the top */}
       <div
-        className={`absolute inset-x-0 top-0 flex h-[42%] flex-col rounded-b-2xl bg-[#f6f7fa] shadow-xl transition-transform duration-300 ease-out ${
+        className={`absolute inset-x-0 top-0 flex h-[42%] flex-col rounded-b-2xl bg-app shadow-xl transition-transform duration-300 ease-out ${
           open ? "translate-y-0" : "-translate-y-full"
         }`}
       >
-        <div className="flex shrink-0 items-center rounded-t-2xl bg-white px-3 py-2.5 shadow-sm">
-          <div className="flex flex-1 items-center gap-2 rounded-[4px] border border-[#d0d6e8] bg-[#f6f7fa] px-3 py-2">
+        <div className="flex shrink-0 items-center rounded-t-2xl bg-surface px-3 py-2.5 shadow-sm">
+          <div className="flex flex-1 items-center gap-2 rounded-[4px] border border-line bg-app px-3 py-2">
             <SearchIcon className="size-5 text-brand" />
             <input
               ref={inputRef}
@@ -83,7 +84,7 @@ export default function SearchOverlay({
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search recipes, creators, posts"
               aria-label="Search"
-              className="flex-1 bg-transparent text-base text-[#292929] outline-none placeholder:italic placeholder:text-[#d0d6e8]"
+              className="flex-1 bg-transparent text-base text-ink outline-none placeholder:italic placeholder:text-line"
             />
             {query ? (
               <button
@@ -110,13 +111,14 @@ export default function SearchOverlay({
                     <Link
                       href={r.href}
                       onClick={onClose}
-                      className="flex items-center gap-3 rounded-[5px] bg-white p-2.5"
+                      className="flex items-center gap-3 rounded bg-surface p-2.5"
                     >
-                      <span className="grid size-10 shrink-0 place-items-center rounded-[5px] bg-[#e9ecf2] text-xl">
-                        {r.emoji}
-                      </span>
+                      <RecipeThumbnail
+                        className="size-10 shrink-0 rounded"
+                        iconClassName="h-5 w-6"
+                      />
                       <span className="flex flex-col">
-                        <span className="text-base font-bold text-[#292929]">
+                        <span className="text-base font-bold text-ink">
                           {r.name}
                         </span>
                         <span className="text-sm text-muted">{r.type}</span>
@@ -132,14 +134,14 @@ export default function SearchOverlay({
             )
           ) : (
             <div className="flex flex-col gap-3">
-              <p className="text-base font-bold text-[#292929]">Recent searches</p>
+              <p className="text-base font-bold text-ink">Recent searches</p>
               <div className="flex flex-wrap gap-2">
                 {recentSearches.map((term) => (
                   <button
                     key={term}
                     type="button"
                     onClick={() => setQuery(term)}
-                    className="rounded-full border border-[#d0d6e8] bg-white px-3 py-1.5 text-sm text-[#292929]"
+                    className="rounded-full border border-line bg-surface px-3 py-1.5 text-sm text-ink"
                   >
                     {term}
                   </button>

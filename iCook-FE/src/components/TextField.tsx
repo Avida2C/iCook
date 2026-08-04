@@ -27,7 +27,7 @@ export default function TextField({
         placeholder={placeholder}
         autoComplete={autoComplete}
         required={required}
-        className="w-full rounded-[4px] border border-[#d0d6e8] bg-[#f6f7fa] px-3 py-2.5 text-base text-[#292929] outline-none placeholder:text-muted focus:border-brand"
+        className="field"
       />
     </div>
   );

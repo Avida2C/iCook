@@ -31,7 +31,7 @@ export default function CreatePostScreen() {
       onSubmit={(e) => e.preventDefault()}
     >
       {/* Title */}
-      <div className="flex flex-col gap-2.5 bg-white p-2.5">
+      <div className="flex flex-col gap-2.5 bg-surface p-2.5">
         <div className="flex items-center justify-between">
           <span className="text-base text-black">
             Post Title <span className="text-brand">*</span>
@@ -43,19 +43,19 @@ export default function CreatePostScreen() {
         <input
           name="title"
           placeholder="5 Tips for Baking Perfect Cakes"
-          className="w-full rounded-[4px] border border-[#d0d6e8] bg-[#f6f7fa] px-2 py-1.5 text-base text-[#292929] outline-none placeholder:italic placeholder:text-[#d0d6e8] focus:border-brand"
+          className="w-full rounded-[4px] border border-line bg-app px-2 py-1.5 text-base text-ink outline-none placeholder:italic placeholder:text-line focus:border-brand"
         />
       </div>
 
       {/* Category */}
-      <div className="flex flex-col gap-2.5 bg-white p-2.5">
+      <div className="flex flex-col gap-2.5 bg-surface p-2.5">
         <span className="text-base text-black">
           Category <span className="text-brand">*</span>
         </span>
         <select
           name="category"
           defaultValue=""
-          className="w-full rounded-[4px] border border-[#d0d6e8] bg-[#f6f7fa] px-2 py-1.5 text-base text-[#292929] outline-none focus:border-brand"
+          className="w-full rounded-[4px] border border-line bg-app px-2 py-1.5 text-base text-ink outline-none focus:border-brand"
         >
           <option value="" disabled>
             Select a Category
@@ -69,12 +69,12 @@ export default function CreatePostScreen() {
       </div>
 
       {/* Content */}
-      <div className="flex flex-1 flex-col gap-2.5 bg-white p-2.5">
+      <div className="flex flex-1 flex-col gap-2.5 bg-surface p-2.5">
         <span className="text-base text-black">
           Post Content <span className="text-brand">*</span>
         </span>
-        <div className="flex flex-col overflow-hidden rounded-[5px] border border-[#d0d6e8]">
-          <div className="flex items-center justify-between border-b border-[#d0d6e8] bg-[#f6f7fa] p-2.5 text-[#292929]">
+        <div className="flex flex-col overflow-hidden rounded-[5px] border border-line">
+          <div className="flex items-center justify-between border-b border-line bg-app p-2.5 text-ink">
             {toolbar.map(({ label, Icon }) => (
               <button
                 key={label}
@@ -90,10 +90,10 @@ export default function CreatePostScreen() {
             name="content"
             rows={10}
             placeholder="Content must be at least 100 words."
-            className="resize-none bg-white p-2 text-base text-[#292929] outline-none placeholder:italic placeholder:text-[#d0d6e8]"
+            className="resize-none bg-surface p-2 text-base text-ink outline-none placeholder:italic placeholder:text-line"
           />
         </div>
-        <p className="text-xs font-semibold text-[#d0d6e8]">
+        <p className="text-xs font-semibold text-line">
           Review your post to ensure clarity and engagement!
         </p>
         <button

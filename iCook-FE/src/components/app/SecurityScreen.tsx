@@ -47,7 +47,7 @@ function Toggle({
       aria-label={label}
       onClick={onChange}
       className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
-        checked ? "bg-brand" : "bg-[#d0d6e8]"
+        checked ? "bg-brand" : "bg-line"
       }`}
     >
       <span
@@ -71,11 +71,11 @@ function Card({
   children?: React.ReactNode;
 }) {
   return (
-    <section className="flex flex-col gap-3 bg-white p-4">
+    <section className="flex flex-col gap-3 bg-surface p-4">
       <div className="flex items-start gap-3">
         <span className="mt-0.5 text-brand">{icon}</span>
         <div className="flex-1">
-          <h2 className="text-lg font-bold text-[#292929]">{title}</h2>
+          <h2 className="text-lg font-bold text-ink">{title}</h2>
           <p className="text-base text-muted">{description}</p>
         </div>
       </div>
@@ -111,13 +111,13 @@ export default function SecurityScreen() {
   }
 
   return (
-    <div className="flex min-h-full flex-col bg-[#f6f7fa]">
+    <div className="flex min-h-full flex-col bg-app">
       {/* Sub header */}
-      <div className="flex items-center gap-4 bg-white px-4 py-2 shadow-sm">
+      <div className="flex items-center gap-4 bg-surface px-4 py-2 shadow-sm">
         <button type="button" onClick={() => router.back()} aria-label="Back">
-          <BackIcon className="size-6 text-[#1a1a1a]" />
+          <BackIcon className="size-6 text-ink" />
         </button>
-        <span className="text-base font-bold text-[#1a1a1a]">
+        <span className="text-base font-bold text-ink">
           Login &amp; Security
         </span>
       </div>
@@ -134,7 +134,7 @@ export default function SecurityScreen() {
           description="Use an authenticator app to generate a code each time you log in."
         >
           <div className="flex items-center justify-between">
-            <span className="text-base font-bold text-[#292929]">
+            <span className="text-base font-bold text-ink">
               Authenticator app
             </span>
             <Toggle
@@ -162,7 +162,7 @@ export default function SecurityScreen() {
                 {codes.map((code) => (
                   <li
                     key={code}
-                    className="rounded-[4px] bg-[#f6f7fa] py-2 text-center font-mono text-base tracking-wider text-[#292929]"
+                    className="rounded-[4px] bg-app py-2 text-center font-mono text-base tracking-wider text-ink"
                   >
                     {code}
                   </li>
@@ -172,7 +172,7 @@ export default function SecurityScreen() {
                 <button
                   type="button"
                   onClick={copyCodes}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-[5px] border border-[#d0d6e8] py-2 text-base font-bold text-[#292929]"
+                  className="flex flex-1 items-center justify-center gap-2 rounded-[5px] border border-line py-2 text-base font-bold text-ink"
                 >
                   {copied ? (
                     <CheckIcon className="size-5 text-[#00a023]" />
@@ -184,7 +184,7 @@ export default function SecurityScreen() {
                 <button
                   type="button"
                   onClick={() => setCodes(makeCodes())}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-[5px] border border-[#d0d6e8] py-2 text-base font-bold text-[#292929]"
+                  className="flex flex-1 items-center justify-center gap-2 rounded-[5px] border border-line py-2 text-base font-bold text-ink"
                 >
                   <RefreshIcon className="size-5" /> Regenerate
                 </button>
@@ -216,7 +216,7 @@ export default function SecurityScreen() {
               >
                 <KeyIcon className="size-5 shrink-0 text-brand" />
                 <div className="flex-1">
-                  <p className="text-base font-bold text-[#292929]">
+                  <p className="text-base font-bold text-ink">
                     {passkey.name}
                   </p>
                   <p className="text-sm text-muted">{passkey.added}</p>

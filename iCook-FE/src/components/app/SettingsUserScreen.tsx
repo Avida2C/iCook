@@ -6,32 +6,32 @@ import { BackIcon, UploadIcon } from "@/components/app/icons";
 function SubHeader({ title }: { title: string }) {
   const router = useRouter();
   return (
-    <div className="flex items-center gap-4 bg-white px-4 py-2 shadow-sm">
+    <div className="flex items-center gap-4 bg-surface px-4 py-2 shadow-sm">
       <button type="button" onClick={() => router.back()} aria-label="Back">
-        <BackIcon className="size-6 text-[#1a1a1a]" />
+        <BackIcon className="size-6 text-ink" />
       </button>
-      <span className="text-base font-bold text-[#1a1a1a]">{title}</span>
+      <span className="text-base font-bold text-ink">{title}</span>
     </div>
   );
 }
 
 const inputClass =
-  "w-full rounded-[4px] border border-[#d0d6e8] bg-[#f6f7fa] px-2 py-1.5 text-base text-[#292929] outline-none placeholder:italic placeholder:text-[#909bab] focus:border-brand";
+  "w-full rounded-[4px] border border-line bg-app px-2 py-1.5 text-base text-ink outline-none placeholder:italic placeholder:text-muted focus:border-brand";
 const labelClass = "text-base font-bold text-black";
 const buttonClass =
   "w-full rounded-[5px] bg-brand px-5 py-1.5 text-xl font-bold text-white shadow-md transition-colors hover:bg-[#e85557]";
 
 export default function SettingsUserScreen() {
   return (
-    <div className="flex min-h-full flex-col bg-[#f6f7fa]">
+    <div className="flex min-h-full flex-col bg-app">
       <SubHeader title="User Details" />
 
       <div className="flex flex-col gap-[5px]">
         {/* Avatar upload */}
-        <div className="flex flex-col items-center gap-2.5 bg-white py-5">
+        <div className="flex flex-col items-center gap-2.5 bg-surface py-5">
           <button
             type="button"
-            className="relative grid size-[143px] place-items-center rounded-full border-2 border-dashed border-[#d0d6e8]"
+            className="relative grid size-[143px] place-items-center rounded-full border-2 border-dashed border-line"
             aria-label="Change profile picture"
           >
             <span className="grid size-[130px] place-items-center rounded-full bg-brand/15 text-3xl font-bold text-brand">
@@ -53,7 +53,7 @@ export default function SettingsUserScreen() {
 
         {/* Full name */}
         <form
-          className="flex flex-col gap-2.5 bg-white p-2.5"
+          className="flex flex-col gap-2.5 bg-surface p-2.5"
           onSubmit={(e) => e.preventDefault()}
         >
           <label className={labelClass} htmlFor="firstName">Full Name</label>
@@ -65,7 +65,7 @@ export default function SettingsUserScreen() {
 
         {/* About me */}
         <form
-          className="flex flex-col gap-2.5 bg-white p-2.5"
+          className="flex flex-col gap-2.5 bg-surface p-2.5"
           onSubmit={(e) => e.preventDefault()}
         >
           <label className={labelClass} htmlFor="about">About Me</label>
@@ -84,7 +84,7 @@ export default function SettingsUserScreen() {
 
         {/* Email */}
         <form
-          className="flex flex-col gap-2.5 bg-white p-2.5"
+          className="flex flex-col gap-2.5 bg-surface p-2.5"
           onSubmit={(e) => e.preventDefault()}
         >
           <label className={labelClass} htmlFor="email">Email Address</label>

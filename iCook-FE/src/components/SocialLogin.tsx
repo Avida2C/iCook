@@ -5,9 +5,9 @@ export default function SocialLogin({ label }: { label: string }) {
   return (
     <div className="flex w-full flex-col items-center gap-2.5">
       <div className="flex w-full items-center gap-3 px-2.5">
-        <span className="h-px flex-1 bg-[#d0d6e8]" />
+        <span className="h-px flex-1 bg-line" />
         <span className="shrink-0 text-base text-muted">{label}</span>
-        <span className="h-px flex-1 bg-[#d0d6e8]" />
+        <span className="h-px flex-1 bg-line" />
       </div>
       <div className="flex w-full items-center justify-between px-12 py-1">
         <button

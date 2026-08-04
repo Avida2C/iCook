@@ -1,9 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-const primaryButtonClass =
-  "flex w-full items-center justify-center rounded-[5px] bg-brand px-5 py-3 text-center text-2xl font-bold text-white shadow-md transition-colors hover:bg-[#e85557] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand";
-
 /** Coral CTA rendered as a link (e.g. "Get Started"). */
 export function PrimaryLink({
   href,
@@ -13,7 +10,7 @@ export function PrimaryLink({
   children: ReactNode;
 }) {
   return (
-    <Link href={href} className={primaryButtonClass}>
+    <Link href={href} className="btn-primary-lg">
       {children}
     </Link>
   );
@@ -28,7 +25,7 @@ export function PrimaryButton({
   type?: "submit" | "button";
 }) {
   return (
-    <button type={type} className={primaryButtonClass}>
+    <button type={type} className="btn-primary-lg">
       {children}
     </button>
   );

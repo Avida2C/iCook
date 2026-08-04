@@ -1,135 +1,326 @@
+"use client";
+
 import Link from "next/link";
-import { HeartIcon, ShareIcon, MessageIcon, SendIcon } from "@/components/app/icons";
+import {
+  HeartIcon,
+  CommentIcon,
+  BookmarkIcon,
+  BookmarkFillIcon,
+} from "@/components/app/icons";
+import RecipeThumbnail from "@/components/app/RecipeThumbnail";
+import {
+  CATALOG_RECIPES,
+  useSavedRecipes,
+} from "@/components/recipes/SavedRecipesProvider";
+
+type FeedUser = { name: string; handle: string; initials: string };
+
+type CommunityItem =
+  | {
+      id: string;
+      kind: "recipe";
+      user: FeedUser;
+      time: string;
+      recipeId: string;
+      recipeName: string;
+      preview: string;
+      likes: number;
+      comments: number;
+    }
+  | {
+      id: string;
+      kind: "post";
+      user: FeedUser;
+      time: string;
+      postId: string;
+      title: string;
+      preview: string;
+      likes: number;
+      comments: number;
+    };
+
+const amy: FeedUser = {
+  name: "Chef Amy",
+  handle: "chefamy",
+  initials: "CA",
+};
+const ben: FeedUser = {
+  name: "Baker Ben",
+  handle: "bakerben",
+  initials: "BB",
+};
+const sue: FeedUser = {
+  name: "Sweet Sue",
+  handle: "sweetsue",
+  initials: "SS",
+};
+const grill: FeedUser = {
+  name: "Grill Guy",
+  handle: "grillguy",
+  initials: "GG",
+};
+const courtney: FeedUser = {
+  name: "Courtney Henry",
+  handle: "courtneyhenry",
+  initials: "CH",
+};
+const fish: FeedUser = {
+  name: "Fish Fan",
+  handle: "fishfan",
+  initials: "FF",
+};
+
+const COMMUNITY_FEED: CommunityItem[] = [
+  {
+    id: "c1",
+    kind: "recipe",
+    user: courtney,
+    time: "1h ago",
+    recipeId: "1",
+    recipeName: "Ricotta Ravioli",
+    preview:
+      "Soft pasta pockets filled with ricotta and basil — classic Italian comfort, made simple.",
+    likes: 42,
+    comments: 8,
+  },
+  {
+    id: "c2",
+    kind: "post",
+    user: sue,
+    time: "2h ago",
+    postId: "1",
+    title: "My go-to cookie tip",
+    preview:
+      "Chill your dough for at least 30 minutes — it keeps the cookies thick and chewy every time. Extra points if you brown the butter first.",
+    likes: 28,
+    comments: 5,
+  },
+  {
+    id: "c3",
+    kind: "recipe",
+    user: ben,
+    time: "4h ago",
+    recipeId: "3",
+    recipeName: "Blueberry Pancakes",
+    preview:
+      "Fluffy weekend pancakes with fresh blueberries and a touch of lemon zest.",
+    likes: 67,
+    comments: 12,
+  },
+  {
+    id: "c4",
+    kind: "post",
+    user: amy,
+    time: "Yesterday",
+    postId: "2",
+    title: "Kitchen reset",
+    preview:
+      "Cleared out the spice rack this morning — sharing what stayed, what went, and the three bottles I always refill first.",
+    likes: 19,
+    comments: 3,
+  },
+  {
+    id: "c5",
+    kind: "recipe",
+    user: grill,
+    time: "Yesterday",
+    recipeId: "5",
+    recipeName: "Pork Roast",
+    preview:
+      "Slow-roasted with rosemary and garlic until the crust is golden and crisp.",
+    likes: 51,
+    comments: 9,
+  },
+  {
+    id: "c6",
+    kind: "post",
+    user: grill,
+    time: "2d ago",
+    postId: "3",
+    title: "Charcoal vs gas — honest take",
+    preview:
+      "Gas is convenient. Charcoal wins on flavour. If you only grill on weekends, charcoal is worth the mess.",
+    likes: 34,
+    comments: 14,
+  },
+  {
+    id: "c7",
+    kind: "recipe",
+    user: fish,
+    time: "2d ago",
+    recipeId: "11",
+    recipeName: "Salmon with Roast Potatoes",
+    preview:
+      "Crispy potatoes, flaky salmon, and a lemon-dill finish that comes together on one tray.",
+    likes: 38,
+    comments: 6,
+  },
+  {
+    id: "c8",
+    kind: "recipe",
+    user: sue,
+    time: "3d ago",
+    recipeId: "13",
+    recipeName: "Raspberry Cheesecake",
+    preview:
+      "No-bake cheesecake with a buttery biscuit base and a bright raspberry swirl.",
+    likes: 89,
+    comments: 21,
+  },
+  {
+    id: "c9",
+    kind: "post",
+    user: courtney,
+    time: "4d ago",
+    postId: "4",
+    title: "Weeknight pasta formula",
+    preview:
+      "One pan, one handful of greens, whatever cheese you have. The formula I use when dinner needs to happen in 20 minutes.",
+    likes: 56,
+    comments: 11,
+  },
+  {
+    id: "c10",
+    kind: "recipe",
+    user: amy,
+    time: "5d ago",
+    recipeId: "2",
+    recipeName: "Egg on Toast",
+    preview:
+      "Perfect soft yolks on crusty toast — the breakfast that never gets old.",
+    likes: 23,
+    comments: 4,
+  },
+];
+
+function Avatar({ user }: { user: FeedUser }) {
+  return <span className="avatar">{user.initials}</span>;
+}
+
+function Handle({ handle, time }: { handle: string; time: string }) {
+  return (
+    <p className="mt-0.5 flex items-center gap-0.5 text-xs leading-[14px]">
+      <span className="text-brand-soft">@</span>
+      <span className="truncate text-placeholder">{handle}</span>
+      <span className="text-muted"> · {time}</span>
+    </p>
+  );
+}
+
+function RecipeFeedCard({ item }: { item: Extract<CommunityItem, { kind: "recipe" }> }) {
+  const recipe =
+    CATALOG_RECIPES.find((r) => r.id === item.recipeId) ?? CATALOG_RECIPES[0];
+  const { isSaved, toggleSave } = useSavedRecipes();
+  const saved = isSaved(recipe.id);
+
+  return (
+    <article className="feed-card flex flex-col gap-2">
+      <div className="flex gap-3">
+        <Avatar user={item.user} />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm leading-5 text-ink">
+            <span className="font-bold text-brand">{item.user.name}</span>{" "}
+            shared a recipe
+          </p>
+          <Handle handle={item.user.handle} time={item.time} />
+        </div>
+        <button
+          type="button"
+          aria-label={saved ? `Unsave ${item.recipeName}` : `Save ${item.recipeName}`}
+          aria-pressed={saved}
+          onClick={() => toggleSave(recipe)}
+          className="shrink-0 text-brand"
+        >
+          {saved ? (
+            <BookmarkFillIcon className="size-6" />
+          ) : (
+            <BookmarkIcon className="size-6" />
+          )}
+        </button>
+      </div>
+
+      <Link
+        href={`/recipe/${item.recipeId}`}
+        className="block overflow-hidden rounded border border-line"
+      >
+          <RecipeThumbnail className="h-36 w-full" iconClassName="h-12 w-14" />
+          <div className="px-3 py-2.5">
+            <p className="truncate text-sm font-bold text-ink">{item.recipeName}</p>
+            <p className="mt-0.5 line-clamp-2 text-xs leading-4 text-muted">
+              {item.preview}
+            </p>
+          </div>
+        </Link>
+
+      <div className="flex items-center gap-4 text-xs text-muted">
+        <span className="inline-flex items-center gap-1">
+          <HeartIcon className="size-3.5 text-brand" />
+          {item.likes}
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <CommentIcon className="size-3.5 text-brand" />
+          {item.comments}
+        </span>
+      </div>
+    </article>
+  );
+}
+
+function PostFeedCard({ item }: { item: Extract<CommunityItem, { kind: "post" }> }) {
+  return (
+    <article className="feed-card flex flex-col gap-2">
+      <div className="flex gap-3">
+        <Avatar user={item.user} />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm leading-5 text-ink">
+            <span className="font-bold text-brand">{item.user.name}</span> shared
+            a post
+          </p>
+          <Handle handle={item.user.handle} time={item.time} />
+        </div>
+      </div>
+
+      <Link
+        href={`/post/${item.postId}`}
+        className="block rounded border border-line px-3 py-2.5"
+      >
+        <p className="text-sm font-bold text-ink">{item.title}</p>
+        <p className="mt-1 line-clamp-3 text-xs leading-4 text-ink-secondary">
+          {item.preview}
+        </p>
+      </Link>
+
+      <div className="flex items-center gap-4 text-xs text-muted">
+        <span className="inline-flex items-center gap-1">
+          <HeartIcon className="size-3.5 text-brand" />
+          {item.likes}
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <CommentIcon className="size-3.5 text-brand" />
+          {item.comments}
+        </span>
+      </div>
+    </article>
+  );
+}
 
 export default function DiscoverScreen() {
   return (
-    <div className="flex flex-col gap-2 py-[5px]">
-      <article className="flex flex-col items-center gap-[5px] bg-white p-[10px] shadow-[0px_2px_2px_rgba(205,205,205,0.25)]">
-        {/* Title + actions */}
-        <div className="flex w-full flex-col gap-[2px]">
-          <div className="flex h-[55px] items-center gap-2.5 border-b-2 border-brand py-2.5">
-            <h2 className="flex-1 text-xl font-bold text-[#292929]">
-              Traditional Ravioli Recipe
-            </h2>
-            <div className="flex items-center gap-1.5 text-brand">
-              <button type="button" aria-label="Like">
-                <HeartIcon className="size-7" />
-              </button>
-              <button type="button" aria-label="Share">
-                <ShareIcon className="size-7" />
-              </button>
-            </div>
-          </div>
-          <p className="text-sm text-muted">20th November 2024</p>
+    <div className="page-fill">
+      <div className="feed-stack">
+        <div className="flex items-center justify-between px-3">
+          <h2 className="section-title">Community</h2>
+          <span className="text-xs text-muted">Recipes &amp; posts</span>
         </div>
 
-        {/* Post body */}
-        <div className="flex w-full flex-col gap-[15px] py-5">
-          <div className="relative h-[226px] w-full overflow-hidden rounded-[5px]">
-            <div className="grid size-full place-items-center bg-[#e9ecf2] text-5xl">
-              🍝
-            </div>
-            <Link
-              href="/recipe/1"
-              className="absolute inset-x-0 bottom-0 flex h-10 items-center justify-center bg-brand text-xl font-bold text-white"
-            >
-              Go to Recipe!
-            </Link>
-          </div>
-
-          <div className="flex flex-col gap-4 text-base text-[#292929]">
-            <p>
-              If you&rsquo;re craving authentic Italian comfort food, homemade
-              ravioli is the way to go. This traditional recipe is easy to follow
-              and results in soft, flavourful pasta that&rsquo;s perfect for any
-              occasion.
-            </p>
-            <p>
-              Making ravioli from scratch might seem intimidating, but it&rsquo;s
-              totally worth it. The freshness of homemade pasta and the
-              satisfaction of making it yourself make every bite special.
-            </p>
-            <p>
-              Ready to give it a try? Follow the link above to get started and
-              make your own homemade ravioli today!
-            </p>
-          </div>
-
-          <p className="flex gap-[15px] text-base text-[#292929]">
-            <span className="font-bold">Tags:</span>
-            <span className="italic">Recipes</span>
-          </p>
-        </div>
-
-        {/* Author */}
-        <div className="flex w-full flex-col items-center border-y-2 border-brand py-2.5">
-          <div className="flex w-full items-stretch gap-5 py-[15px]">
-            <div className="flex w-[55px] flex-col items-center gap-5">
-              <Link
-                href="/user"
-                className="grid size-[55px] place-items-center rounded-full bg-brand/15 text-lg font-bold text-brand"
-              >
-                CH
-              </Link>
-              <div className="flex flex-1 flex-col items-center justify-between text-brand">
-                <button type="button" aria-label="Like">
-                  <HeartIcon className="size-7" />
-                </button>
-                <button type="button" aria-label="Message">
-                  <MessageIcon className="size-7" />
-                </button>
-                <button type="button" aria-label="Share">
-                  <ShareIcon className="size-6" />
-                </button>
-              </div>
-            </div>
-            <div className="flex flex-1 flex-col gap-3">
-              <p className="text-xl font-bold text-brand">Courtney Henry</p>
-              <p className="text-base italic text-[#292929]">
-                I&rsquo;m passionate about cooking and love experimenting with
-                flavours and ingredients. I create simple, delicious recipes with
-                easy-to-follow instructions, inspiring others to try new dishes
-                in their kitchens.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Comments */}
-        <section className="flex w-full flex-col gap-[5px] px-[5px]">
-          <h3 className="text-xl font-bold text-[#292929]">Comments</h3>
-          <div className="flex flex-col gap-2.5">
-            <div className="flex gap-[15px] rounded-[5px] bg-[#f6f7fa] p-2.5">
-              <span className="grid size-[35px] shrink-0 place-items-center rounded-full bg-brand/15 text-sm font-bold text-brand">
-                AM
-              </span>
-              <div className="flex flex-1 flex-col gap-[5px] py-[5px]">
-                <p className="font-semibold text-brand">Arlene McCoy</p>
-                <p className="text-sm text-[#292929]">
-                  Simple recipe, turned out yummy!
-                </p>
-                <p className="text-sm text-muted">10:30AM - 27/11/2024</p>
-              </div>
-            </div>
-            <button
-              type="button"
-              className="flex h-[45px] items-center justify-center bg-brand text-xl font-semibold text-white"
-            >
-              Show More
-            </button>
-            <form className="flex items-center gap-1.5 rounded-[5px] bg-[#f6f7fa] px-2.5 py-[5px]">
-              <input
-                className="flex-1 bg-transparent py-[5px] text-base font-bold text-[#292929] outline-none placeholder:text-muted"
-                placeholder="Write a comment!"
-                aria-label="Write a comment"
-              />
-              <button type="submit" aria-label="Send comment" className="text-brand">
-                <SendIcon className="size-6" />
-              </button>
-            </form>
-          </div>
-        </section>
-      </article>
+        {COMMUNITY_FEED.map((item) =>
+          item.kind === "recipe" ? (
+            <RecipeFeedCard key={item.id} item={item} />
+          ) : (
+            <PostFeedCard key={item.id} item={item} />
+          ),
+        )}
+      </div>
     </div>
   );
 }

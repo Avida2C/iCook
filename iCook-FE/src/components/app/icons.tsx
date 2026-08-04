@@ -41,6 +41,8 @@ import {
   FiRefreshCw,
   FiCheck,
   FiTrash2,
+  FiSun,
+  FiMoon,
 } from "react-icons/fi";
 import {
   FaPlay,
@@ -65,6 +67,10 @@ import { FaFacebook } from "react-icons/fa6";
 export const SearchIcon = FiSearch;
 export const BellIcon = FiBell;
 export const GearIcon = FiSettings;
+
+// Theme
+export const SunIcon = FiSun;
+export const MoonIcon = FiMoon;
 
 // Bottom navigation
 export const RecipesIcon = FiHome;

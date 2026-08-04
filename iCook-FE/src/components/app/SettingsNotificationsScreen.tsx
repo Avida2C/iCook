@@ -56,13 +56,13 @@ function Toggle({
       aria-checked={checked}
       aria-label={label}
       onClick={onChange}
-      className={`relative h-5 w-9 shrink-0 rounded-full border-2 border-[#1a1a1a] transition-colors ${
-        checked ? "bg-brand" : "bg-[#f2f2f2]"
+      className={`relative h-5 w-9 shrink-0 rounded-full border-2 border-ink transition-colors ${
+        checked ? "bg-brand" : "bg-surface-muted"
       }`}
     >
       <span
         className={`absolute top-1/2 size-3 -translate-y-1/2 rounded-full transition-all ${
-          checked ? "left-[18px] bg-white" : "left-[2px] bg-[#1a1a1a]"
+          checked ? "left-[18px] bg-white" : "left-[2px] bg-ink"
         }`}
       />
     </button>
@@ -78,22 +78,22 @@ export default function SettingsNotificationsScreen() {
     setState((prev) => ({ ...prev, [id]: !prev[id] }));
 
   return (
-    <div className="flex min-h-full flex-col bg-[#f6f7fa]">
-      <div className="flex items-center gap-4 bg-white px-4 py-2 shadow-sm">
+    <div className="flex min-h-full flex-col bg-app">
+      <div className="flex items-center gap-4 bg-surface px-4 py-2 shadow-sm">
         <button type="button" onClick={() => router.back()} aria-label="Back">
-          <BackIcon className="size-6 text-[#1a1a1a]" />
+          <BackIcon className="size-6 text-ink" />
         </button>
-        <span className="text-base font-bold text-[#1a1a1a]">Notifications</span>
+        <span className="text-base font-bold text-ink">Notifications</span>
       </div>
 
       <form
-        className="flex flex-col gap-6 bg-white p-2.5"
+        className="flex flex-col gap-6 bg-surface p-2.5"
         onSubmit={(e) => e.preventDefault()}
       >
         {groups.map((group) => (
           <section
             key={group.title}
-            className="flex flex-col gap-4 border-b border-[#e5e5e5] pb-5"
+            className="flex flex-col gap-4 border-b border-line pb-5"
           >
             <h2 className="text-base font-bold text-black">{group.title}</h2>
             {group.options.map((option) => (

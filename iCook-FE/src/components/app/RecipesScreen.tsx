@@ -1,115 +1,162 @@
+"use client";
+
 import Link from "next/link";
-import { BookmarkFillIcon } from "@/components/app/icons";
+import RecipeThumbnail from "@/components/app/RecipeThumbnail";
+import {
+  CATALOG_RECIPES,
+  RECIPE_CATEGORIES,
+  sortByMostBookmarked,
+  useSavedRecipes,
+  type CatalogRecipe,
+} from "@/components/recipes/SavedRecipesProvider";
 
-type Recipe = { name: string; emoji: string };
-type Category = { title: string; slug: string; recipes: Recipe[] };
+function DiscoverRecipeCard({ recipe }: { recipe: CatalogRecipe }) {
+  const { isSaved, toggleSave } = useSavedRecipes();
+  const saved = isSaved(recipe.id);
 
-const categories: Category[] = [
-  {
-    title: "Most Loved Recipes!",
-    slug: "loved",
-    recipes: [
-      { name: "Traditional Ravioli", emoji: "🥟" },
-      { name: "Egg & Tomatoes on Toast", emoji: "🍳" },
-      { name: "Popcorn", emoji: "🍿" },
-    ],
-  },
-  {
-    title: "Breakfast",
-    slug: "breakfast",
-    recipes: [
-      { name: "Egg Avocado Toast", emoji: "🥑" },
-      { name: "Egg & Tomatoes on Toast", emoji: "🍳" },
-      { name: "Blueberry Pancakes", emoji: "🥞" },
-    ],
-  },
-  {
-    title: "Lunch",
-    slug: "lunch",
-    recipes: [
-      { name: "Salad", emoji: "🥗" },
-      { name: "Pasta Salad", emoji: "🍝" },
-      { name: "Pizza", emoji: "🍕" },
-    ],
-  },
-  {
-    title: "Snacks",
-    slug: "snacks",
-    recipes: [
-      { name: "Olive Dip", emoji: "🫒" },
-      { name: "Muffins", emoji: "🧁" },
-      { name: "Popcorn", emoji: "🍿" },
-    ],
-  },
-  {
-    title: "Dinner",
-    slug: "dinner",
-    recipes: [
-      { name: "Ravioli", emoji: "🥟" },
-      { name: "Pork Roast", emoji: "🍖" },
-      { name: "Spaghetti", emoji: "🍝" },
-    ],
-  },
-  {
-    title: "Dessert",
-    slug: "dessert",
-    recipes: [
-      { name: "Raspberry Cheesecake", emoji: "🍰" },
-      { name: "Strawberry Yogurt", emoji: "🍓" },
-      { name: "Chocolate Cookies", emoji: "🍪" },
-    ],
-  },
-];
-
-function RecipeCard({ recipe }: { recipe: Recipe }) {
   return (
-    <div className="relative flex flex-col items-center">
-      <Link
-        href="/recipe/1"
-        className="grid size-[100px] place-items-center rounded-[5px] bg-[#e9ecf2] text-4xl"
-      >
-        {recipe.emoji}
-      </Link>
-      <p className="mt-1 max-w-[100px] truncate text-sm text-[#292929]">
-        {recipe.name}
-      </p>
-      <button
-        type="button"
-        aria-label={`Save ${recipe.name}`}
-        className="absolute left-[64px] top-[4px] text-brand"
-      >
-        <BookmarkFillIcon className="size-7 drop-shadow" />
-      </button>
+    <div className="flex min-w-0 flex-1 flex-col items-center rounded">
+      <div className="relative w-full max-w-[135px]">
+        <Link
+          href={`/recipe/${recipe.id}`}
+          className="relative block h-32 w-full overflow-hidden rounded border-2 border-line-soft"
+        >
+          <RecipeThumbnail className="size-full" iconClassName="h-[60px] w-[68px]" />
+        </Link>
+        <button
+          type="button"
+          aria-label={saved ? `Unsave ${recipe.name}` : `Save ${recipe.name}`}
+          aria-pressed={saved}
+          onClick={() => toggleSave(recipe)}
+          className="absolute top-1.5 right-1.5 flex size-7 items-center justify-center rounded bg-brand p-1.5"
+        >
+          <img
+            src={
+              saved
+                ? "/icons/recipes/bookmark-fill.svg"
+                : "/icons/recipes/bookmark-empty.svg"
+            }
+            alt=""
+            aria-hidden
+            className="h-[13.5px] w-[10.83px]"
+          />
+        </button>
+      </div>
+
+      <div className="w-full max-w-[135px] p-1">
+        <Link
+          href={`/recipe/${recipe.id}`}
+          className="block truncate text-sm leading-[16.8px] text-ink-secondary"
+        >
+          {recipe.name}
+        </Link>
+        <div className="flex items-center gap-0.5 py-0.5 text-xs leading-[14px]">
+          <span className="text-brand-soft">@</span>
+          <span className="truncate text-placeholder">{recipe.author}</span>
+        </div>
+      </div>
     </div>
   );
 }
 
-export default function RecipesScreen() {
+function RecipeSection({
+  title,
+  recipes,
+  moreHref,
+}: {
+  title: string;
+  recipes: CatalogRecipe[];
+  moreHref: string;
+}) {
   return (
-    <div className="flex flex-col gap-[5px] py-[5px]">
-      {categories.map((category) => (
-        <section
-          key={category.slug}
-          className="flex flex-col gap-3 bg-white px-[10px] py-[15px] shadow-[0px_2px_2.5px_rgba(178,178,178,0.25)]"
+    <section className="flex w-full flex-col gap-2 bg-surface px-2 pt-2 pb-4">
+      <div className="flex items-start gap-4">
+        <h2 className="min-w-0 flex-1 text-xl leading-6 text-brand">{title}</h2>
+        <Link
+          href={moreHref}
+          className="shrink-0 rounded bg-brand px-2 py-0.5 text-center text-base leading-[22.4px] text-white"
         >
-          <div className="flex items-center gap-[5px]">
-            <h2 className="flex-1 text-xl font-bold text-brand">
-              {category.title}
-            </h2>
+          more
+        </Link>
+      </div>
+      <div className="flex items-start gap-2">
+        {recipes.map((recipe) => (
+          <DiscoverRecipeCard key={recipe.id} recipe={recipe} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function FeaturedRecipeCta({ recipe }: { recipe: CatalogRecipe }) {
+  return (
+    <section className="relative w-full overflow-hidden rounded">
+      <RecipeThumbnail className="h-[248px] w-full rounded" iconClassName="h-16 w-[72px]" />
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-brand/75 px-8 pt-10 pb-4 text-app">
+        <div className="flex w-full flex-col items-start rounded-lg border-2 border-app px-5 py-4">
+          <p className="text-base leading-[22.4px]">{recipe.name}</p>
+          <p className="text-base leading-[22.4px]">
+            Classic Italian comfort made simple. Homemade ravioli filled with a
+            velvety ricotta blend, paired perfectly with a bright, slow-simmered
+            tomato and basil sauce.
+          </p>
+        </div>
+        <Link
+          href={`/recipe/${recipe.id}`}
+          className="w-full text-right text-xl leading-6"
+        >
+          View Recipe
+        </Link>
+      </div>
+    </section>
+  );
+}
+
+export default function RecipesScreen() {
+  const { savedIds } = useSavedRecipes();
+  const mostLoved = sortByMostBookmarked(CATALOG_RECIPES, savedIds);
+  const topLoved = mostLoved.slice(0, 3);
+  const nextLoved = mostLoved.slice(3, 6);
+  const featured = mostLoved[0] ?? CATALOG_RECIPES[0];
+
+  return (
+    <div className="flex flex-col gap-1 pb-4">
+      <div className="bg-surface px-2 pt-2 pb-4">
+        <div className="grid grid-cols-5 gap-2">
+          {RECIPE_CATEGORIES.map((cat) => (
             <Link
-              href="/recipes/more"
-              className="flex h-9 items-center justify-center rounded-[4px] bg-brand px-4 text-xl text-white"
+              key={cat.slug}
+              href={`/recipes/more?category=${cat.slug}`}
+              className="flex flex-col items-center justify-center gap-1 px-2 py-1"
             >
-              more
+              <span className="relative size-[55px] shrink-0 overflow-hidden">
+                <img
+                  src={cat.icon}
+                  alt=""
+                  className="absolute inset-0 size-full object-cover"
+                />
+              </span>
+              <span className="w-full truncate text-center text-[14px] leading-[16.8px] font-normal text-ink-secondary">
+                {cat.label}
+              </span>
             </Link>
-          </div>
-          <div className="flex items-start justify-between">
-            {category.recipes.map((recipe, i) => (
-              <RecipeCard key={`${category.slug}-${i}`} recipe={recipe} />
-            ))}
-          </div>
-        </section>
-      ))}
+          ))}
+        </div>
+      </div>
+
+      <RecipeSection
+        title="Most Loved Recipes!"
+        recipes={topLoved}
+        moreHref="/recipes/more?sort=loved"
+      />
+      <FeaturedRecipeCta recipe={featured} />
+      {nextLoved.length > 0 ? (
+        <RecipeSection
+          title="Most Loved Recipes!"
+          recipes={nextLoved}
+          moreHref="/recipes/more?sort=loved"
+        />
+      ) : null}
     </div>
   );
 }

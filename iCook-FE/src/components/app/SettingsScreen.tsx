@@ -3,13 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
-import {
-  BackIcon,
-  ShieldIcon,
-  KeyIcon,
-  SmartphoneIcon,
-  ChevronRightIcon,
-} from "@/components/app/icons";
+import { BackIcon } from "@/components/app/icons";
+import { APP_SUPPORT_EMAIL, APP_VERSION } from "@/lib/appInfo";
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -20,90 +15,72 @@ export default function SettingsScreen() {
     router.replace("/login");
   }
 
-  const rowClass = "w-full text-left text-xl text-[#1a1a1a]";
-
-  const securityRows = [
-    { label: "Two-Factor Authentication", Icon: ShieldIcon },
-    { label: "Authentication Codes", Icon: KeyIcon },
-    { label: "Passkeys", Icon: SmartphoneIcon },
-  ];
-
   return (
-    <div className="flex min-h-full flex-col bg-[#f6f7fa]">
-      {/* Sub header */}
-      <div className="flex items-center gap-4 bg-white px-4 py-2 shadow-sm">
+    <div className="page">
+      <div className="subhead">
         <button type="button" onClick={() => router.back()} aria-label="Back">
-          <BackIcon className="size-6 text-[#1a1a1a]" />
+          <BackIcon className="size-6 text-ink" />
         </button>
-        <span className="text-base font-bold text-[#1a1a1a]">Settings</span>
+        <span className="section-title">Settings</span>
       </div>
 
-      <div className="flex flex-col gap-5 bg-white px-2.5">
-        {/* Account */}
-        <section className="flex flex-col gap-4 border-b border-[#e5e5e5] p-4">
-          <h2 className="text-base font-bold text-[#666]">Account</h2>
-          <Link href="/settings/user" className={rowClass}>
+      <div className="list-stack py-2">
+        <section className="feed-card flex flex-col gap-1">
+          <h2 className="text-xs font-bold text-brand-soft">Account</h2>
+          <Link href="/settings/user" className="py-2 text-base text-ink">
             User Details
           </Link>
         </section>
 
-        {/* Privacy & Security */}
-        <section className="flex flex-col gap-4 border-b border-[#e5e5e5] p-4">
-          <h2 className="text-base font-bold text-[#666]">
+        <section className="feed-card flex flex-col gap-1">
+          <h2 className="text-xs font-bold text-brand-soft">
             Privacy &amp; Security
           </h2>
-          <p className="-mt-2 text-base text-muted">Ways to log in</p>
-          {securityRows.map(({ label, Icon }) => (
-            <Link
-              key={label}
-              href="/settings/security"
-              className="flex items-center gap-3 text-xl text-[#1a1a1a]"
-            >
-              <Icon className="size-6 shrink-0 text-brand" />
-              <span className="flex-1">{label}</span>
-              <ChevronRightIcon className="size-5 shrink-0 text-muted" />
-            </Link>
-          ))}
+          <Link href="/settings/security" className="py-2 text-base text-ink">
+            Security
+          </Link>
         </section>
 
-        {/* Log Out */}
+        <section className="feed-card flex flex-col gap-1">
+          <h2 className="text-xs font-bold text-brand-soft">Preferences</h2>
+          <Link
+            href="/settings/notifications"
+            className="py-2 text-base text-ink"
+          >
+            Notifications
+          </Link>
+        </section>
+
+        <section className="feed-card flex flex-col gap-1">
+          <h2 className="text-xs font-bold text-brand-soft">About the App</h2>
+          <Link href="/settings/about" className="py-2 text-base text-ink">
+            About
+          </Link>
+          <div className="flex items-center justify-between gap-2 py-2">
+            <span className="text-base text-ink">App Version</span>
+            <span className="font-bold text-ink">{APP_VERSION}</span>
+          </div>
+          <Link href="/settings/terms" className="py-2 text-base text-ink">
+            Terms of Service
+          </Link>
+          <Link href="/settings/privacy" className="py-2 text-base text-ink">
+            Privacy Policy
+          </Link>
+          <a
+            href={`mailto:${APP_SUPPORT_EMAIL}`}
+            className="py-2 text-base text-brand"
+          >
+            Contact Support
+          </a>
+        </section>
+
         <button
           type="button"
           onClick={handleLogout}
-          className="flex items-center bg-brand px-4 py-2.5 text-left text-xl font-bold text-white"
+          className="btn-primary mx-3 w-auto justify-start px-4 text-base"
         >
           Log Out
         </button>
-
-        {/* Preferences */}
-        <section className="flex flex-col gap-4 border-b border-[#e5e5e5] p-4">
-          <h2 className="text-base font-bold text-[#666]">Preferences</h2>
-          <Link href="/settings/notifications" className={rowClass}>
-            Notifications
-          </Link>
-          <div className="flex items-center justify-between text-xl text-[#1a1a1a]">
-            <span>Language</span>
-            <span className="font-bold">ENG</span>
-          </div>
-        </section>
-
-        {/* Help & Support */}
-        <section className="flex flex-col gap-4 border-b border-[#e5e5e5] p-4">
-          <h2 className="text-base font-bold text-[#666]">Help &amp; Support</h2>
-          <button type="button" className={rowClass}>FAQ</button>
-          <button type="button" className={rowClass}>Contact Support</button>
-          <button type="button" className={rowClass}>Terms &amp; Privacy Policy</button>
-        </section>
-
-        {/* About */}
-        <section className="flex flex-col gap-4 border-b border-[#e5e5e5] p-4">
-          <h2 className="text-base font-bold text-[#666]">About the App</h2>
-          <div className="flex items-center justify-between text-xl text-[#1a1a1a]">
-            <span>App Version</span>
-            <span className="font-bold">2.0.0</span>
-          </div>
-          <button type="button" className={rowClass}>Share App</button>
-        </section>
       </div>
     </div>
   );
