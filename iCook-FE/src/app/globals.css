@@ -141,7 +141,7 @@ body {
   }
 
   .feed-card {
-    @apply bg-surface px-3 py-3;
+    @apply bg-surface px-3 py-2.5;
   }
 
   /* Typography */
@@ -177,7 +177,7 @@ body {
   }
 
   .avatar-xs {
-    @apply grid size-[30px] shrink-0 place-items-center rounded-full bg-brand/15 text-xs font-bold text-brand;
+    @apply grid size-7.5 shrink-0 place-items-center rounded-full bg-brand/15 text-xs font-bold text-brand;
   }
 
   .avatar-lg {

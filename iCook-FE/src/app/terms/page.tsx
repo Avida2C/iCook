@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 export default function TermsPage() {
   return (
     <div className="flex min-h-dvh justify-center bg-app-frame">
-      <div className="w-full max-w-[400px] bg-app shadow-xl">
+      <div className="w-full max-w-100 bg-app shadow-xl">
         <LegalDocumentScreen doc="terms" />
       </div>
     </div>

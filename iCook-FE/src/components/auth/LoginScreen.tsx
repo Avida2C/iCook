@@ -67,7 +67,7 @@ export default function LoginScreen() {
         <PrimaryButton>Log In</PrimaryButton>
       </form>
 
-      <p className="mb-6 w-full rounded-[4px] bg-app px-3 py-2 text-center text-sm text-muted">
+      <p className="mb-6 w-full rounded-DEFAULT bg-app px-3 py-2 text-center text-sm text-muted">
         Demo account — {DEMO_CREDENTIALS.email} / {DEMO_CREDENTIALS.password}
       </p>
 

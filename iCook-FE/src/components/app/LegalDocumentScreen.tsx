@@ -83,19 +83,17 @@ export default function LegalDocumentScreen({ doc }: { doc: LegalDoc }) {
 
   return (
     <div className="page">
-      <div className="list-stack py-2">
         <section className="feed-card">
-          <h1 className="text-lg font-bold text-ink">{content.title}</h1>
-          <p className="mt-1 text-xs text-muted">Last updated {content.updated}</p>
+          <h1 className="text-lg font-bold">{content.title}</h1>
+          <p className="text-xs text-muted">Last updated {content.updated}</p>
         </section>
 
         {content.sections.map((section) => (
-          <section key={section.heading} className="feed-card flex flex-col gap-2">
+          <section key={section.heading} className="feed-card flex flex-col">
             <h2 className="text-sm font-bold text-brand">{section.heading}</h2>
             <p className="text-sm leading-5 text-ink-secondary">{section.body}</p>
           </section>
         ))}
-      </div>
     </div>
   );
 }

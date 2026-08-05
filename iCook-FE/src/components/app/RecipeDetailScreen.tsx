@@ -122,7 +122,7 @@ const steps: { n: string; text: string; image?: boolean }[] = [
 
 function NutritionRing({ label, value }: { label: string; value: string }) {
   return (
-    <div className="grid size-[74px] place-items-center rounded-full border-4 border-brand text-center text-sm text-ink">
+    <div className="grid size-18.5 place-items-center rounded-full border-4 border-brand text-center text-sm text-ink">
       <div>
         <p className="font-bold leading-none">{value}</p>
         <p className="mt-0.5 leading-none text-muted">{label}</p>
@@ -149,7 +149,7 @@ function MoreCard({
         <RecipeThumbnail className="size-full" iconClassName="h-10 w-11" />
       </Link>
       <p className="mt-1 w-full truncate text-sm text-ink-secondary">{name}</p>
-      <p className="flex w-full items-center gap-0.5 text-xs leading-[14px]">
+      <p className="flex w-full items-center gap-0.5 text-xs leading-3.5">
         <span className="text-brand-soft">@</span>
         <span className="truncate text-placeholder">{author}</span>
       </p>
@@ -358,7 +358,7 @@ export default function RecipeDetailScreen({
                 handle={authorHandle}
                 className="text-base font-bold text-brand"
               />
-              <p className="mt-0.5 flex items-center gap-0.5 text-xs leading-[14px]">
+              <p className="mt-0.5 flex items-center gap-0.5 text-xs leading-3.5">
                 <span className="text-brand-soft">@</span>
                 <Link
                   href={userProfilePath(authorHandle)}
