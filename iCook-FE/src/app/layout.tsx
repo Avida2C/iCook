@@ -4,6 +4,8 @@ import "./globals.css";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { LikedPostsProvider } from "@/components/app/LikedPostsProvider";
+import { CreatedContentProvider } from "@/components/app/CreatedContentProvider";
+import { ActivityFiltersProvider } from "@/components/app/user/ActivityFiltersProvider";
 import { SavedRecipesProvider } from "@/components/recipes/SavedRecipesProvider";
 
 const geistSans = Geist({
@@ -47,7 +49,11 @@ export default function RootLayout({
         <ThemeProvider>
           <AuthProvider>
             <SavedRecipesProvider>
-              <LikedPostsProvider>{children}</LikedPostsProvider>
+              <CreatedContentProvider>
+                <LikedPostsProvider>
+                  <ActivityFiltersProvider>{children}</ActivityFiltersProvider>
+                </LikedPostsProvider>
+              </CreatedContentProvider>
             </SavedRecipesProvider>
           </AuthProvider>
         </ThemeProvider>

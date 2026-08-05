@@ -43,6 +43,7 @@ import {
   FiTrash2,
   FiSun,
   FiMoon,
+  FiFilter,
 } from "react-icons/fi";
 import {
   FaPlay,
@@ -95,6 +96,7 @@ export const BackIcon = FiArrowLeft;
 export const CloseIcon = FiX;
 export const ChevronRightIcon = FiChevronRight;
 export const PlusIcon = FiPlus;
+export const FilterIcon = FiFilter;
 
 // Security / login
 export const ShieldIcon = FiShield;

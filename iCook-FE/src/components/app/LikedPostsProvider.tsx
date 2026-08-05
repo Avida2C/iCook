@@ -15,6 +15,7 @@ import {
   useSavedRecipes,
   type CatalogRecipe,
 } from "@/components/recipes/SavedRecipesProvider";
+import { useCreatedContent } from "@/components/app/CreatedContentProvider";
 
 const STORAGE_KEY = "icook.likedPosts";
 
@@ -77,11 +78,13 @@ function youLikedRecipe(recipe: CatalogRecipe): FeedItem {
 function buildActivity(
   likedPosts: LikedPost[],
   savedRecipes: CatalogRecipe[],
+  createdActivity: FeedItem[],
 ): FeedItem[] {
   const withoutSelf = ACTIVITY_FEED.filter(
     (item) => !(item.kind === "like" && item.self),
   );
   return [
+    ...createdActivity,
     ...likedPosts.map(youLikedPost),
     ...savedRecipes.map(youLikedRecipe),
     ...withoutSelf,
@@ -90,6 +93,7 @@ function buildActivity(
 
 export function LikedPostsProvider({ children }: { children: ReactNode }) {
   const { savedRecipes } = useSavedRecipes();
+  const { activityItems: createdActivity } = useCreatedContent();
   const [likedPosts, setLikedPosts] = useState<LikedPost[]>([]);
 
   useEffect(() => {
@@ -131,8 +135,8 @@ export function LikedPostsProvider({ children }: { children: ReactNode }) {
   const likedIds = useMemo(() => likedPosts.map((p) => p.id), [likedPosts]);
 
   const activityItems = useMemo(
-    () => buildActivity(likedPosts, savedRecipes),
-    [likedPosts, savedRecipes],
+    () => buildActivity(likedPosts, savedRecipes, createdActivity),
+    [likedPosts, savedRecipes, createdActivity],
   );
 
   const value = useMemo(

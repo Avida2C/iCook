@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import RecipeThumbnail from "@/components/app/RecipeThumbnail";
+import { useCreatedContent } from "@/components/app/CreatedContentProvider";
 import {
   CATALOG_RECIPES,
   useSavedRecipes,
@@ -102,9 +103,12 @@ function RecipeCard({
 }
 
 export function MyRecipesPanel() {
+  const { recipes: createdRecipes } = useCreatedContent();
+  const recipes = [...createdRecipes, ...MY_RECIPES];
+
   return (
     <div className="grid w-full grid-cols-3 gap-x-2 gap-y-2 bg-surface px-2 pt-2 pb-2">
-      {MY_RECIPES.length === 0 ? (
+      {recipes.length === 0 ? (
         <div className="col-span-3 flex flex-col items-center gap-3 py-8">
           <p className="text-center text-base text-muted">
             No recipes yet — create your first one.
@@ -117,7 +121,7 @@ export function MyRecipesPanel() {
           </Link>
         </div>
       ) : (
-        MY_RECIPES.map((recipe) => (
+        recipes.map((recipe) => (
           <RecipeCard key={recipe.id} recipe={recipe} showActions />
         ))
       )}

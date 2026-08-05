@@ -17,10 +17,12 @@ import {
   getCategoryLabel,
   useSavedRecipes,
 } from "@/components/recipes/SavedRecipesProvider";
+import { useCreatedContent } from "@/components/app/CreatedContentProvider";
 import UserAvatar from "@/components/app/UserAvatar";
 import UserNameLink from "@/components/app/UserNameLink";
 import { absoluteAppUrl, shareContent } from "@/lib/share";
 import { userProfilePath } from "@/lib/userProfile";
+import { CURRENT_USER } from "@/components/app/user/data";
 
 const nutrition = [
   { label: "Fat", value: "5.8g" },
@@ -160,12 +162,24 @@ export default function RecipeDetailScreen({
 }: {
   recipeId?: string;
 }) {
+  const { getRecipe } = useCreatedContent();
+  const created = getRecipe(recipeId);
   const recipe =
-    CATALOG_RECIPES.find((r) => r.id === recipeId) ?? CATALOG_RECIPES[0];
+    created ??
+    CATALOG_RECIPES.find((r) => r.id === recipeId) ??
+    CATALOG_RECIPES[0];
   const { isSaved, toggleSave } = useSavedRecipes();
   const saved = isSaved(recipe.id);
-  const authorHandle = recipe.author.replace(/\s+/g, "").toLowerCase();
-  const authorInitials = recipe.author.slice(0, 2).toUpperCase();
+  const authorHandle =
+    recipe.author === CURRENT_USER.handle || recipe.author === "you"
+      ? CURRENT_USER.handle
+      : recipe.author.replace(/\s+/g, "").toLowerCase();
+  const authorInitials =
+    authorHandle === CURRENT_USER.handle
+      ? CURRENT_USER.initials
+      : recipe.author.slice(0, 2).toUpperCase();
+  const authorName =
+    authorHandle === CURRENT_USER.handle ? CURRENT_USER.name : recipe.author;
   const moreRecipes = CATALOG_RECIPES.filter((r) => r.id !== recipe.id).slice(
     0,
     6,
@@ -229,7 +243,7 @@ export default function RecipeDetailScreen({
                 href={userProfilePath(authorHandle)}
                 className="truncate text-placeholder"
               >
-                {recipe.author}
+                {authorHandle}
               </Link>
             </p>
             <p className="mt-1 flex gap-2 text-sm text-ink">
@@ -318,7 +332,7 @@ export default function RecipeDetailScreen({
             <div className="flex flex-col items-center gap-3">
               <Link
                 href={userProfilePath(authorHandle)}
-                aria-label={recipe.author}
+                aria-label={authorName}
               >
                 <UserAvatar
                   initials={authorInitials}
@@ -349,7 +363,7 @@ export default function RecipeDetailScreen({
             </div>
             <div className="min-w-0 flex-1">
               <UserNameLink
-                name={recipe.author}
+                name={authorName}
                 handle={authorHandle}
                 className="text-base font-bold text-brand"
               />

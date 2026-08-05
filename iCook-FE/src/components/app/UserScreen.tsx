@@ -7,30 +7,42 @@ import {
   SavedRecipesPanel,
 } from "@/components/app/UserCollectionScreens";
 import { useLikedPosts } from "@/components/app/LikedPostsProvider";
+import { useCreatedContent } from "@/components/app/CreatedContentProvider";
 import { useSavedRecipes } from "@/components/recipes/SavedRecipesProvider";
 import ActivityFeed from "@/components/app/user/ActivityFeed";
+import ActivityFilterPanel from "@/components/app/user/ActivityFilterPanel";
 import PeoplePanel from "@/components/app/user/PeoplePanel";
 import UserProfileHeader from "@/components/app/user/UserProfileHeader";
 import UserTabBar from "@/components/app/user/UserTabBar";
+import { FilterIcon } from "@/components/app/icons";
 import {
   INITIAL_FOLLOWERS,
   INITIAL_FOLLOWING,
   PANEL_TITLE,
 } from "@/components/app/user/data";
+import { filterActivityItems } from "@/components/app/user/activityFilters";
+import { useActivityFilters } from "@/components/app/user/ActivityFiltersProvider";
 import type { MeTab } from "@/components/app/user/types";
 
 export default function UserScreen() {
   const [tab, setTab] = useState<MeTab>("activity");
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [followers] = useState(INITIAL_FOLLOWERS);
   const [following, setFollowing] = useState(INITIAL_FOLLOWING);
   const { savedRecipes } = useSavedRecipes();
   const { activityItems } = useLikedPosts();
+  const { recipes: createdRecipes } = useCreatedContent();
+  const { prefs } = useActivityFilters();
 
   const followingSet = useMemo(() => new Set(following), [following]);
+  const visibleActivity = useMemo(
+    () => filterActivityItems(activityItems, prefs),
+    [activityItems, prefs],
+  );
 
   const tabCounts: Record<MeTab, number> = {
-    activity: activityItems.filter((item) => item.unread).length,
-    recipes: MY_RECIPES.length,
+    activity: visibleActivity.filter((item) => item.unread).length,
+    recipes: createdRecipes.length + MY_RECIPES.length,
     saved: savedRecipes.length,
     followers: followers.length,
     following: following.length,
@@ -54,7 +66,25 @@ export default function UserScreen() {
       <div className="feed-stack">
         <div className="flex items-center justify-between px-3">
           <h2 className="section-title">{PANEL_TITLE[tab]}</h2>
+          {tab === "activity" ? (
+            <button
+              type="button"
+              aria-label={filtersOpen ? "Close activity filters" : "Filter activity"}
+              aria-expanded={filtersOpen}
+              onClick={() => setFiltersOpen((open) => !open)}
+              className={`inline-flex items-center gap-1.5 text-xs font-bold ${
+                filtersOpen ? "text-brand" : "text-ink-secondary"
+              }`}
+            >
+              <FilterIcon className="size-4" />
+              {filtersOpen ? "Close" : "Filter"}
+            </button>
+          ) : null}
         </div>
+
+        {tab === "activity" && filtersOpen ? (
+          <ActivityFilterPanel onClose={() => setFiltersOpen(false)} />
+        ) : null}
 
         {tab === "activity" ? (
           <ActivityFeed />

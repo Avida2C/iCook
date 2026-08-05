@@ -2,6 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { UploadIcon, ImageIcon } from "@/components/app/icons";
+import { useCreatedContent } from "@/components/app/CreatedContentProvider";
+import type { RecipeCategorySlug } from "@/components/recipes/SavedRecipesProvider";
 
 const categories = [
   "Breakfast",
@@ -13,15 +15,30 @@ const categories = [
   "Toasty",
   "Savoury",
   "Pasta",
-];
+] as const;
 
 export default function CreateRecipeScreen() {
   const router = useRouter();
+  const { publishRecipe } = useCreatedContent();
+
+  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const data = new FormData(e.currentTarget);
+    const name = String(data.get("title") ?? "").trim();
+    const category = String(data.get("category") ?? "").trim() as Exclude<
+      RecipeCategorySlug,
+      "all"
+    >;
+    if (!name || !category) return;
+
+    const recipe = publishRecipe({ name, category });
+    router.push(`/recipe/${recipe.id}`);
+  }
 
   return (
     <form
       className="flex min-h-full flex-col justify-between bg-app pt-[5px]"
-      onSubmit={(e) => e.preventDefault()}
+      onSubmit={onSubmit}
     >
       <div className="flex flex-col gap-[5px]">
         {/* Step indicator */}
@@ -42,6 +59,7 @@ export default function CreateRecipeScreen() {
           </div>
           <input
             name="title"
+            required
             placeholder="Traditional Garlic Bread"
             className="w-full rounded-[4px] border border-line bg-app px-2 py-1.5 text-base text-ink outline-none placeholder:italic placeholder:text-line focus:border-brand"
           />
@@ -55,13 +73,14 @@ export default function CreateRecipeScreen() {
           <select
             name="category"
             defaultValue=""
+            required
             className="w-full rounded-[4px] border border-line bg-app px-2 py-1.5 text-base text-ink outline-none focus:border-brand"
           >
             <option value="" disabled>
               Select a Category
             </option>
             {categories.map((c) => (
-              <option key={c} value={c}>
+              <option key={c} value={c.toLowerCase()}>
                 {c}
               </option>
             ))}
@@ -106,7 +125,7 @@ export default function CreateRecipeScreen() {
           type="submit"
           className="w-[114px] rounded-[5px] bg-brand px-5 py-1.5 text-xl font-bold text-white shadow-md"
         >
-          NEXT
+          Publish
         </button>
       </div>
     </form>

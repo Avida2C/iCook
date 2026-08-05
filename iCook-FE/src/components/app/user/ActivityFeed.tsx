@@ -12,6 +12,8 @@ import UserNameLink from "@/components/app/UserNameLink";
 import { useLikedPosts } from "@/components/app/LikedPostsProvider";
 import { ACTIVITY_FEED, CURRENT_USER } from "./data";
 import type { FeedItem, FeedUser } from "./types";
+import { filterActivityItems } from "./activityFilters";
+import { useActivityFilters } from "./ActivityFiltersProvider";
 import { userProfilePath } from "@/lib/userProfile";
 
 function Avatar({ user, size = "md" }: { user: FeedUser; size?: "sm" | "md" }) {
@@ -262,7 +264,19 @@ function FeedCard({ item }: { item: FeedItem }) {
 
 export default function ActivityFeed({ items }: { items?: FeedItem[] }) {
   const { activityItems } = useLikedPosts();
-  const feed = items ?? activityItems ?? ACTIVITY_FEED;
+  const { prefs } = useActivityFilters();
+  const feed = filterActivityItems(
+    items ?? activityItems ?? ACTIVITY_FEED,
+    prefs,
+  );
+
+  if (feed.length === 0) {
+    return (
+      <p className="feed-card px-3 py-8 text-center text-base text-muted">
+        Nothing to show with your current filters.
+      </p>
+    );
+  }
 
   return (
     <>

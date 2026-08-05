@@ -9,8 +9,10 @@ import {
   SendIcon,
 } from "@/components/app/icons";
 import { useLikedPosts } from "@/components/app/LikedPostsProvider";
+import { useCreatedContent } from "@/components/app/CreatedContentProvider";
 import UserAvatar from "@/components/app/UserAvatar";
 import UserNameLink from "@/components/app/UserNameLink";
+import { CURRENT_USER } from "@/components/app/user/data";
 import { absoluteAppUrl, shareContent } from "@/lib/share";
 import { userProfilePath } from "@/lib/userProfile";
 
@@ -98,8 +100,25 @@ const POSTS: Record<
 };
 
 export default function PostDetailScreen({ postId }: { postId: string }) {
-  const post = POSTS[postId] ?? POSTS["1"];
-  const resolvedId = POSTS[postId] ? postId : "1";
+  const { getPost } = useCreatedContent();
+  const created = getPost(postId);
+  const catalog = POSTS[postId];
+  const resolvedId = created?.id ?? (catalog ? postId : "1");
+  const post = created
+    ? {
+        title: created.title,
+        body: created.body,
+        time: "Just now",
+        user: CURRENT_USER,
+        likes: 0,
+        comments: [] as {
+          name: string;
+          initials: string;
+          text: string;
+          time: string;
+        }[],
+      }
+    : (catalog ?? POSTS["1"]);
   const { isLiked, likeCount, toggleLike } = useLikedPosts();
   const liked = isLiked(resolvedId);
   const likes = likeCount(resolvedId, post.likes);

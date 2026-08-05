@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import {
   BoldIcon,
   ItalicIcon,
@@ -10,6 +11,7 @@ import {
   LinkIcon,
   ImageIcon,
 } from "@/components/app/icons";
+import { useCreatedContent } from "@/components/app/CreatedContentProvider";
 
 const categories = ["Tips", "Recipes", "Cooking Techniques"];
 
@@ -25,10 +27,29 @@ const toolbar = [
 ];
 
 export default function CreatePostScreen() {
+  const router = useRouter();
+  const { publishPost } = useCreatedContent();
+
+  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const data = new FormData(e.currentTarget);
+    const title = String(data.get("title") ?? "").trim();
+    const body = String(data.get("content") ?? "").trim();
+    const category = String(data.get("category") ?? "").trim();
+    if (!title || !body) return;
+
+    const post = publishPost({
+      title,
+      body,
+      category: category || undefined,
+    });
+    router.push(`/post/${post.id}`);
+  }
+
   return (
     <form
       className="flex min-h-full flex-col gap-[5px] pt-[5px]"
-      onSubmit={(e) => e.preventDefault()}
+      onSubmit={onSubmit}
     >
       {/* Title */}
       <div className="flex flex-col gap-2.5 bg-surface p-2.5">
@@ -42,6 +63,7 @@ export default function CreatePostScreen() {
         </div>
         <input
           name="title"
+          required
           placeholder="5 Tips for Baking Perfect Cakes"
           className="w-full rounded-[4px] border border-line bg-app px-2 py-1.5 text-base text-ink outline-none placeholder:italic placeholder:text-line focus:border-brand"
         />
@@ -55,6 +77,7 @@ export default function CreatePostScreen() {
         <select
           name="category"
           defaultValue=""
+          required
           className="w-full rounded-[4px] border border-line bg-app px-2 py-1.5 text-base text-ink outline-none focus:border-brand"
         >
           <option value="" disabled>
@@ -89,6 +112,7 @@ export default function CreatePostScreen() {
           <textarea
             name="content"
             rows={10}
+            required
             placeholder="Content must be at least 100 words."
             className="resize-none bg-surface p-2 text-base text-ink outline-none placeholder:italic placeholder:text-line"
           />
@@ -100,7 +124,7 @@ export default function CreatePostScreen() {
           type="submit"
           className="w-full rounded-[5px] bg-brand px-5 py-1.5 text-xl font-bold text-white shadow-md transition-colors hover:bg-[#e85557]"
         >
-          Next
+          Publish
         </button>
       </div>
     </form>
