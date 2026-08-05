@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { EditIcon, ChevronRightIcon } from "@/components/app/icons";
+import { EditIcon, PostIcon, ChevronRightIcon } from "@/components/app/icons";
 
 const guidelines = [
   "Be respectful in your language and avoid inappropriate content.",
@@ -37,7 +37,7 @@ export default function CreateScreen() {
           href="/create/post"
           className="flex items-center gap-3.75 bg-brand px-4 py-2 text-white shadow-md transition-colors hover:bg-[#e85557]"
         >
-          <EditIcon className="size-5" />
+          <PostIcon className="size-5" />
           <span className="text-2xl font-bold">Write a Post</span>
         </Link>
 

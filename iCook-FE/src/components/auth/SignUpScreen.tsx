@@ -8,14 +8,18 @@ import LogoSlogan from "@/components/LogoSlogan";
 import TextField from "@/components/TextField";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import SocialLogin from "@/components/SocialLogin";
+import GettingAppReady, {
+  waitForAppReady,
+} from "@/components/auth/GettingAppReady";
 import { useAuth } from "@/components/auth/AuthProvider";
 
 export default function SignUpScreen() {
   const router = useRouter();
   const { signup } = useAuth();
   const [error, setError] = useState<string | null>(null);
+  const [preparing, setPreparing] = useState(false);
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     const result = signup(String(data.get("email") ?? ""));
@@ -23,11 +27,15 @@ export default function SignUpScreen() {
       setError(result.error);
       return;
     }
+    setPreparing(true);
+    await waitForAppReady();
     router.push("/recipes");
   }
 
   return (
-    <AuthCard>
+    <>
+      {preparing ? <GettingAppReady /> : null}
+      <AuthCard>
       <LogoSlogan />
       <h1 className="w-full text-2xl font-bold text-brand">Sign Up</h1>
 
@@ -80,5 +88,6 @@ export default function SignUpScreen() {
         </Link>
       </div>
     </AuthCard>
+    </>
   );
 }

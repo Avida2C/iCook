@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { EditIcon, MessageIcon } from "@/components/app/icons";
+import { EditIcon, PostIcon } from "@/components/app/icons";
 import UserAvatar from "@/components/app/UserAvatar";
 import { CURRENT_USER } from "./data";
 
@@ -41,7 +41,7 @@ export default function UserProfileHeader() {
             <span className="leading-tight">Create a Recipe</span>
           </Link>
           <Link href="/create/post" className="btn-secondary">
-            <MessageIcon className="size-5 shrink-0" />
+            <PostIcon className="size-5 shrink-0" />
             <span className="leading-tight">Write a Post</span>
           </Link>
         </div>

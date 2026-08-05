@@ -201,7 +201,7 @@ export default function PostDetailScreen({ postId }: { postId: string }) {
       </article>
 
       <section className="list-stack px-0 py-2">
-        <h2 className="section-title px-3">Comments</h2>
+        <h2 className="section-header section-title">Comments</h2>
         {post.comments.map((c) => (
           <div key={`${c.name}-${c.time}`} className="feed-card flex gap-3">
             <span className="avatar-sm">{c.initials}</span>

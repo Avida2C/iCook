@@ -22,7 +22,6 @@ import {
   FiUserPlus,
   FiHeart,
   FiShare2,
-  FiMessageCircle,
   FiSend,
   FiArrowLeft,
   FiBookmark,
@@ -63,7 +62,7 @@ import {
 import { BiCommentDots, BiCommentEdit } from "react-icons/bi";
 import { FcGoogle } from "react-icons/fc";
 import { FaFacebook } from "react-icons/fa6";
-import { LuCookingPot, LuChefHat, LuEggFried } from "react-icons/lu";
+import { LuCookingPot, LuChefHat, LuEggFried, LuMessageSquareText, LuNotepadText } from "react-icons/lu";
 
 
 
@@ -87,7 +86,8 @@ export const UserIcon = FiUser;
 export const HeartIcon = FiHeart;
 export const HeartFillIcon = FaHeart;
 export const ShareIcon = FiShare2;
-export const MessageIcon = FiMessageCircle;
+export const MessageIcon = LuMessageSquareText;
+export const PostIcon = LuNotepadText;
 export const SendIcon = FiSend;
 export const UserAddIcon = FiUserPlus;
 
