@@ -32,12 +32,15 @@ export default function SignUpScreen() {
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setError(null);
     const data = new FormData(event.currentTarget);
     const result = signup({
       email: String(data.get("email") ?? ""),
       username: String(data.get("username") ?? ""),
       firstName: String(data.get("firstName") ?? ""),
       lastName: String(data.get("lastName") ?? ""),
+      password: String(data.get("password") ?? ""),
+      confirmPassword: String(data.get("confirmPassword") ?? ""),
       avatarUrl: avatarUrl ?? undefined,
     });
     if (!result.ok) {
@@ -135,6 +138,24 @@ export default function SignUpScreen() {
             type="email"
             placeholder="email address"
             autoComplete="email"
+            required
+          />
+
+          <TextField
+            label="Password"
+            name="password"
+            type="password"
+            placeholder="at least 8 characters"
+            autoComplete="new-password"
+            required
+          />
+
+          <TextField
+            label="Confirm password"
+            name="confirmPassword"
+            type="password"
+            placeholder="confirm password"
+            autoComplete="new-password"
             required
           />
 

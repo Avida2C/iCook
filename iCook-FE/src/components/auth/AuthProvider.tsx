@@ -57,7 +57,8 @@ export type SignupInput = {
   username: string;
   firstName: string;
   lastName: string;
-  password?: string;
+  password: string;
+  confirmPassword: string;
   avatarUrl?: string;
 };
 
@@ -213,7 +214,7 @@ function findUser(identifier: string): StoredUser | undefined {
 }
 
 function validateNewPassword(password: string): string | null {
-  if (!password) return "Enter a new password.";
+  if (!password) return "Enter a password.";
   if (password.length < MIN_PASSWORD_LENGTH) {
     return `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`;
   }
@@ -502,6 +503,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const lastName = input.lastName.trim();
       if (!firstName) return { ok: false, error: "Enter your first name." };
       if (!lastName) return { ok: false, error: "Enter your last name." };
+
+      const passwordError = validateNewPassword(input.password);
+      if (passwordError) return { ok: false, error: passwordError };
+      if (input.password !== input.confirmPassword) {
+        return { ok: false, error: "Passwords do not match." };
+      }
 
       const users = readUsers();
       if (users.some((u) => u.email.toLowerCase() === email)) {
