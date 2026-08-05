@@ -12,7 +12,9 @@ import { useLikedPosts } from "@/components/app/LikedPostsProvider";
 import { useCreatedContent } from "@/components/app/CreatedContentProvider";
 import UserAvatar from "@/components/app/UserAvatar";
 import UserNameLink from "@/components/app/UserNameLink";
-import { CURRENT_USER } from "@/components/app/user/data";
+import { withLiveProfile } from "@/components/app/user/authors";
+import { useCurrentFeedUser } from "@/components/app/user/useCurrentFeedUser";
+import type { FeedUser } from "@/components/app/user/types";
 import { absoluteAppUrl, shareContent } from "@/lib/share";
 import { userProfilePath } from "@/lib/userProfile";
 
@@ -22,7 +24,7 @@ const POSTS: Record<
     title: string;
     body: string;
     time: string;
-    user: { name: string; handle: string; initials: string };
+    user: FeedUser;
     likes: number;
     comments: { name: string; initials: string; text: string; time: string }[];
   }
@@ -100,6 +102,7 @@ const POSTS: Record<
 };
 
 export default function PostDetailScreen({ postId }: { postId: string }) {
+  const me = useCurrentFeedUser();
   const { getPost } = useCreatedContent();
   const created = getPost(postId);
   const catalog = POSTS[postId];
@@ -109,7 +112,7 @@ export default function PostDetailScreen({ postId }: { postId: string }) {
         title: created.title,
         body: created.body,
         time: "Just now",
-        user: CURRENT_USER,
+        user: me,
         likes: 0,
         comments: [] as {
           name: string;
@@ -119,6 +122,7 @@ export default function PostDetailScreen({ postId }: { postId: string }) {
         }[],
       }
     : (catalog ?? POSTS["1"]);
+  const author = withLiveProfile(post.user, me);
   const { isLiked, likeCount, toggleLike } = useLikedPosts();
   const liked = isLiked(resolvedId);
   const likes = likeCount(resolvedId, post.likes);
@@ -136,27 +140,29 @@ export default function PostDetailScreen({ postId }: { postId: string }) {
       <article className="feed-card flex flex-col gap-3">
         <div className="flex gap-3">
           <Link
-            href={userProfilePath(post.user.handle)}
-            aria-label={post.user.name}
+            href={userProfilePath(author.handle, me.handle)}
+            aria-label={author.name}
           >
             <UserAvatar
-              initials={post.user.initials}
-              handle={post.user.handle}
+              initials={author.initials}
+              handle={author.handle}
+              src={author.avatarUrl}
+              me={author.handle === me.handle}
             />
           </Link>
           <div className="min-w-0 flex-1">
             <UserNameLink
-              name={post.user.name}
-              handle={post.user.handle}
+              name={author.name}
+              handle={author.handle}
               className="truncate text-sm font-bold text-brand"
             />
             <p className="mt-0.5 flex items-center gap-0.5 text-xs leading-[14px]">
               <span className="text-brand-soft">@</span>
               <Link
-                href={userProfilePath(post.user.handle)}
+                href={userProfilePath(author.handle, me.handle)}
                 className="truncate text-placeholder"
               >
-                {post.user.handle}
+                {author.handle}
               </Link>
               <span className="text-muted"> · {post.time}</span>
             </p>

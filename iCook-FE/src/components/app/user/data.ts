@@ -4,6 +4,8 @@ export const CURRENT_USER: FeedUser = {
   name: "Courtney Henry",
   handle: "courtneyhenry",
   initials: "CH",
+  about:
+    "Passionate about cooking and sharing simple, delicious recipes with easy-to-follow instructions.",
 };
 
 const amy: FeedUser = {

@@ -78,16 +78,17 @@ export function writeActivityFilters(prefs: ActivityFilterPrefs) {
   }
 }
 
-function isMine(item: FeedItem): boolean {
+function isMine(item: FeedItem, myHandle: string): boolean {
   if (item.kind === "like" && item.self) return true;
   if (item.kind === "follow" || item.kind === "comment") return false;
   if (item.kind === "like") return false;
-  return item.user.handle === CURRENT_USER.handle;
+  return item.user.handle === myHandle;
 }
 
 export function matchesActivityFilter(
   item: FeedItem,
   prefs: ActivityFilterPrefs,
+  myHandle: string = CURRENT_USER.handle,
 ): boolean {
   switch (item.kind) {
     case "follow":
@@ -98,9 +99,9 @@ export function matchesActivityFilter(
       if (item.self) return prefs.myLikes;
       return prefs.othersLikes;
     case "post":
-      return isMine(item) ? prefs.myPosts : prefs.othersPosts;
+      return isMine(item, myHandle) ? prefs.myPosts : prefs.othersPosts;
     case "recipe":
-      return isMine(item) ? prefs.myRecipes : prefs.othersRecipes;
+      return isMine(item, myHandle) ? prefs.myRecipes : prefs.othersRecipes;
     default:
       return true;
   }
@@ -109,8 +110,9 @@ export function matchesActivityFilter(
 export function filterActivityItems(
   items: FeedItem[],
   prefs: ActivityFilterPrefs,
+  myHandle: string = CURRENT_USER.handle,
 ): FeedItem[] {
-  return items.filter((item) => matchesActivityFilter(item, prefs));
+  return items.filter((item) => matchesActivityFilter(item, prefs, myHandle));
 }
 
 function activitySearchText(item: FeedItem): string {

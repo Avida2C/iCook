@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { SendIcon, BackIcon } from "@/components/app/icons";
 import UserAvatar from "@/components/app/UserAvatar";
 import UserNameLink from "@/components/app/UserNameLink";
-import { CURRENT_USER } from "@/components/app/user/data";
+import { useCurrentFeedUser } from "@/components/app/user/useCurrentFeedUser";
 import { userProfilePath } from "@/lib/userProfile";
 
 type Message = { from: "you" | "them"; text: string; time?: string };
@@ -49,6 +49,7 @@ const initialMessages: Message[] = [
 
 export default function ChatboxScreen() {
   const router = useRouter();
+  const me = useCurrentFeedUser();
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [draft, setDraft] = useState("");
 
@@ -66,7 +67,10 @@ export default function ChatboxScreen() {
         <button type="button" onClick={() => router.back()} aria-label="Back">
           <BackIcon className="size-6 text-ink" />
         </button>
-        <Link href={userProfilePath("eleanorpena")} aria-label="Eleanor Pena">
+        <Link
+          href={userProfilePath("eleanorpena", me.handle)}
+          aria-label="Eleanor Pena"
+        >
           <UserAvatar initials="EP" handle="eleanorpena" />
         </Link>
         <div className="min-w-0 flex-1 leading-tight">
@@ -78,7 +82,7 @@ export default function ChatboxScreen() {
           <p className="flex items-center gap-0.5 text-xs leading-[14px]">
             <span className="text-brand-soft">@</span>
             <Link
-              href={userProfilePath("eleanorpena")}
+              href={userProfilePath("eleanorpena", me.handle)}
               className="truncate text-placeholder"
             >
               eleanorpena
@@ -96,8 +100,9 @@ export default function ChatboxScreen() {
               <UserAvatar initials="EP" size="sm" />
             ) : (
               <UserAvatar
-                initials={CURRENT_USER.initials}
-                handle={CURRENT_USER.handle}
+                initials={me.initials}
+                handle={me.handle}
+                src={me.avatarUrl}
                 size="sm"
                 me
               />

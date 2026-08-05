@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import RecipeAuthor from "@/components/app/RecipeAuthor";
 import RecipeThumbnail from "@/components/app/RecipeThumbnail";
 import { useCreatedContent } from "@/components/app/CreatedContentProvider";
 import {
@@ -39,10 +40,7 @@ function RecipeCard({
         >
           {recipe.name}
         </Link>
-        <div className="flex items-center gap-0.5 py-0.5 text-xs leading-[14px]">
-          <span className="text-brand-soft">@</span>
-          <span className="truncate text-placeholder">{recipe.author}</span>
-        </div>
+        <RecipeAuthor author={recipe.author} />
       </div>
 
       {showActions ? (

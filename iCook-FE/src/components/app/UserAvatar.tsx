@@ -1,3 +1,6 @@
+"use client";
+
+import { useAuth } from "@/components/auth/AuthProvider";
 import { CURRENT_USER } from "@/components/app/user/data";
 
 type AvatarSize = "xs" | "sm" | "md" | "lg";
@@ -8,15 +11,6 @@ const SIZE_CLASS: Record<AvatarSize, string> = {
   md: "avatar",
   lg: "avatar-lg",
 };
-
-export function isCurrentUser(user: {
-  handle?: string;
-  initials?: string;
-}): boolean {
-  if (user.handle) return user.handle === CURRENT_USER.handle;
-  if (user.initials) return user.initials === CURRENT_USER.initials;
-  return false;
-}
 
 export default function UserAvatar({
   initials,
@@ -31,11 +25,13 @@ export default function UserAvatar({
   /** Optional profile image URL / data URL. */
   src?: string | null;
   size?: AvatarSize;
-  /** Force logged-in styling; otherwise inferred from handle/initials. */
+  /** Force logged-in styling; otherwise inferred from handle. */
   me?: boolean;
   className?: string;
 }) {
-  const self = me ?? isCurrentUser({ handle, initials });
+  const { user } = useAuth();
+  const myHandle = user?.username ?? CURRENT_USER.handle;
+  const self = me ?? (handle ? handle === myHandle : false);
   const classes = `${SIZE_CLASS[size]}${self ? " avatar-me" : ""}${className ? ` ${className}` : ""}`;
 
   if (src) {

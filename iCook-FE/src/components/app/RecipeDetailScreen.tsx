@@ -11,6 +11,7 @@ import {
   PlayIcon,
   ServingIcon,
 } from "@/components/app/icons";
+import RecipeAuthor from "@/components/app/RecipeAuthor";
 import RecipeThumbnail from "@/components/app/RecipeThumbnail";
 import {
   CATALOG_RECIPES,
@@ -22,7 +23,8 @@ import UserAvatar from "@/components/app/UserAvatar";
 import UserNameLink from "@/components/app/UserNameLink";
 import { absoluteAppUrl, shareContent } from "@/lib/share";
 import { userProfilePath } from "@/lib/userProfile";
-import { CURRENT_USER } from "@/components/app/user/data";
+import { resolveAuthor } from "@/components/app/user/authors";
+import { useCurrentFeedUser } from "@/components/app/user/useCurrentFeedUser";
 
 const nutrition = [
   { label: "Fat", value: "5.8g" },
@@ -149,10 +151,7 @@ function MoreCard({
         <RecipeThumbnail className="size-full" iconClassName="h-10 w-11" />
       </Link>
       <p className="mt-1 w-full truncate text-sm text-ink-secondary">{name}</p>
-      <p className="flex w-full items-center gap-0.5 text-xs leading-3.5">
-        <span className="text-brand-soft">@</span>
-        <span className="truncate text-placeholder">{author}</span>
-      </p>
+      <RecipeAuthor author={author} className="w-full" />
     </div>
   );
 }
@@ -162,6 +161,7 @@ export default function RecipeDetailScreen({
 }: {
   recipeId?: string;
 }) {
+  const me = useCurrentFeedUser();
   const { getRecipe } = useCreatedContent();
   const created = getRecipe(recipeId);
   const recipe =
@@ -170,16 +170,7 @@ export default function RecipeDetailScreen({
     CATALOG_RECIPES[0];
   const { isSaved, toggleSave } = useSavedRecipes();
   const saved = isSaved(recipe.id);
-  const authorHandle =
-    recipe.author === CURRENT_USER.handle || recipe.author === "you"
-      ? CURRENT_USER.handle
-      : recipe.author.replace(/\s+/g, "").toLowerCase();
-  const authorInitials =
-    authorHandle === CURRENT_USER.handle
-      ? CURRENT_USER.initials
-      : recipe.author.slice(0, 2).toUpperCase();
-  const authorName =
-    authorHandle === CURRENT_USER.handle ? CURRENT_USER.name : recipe.author;
+  const author = resolveAuthor(recipe.author, me);
   const moreRecipes = CATALOG_RECIPES.filter((r) => r.id !== recipe.id).slice(
     0,
     6,
@@ -322,13 +313,15 @@ export default function RecipeDetailScreen({
           <div className="flex gap-3 border-b border-line pb-3">
             <div className="flex flex-col items-center gap-3">
               <Link
-                href={userProfilePath(authorHandle)}
-                aria-label={authorName}
+                href={userProfilePath(author.handle, me.handle)}
+                aria-label={author.name}
               >
                 <UserAvatar
-                  initials={authorInitials}
-                  handle={authorHandle}
+                  initials={author.initials}
+                  handle={author.handle}
+                  src={author.avatarUrl}
                   size="lg"
+                  me={author.handle === me.handle}
                 />
               </Link>
               <div className="flex flex-col items-center gap-2 text-brand">
@@ -354,22 +347,22 @@ export default function RecipeDetailScreen({
             </div>
             <div className="min-w-0 flex-1">
               <UserNameLink
-                name={authorName}
-                handle={authorHandle}
+                name={author.name}
+                handle={author.handle}
                 className="text-base font-bold text-brand"
               />
               <p className="mt-0.5 flex items-center gap-0.5 text-xs leading-3.5">
                 <span className="text-brand-soft">@</span>
                 <Link
-                  href={userProfilePath(authorHandle)}
+                  href={userProfilePath(author.handle, me.handle)}
                   className="truncate text-placeholder"
                 >
-                  {authorHandle}
+                  {author.handle}
                 </Link>
               </p>
               <p className="mt-2 text-sm italic leading-5 text-ink-secondary">
-                Passionate about cooking and sharing simple, delicious recipes
-                with easy-to-follow instructions.
+                {author.about ??
+                  "Passionate about cooking and sharing simple, delicious recipes with easy-to-follow instructions."}
               </p>
             </div>
           </div>
@@ -416,7 +409,7 @@ export default function RecipeDetailScreen({
               More to Love!
             </h2>
             <Link
-              href="/recipes/more"
+              href="/recipes/more?sort=loved"
               className="shrink-0 rounded bg-brand px-3 py-1 text-sm font-bold text-white hover:bg-brand-hover"
             >
               more

@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useCurrentFeedUser } from "@/components/app/user/useCurrentFeedUser";
 import { userProfilePath } from "@/lib/userProfile";
 
 export default function UserNameLink({
@@ -10,8 +13,9 @@ export default function UserNameLink({
   handle: string;
   className?: string;
 }) {
+  const me = useCurrentFeedUser();
   return (
-    <Link href={userProfilePath(handle)} className={className}>
+    <Link href={userProfilePath(handle, me.handle)} className={className}>
       {name}
     </Link>
   );

@@ -1,6 +1,14 @@
 export type MeTab = "activity" | "recipes" | "saved" | "followers" | "following";
 
-export type FeedUser = { name: string; handle: string; initials: string };
+export type FeedUser = {
+  name: string;
+  handle: string;
+  initials: string;
+  /** Optional profile image (data URL or remote). */
+  avatarUrl?: string;
+  /** Short bio shown on recipe/post detail. */
+  about?: string;
+};
 
 export type FeedItem =
   | {

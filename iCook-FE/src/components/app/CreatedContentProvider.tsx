@@ -9,8 +9,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { CURRENT_USER } from "@/components/app/user/data";
-import type { FeedItem } from "@/components/app/user/types";
+import { useCurrentFeedUser } from "@/components/app/user/useCurrentFeedUser";
+import type { FeedItem, FeedUser } from "@/components/app/user/types";
 import type { CatalogRecipe, RecipeCategorySlug } from "@/components/recipes/SavedRecipesProvider";
 
 const POSTS_KEY = "icook.createdPosts";
@@ -39,7 +39,7 @@ type CreatedContentContextValue = {
   }) => CreatedPost;
   publishRecipe: (input: {
     name: string;
-    category: Exclude<RecipeCategorySlug, "all">;
+    category: Exclude<RecipeCategorySlug, "all" | "loved">;
     preview?: string;
   }) => CreatedRecipe;
   getPost: (id: string) => CreatedPost | undefined;
@@ -72,11 +72,11 @@ function readRecipes(): CreatedRecipe[] {
   }
 }
 
-function postActivityItem(post: CreatedPost): FeedItem {
+function postActivityItem(post: CreatedPost, user: FeedUser): FeedItem {
   return {
     id: `my-post-${post.id}`,
     kind: "post",
-    user: CURRENT_USER,
+    user,
     time: "Just now",
     postId: post.id,
     title: post.title,
@@ -85,11 +85,11 @@ function postActivityItem(post: CreatedPost): FeedItem {
   };
 }
 
-function recipeActivityItem(recipe: CreatedRecipe): FeedItem {
+function recipeActivityItem(recipe: CreatedRecipe, user: FeedUser): FeedItem {
   return {
     id: `my-recipe-${recipe.id}`,
     kind: "recipe",
-    user: CURRENT_USER,
+    user,
     time: "Just now",
     recipeId: recipe.id,
     recipeName: recipe.name,
@@ -99,6 +99,7 @@ function recipeActivityItem(recipe: CreatedRecipe): FeedItem {
 }
 
 export function CreatedContentProvider({ children }: { children: ReactNode }) {
+  const me = useCurrentFeedUser();
   const [posts, setPosts] = useState<CreatedPost[]>([]);
   const [recipes, setRecipes] = useState<CreatedRecipe[]>([]);
 
@@ -143,24 +144,24 @@ export function CreatedContentProvider({ children }: { children: ReactNode }) {
   const publishRecipe = useCallback(
     (input: {
       name: string;
-      category: Exclude<RecipeCategorySlug, "all">;
+      category: Exclude<RecipeCategorySlug, "all" | "loved">;
       preview?: string;
     }) => {
       const recipe: CreatedRecipe = {
         id: `r-${Date.now()}`,
         name: input.name.trim(),
-        author: CURRENT_USER.handle,
+        author: me.handle,
         category: input.category,
         bookmarkCount: 0,
         preview:
           input.preview?.trim() ||
-          `A new ${input.category} recipe from ${CURRENT_USER.name}.`,
+          `A new ${input.category} recipe from ${me.name}.`,
         createdAt: Date.now(),
       };
       persistRecipes([recipe, ...recipes]);
       return recipe;
     },
-    [persistRecipes, recipes],
+    [persistRecipes, recipes, me.handle, me.name],
   );
 
   const getPost = useCallback(
@@ -175,10 +176,10 @@ export function CreatedContentProvider({ children }: { children: ReactNode }) {
 
   const activityItems = useMemo(
     () => [
-      ...posts.map(postActivityItem),
-      ...recipes.map(recipeActivityItem),
+      ...posts.map((post) => postActivityItem(post, me)),
+      ...recipes.map((recipe) => recipeActivityItem(recipe, me)),
     ],
-    [posts, recipes],
+    [posts, recipes, me],
   );
 
   const value = useMemo(

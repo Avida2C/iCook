@@ -3,10 +3,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { HeartIcon, HeartFillIcon } from "@/components/app/icons";
+import RecipeAuthor from "@/components/app/RecipeAuthor";
 import RecipeThumbnail from "@/components/app/RecipeThumbnail";
 import {
   CATALOG_RECIPES,
   RECIPE_CATEGORIES,
+  categoryHref,
   sortByMostBookmarked,
   useSavedRecipes,
   type CatalogRecipe,
@@ -47,10 +49,7 @@ function DiscoverRecipeCard({ recipe }: { recipe: CatalogRecipe }) {
         >
           {recipe.name}
         </Link>
-        <div className="flex items-center gap-0.5 py-0.5 text-xs leading-3.5">
-          <span className="text-brand-soft">@</span>
-          <span className="truncate text-placeholder">{recipe.author}</span>
-        </div>
+        <RecipeAuthor author={recipe.author} />
       </div>
     </div>
   );
@@ -123,7 +122,7 @@ export default function RecipesScreen() {
           {RECIPE_CATEGORIES.map((cat) => (
             <Link
               key={cat.slug}
-              href={`/recipes/more?category=${cat.slug}`}
+              href={categoryHref(cat.slug)}
               className="flex flex-col items-center justify-center gap-1 pt-4"
             >
               <span className="relative size-13.75 shrink-0 overflow-hidden">
@@ -144,14 +143,14 @@ export default function RecipesScreen() {
       </div>
 
       <RecipeSection
-        title="Most Loved Recipes!"
+        title="More to Love!"
         recipes={topLoved}
         moreHref="/recipes/more?sort=loved"
       />
       <FeaturedRecipeCta recipe={featured} />
       {nextLoved.length > 0 ? (
         <RecipeSection
-          title="Most Loved Recipes!"
+          title="More to Love!"
           recipes={nextLoved}
           moreHref="/recipes/more?sort=loved"
         />

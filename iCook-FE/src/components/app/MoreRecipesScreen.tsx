@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { HeartIcon, HeartFillIcon } from "@/components/app/icons";
+import RecipeAuthor from "@/components/app/RecipeAuthor";
 import RecipeThumbnail from "@/components/app/RecipeThumbnail";
 import {
   CATALOG_RECIPES,
@@ -47,10 +48,7 @@ function MoreRecipeCard({ recipe }: { recipe: CatalogRecipe }) {
         >
           {recipe.name}
         </Link>
-        <div className="flex items-center gap-0.5 py-0.5 text-xs leading-[14px]">
-          <span className="text-brand-soft">@</span>
-          <span className="truncate text-placeholder">{recipe.author}</span>
-        </div>
+        <RecipeAuthor author={recipe.author} />
       </div>
     </div>
   );
@@ -73,8 +71,8 @@ export default function MoreRecipesScreen({
 
   const title = byLoved
     ? category && category !== "all"
-      ? `Most Loved · ${getCategoryLabel(category)}`
-      : "Most Loved Recipes!"
+      ? `More to Love · ${getCategoryLabel(category)}`
+      : "More to Love!"
     : getCategoryLabel(category);
 
   return (

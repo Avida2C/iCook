@@ -15,10 +15,11 @@ import {
   CATALOG_RECIPES,
   useSavedRecipes,
 } from "@/components/recipes/SavedRecipesProvider";
+import { withLiveProfile } from "@/components/app/user/authors";
+import { useCurrentFeedUser } from "@/components/app/user/useCurrentFeedUser";
+import type { FeedUser } from "@/components/app/user/types";
 import { absoluteAppUrl, shareContent } from "@/lib/share";
 import { userProfilePath } from "@/lib/userProfile";
-
-type FeedUser = { name: string; handle: string; initials: string };
 
 type CommunityItem =
   | {
@@ -199,25 +200,48 @@ const COMMUNITY_FEED: CommunityItem[] = [
 ];
 
 function Avatar({ user }: { user: FeedUser }) {
+  const me = useCurrentFeedUser();
+  const author = withLiveProfile(user, me);
   return (
-    <Link href={userProfilePath(user.handle)} aria-label={user.name}>
-      <UserAvatar initials={user.initials} handle={user.handle} />
+    <Link
+      href={userProfilePath(author.handle, me.handle)}
+      aria-label={author.name}
+    >
+      <UserAvatar
+        initials={author.initials}
+        handle={author.handle}
+        src={author.avatarUrl}
+        me={author.handle === me.handle}
+      />
     </Link>
   );
 }
 
 function Handle({ handle, time }: { handle: string; time: string }) {
+  const me = useCurrentFeedUser();
+  const author = withLiveProfile(
+    { name: handle, handle, initials: handle.slice(0, 2).toUpperCase() },
+    me,
+  );
   return (
     <p className="mt-0.5 flex items-center gap-0.5 text-xs leading-3.5">
       <span className="text-brand-soft">@</span>
       <Link
-        href={userProfilePath(handle)}
+        href={userProfilePath(author.handle, me.handle)}
         className="truncate text-placeholder"
       >
-        {handle}
+        {author.handle}
       </Link>
       <span className="text-muted"> · {time}</span>
     </p>
+  );
+}
+
+function AuthorLabel({ user }: { user: FeedUser }) {
+  const me = useCurrentFeedUser();
+  const author = withLiveProfile(user, me);
+  return (
+    <UserNameLink name={author.name} handle={author.handle} />
   );
 }
 
@@ -242,7 +266,7 @@ function RecipeFeedCard({ item }: { item: Extract<CommunityItem, { kind: "recipe
         <Avatar user={item.user} />
         <div className="min-w-0 flex-1">
           <p className="text-sm leading-5 text-ink">
-            <UserNameLink name={item.user.name} handle={item.user.handle} />{" "}
+            <AuthorLabel user={item.user} />{" "}
             shared a recipe
           </p>
           <Handle handle={item.user.handle} time={item.time} />
@@ -315,7 +339,7 @@ function PostFeedCard({ item }: { item: Extract<CommunityItem, { kind: "post" }>
         <Avatar user={item.user} />
         <div className="min-w-0 flex-1">
           <p className="text-sm leading-5 text-ink">
-            <UserNameLink name={item.user.name} handle={item.user.handle} />{" "}
+            <AuthorLabel user={item.user} />{" "}
             shared a post
           </p>
           <Handle handle={item.user.handle} time={item.time} />

@@ -27,7 +27,7 @@ export default function CreateRecipeScreen() {
     const name = String(data.get("title") ?? "").trim();
     const category = String(data.get("category") ?? "").trim() as Exclude<
       RecipeCategorySlug,
-      "all"
+      "all" | "loved"
     >;
     if (!name || !category) return;
 

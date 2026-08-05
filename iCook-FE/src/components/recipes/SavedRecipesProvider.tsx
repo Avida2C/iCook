@@ -20,13 +20,14 @@ export type RecipeCategorySlug =
   | "toasty"
   | "savoury"
   | "pasta"
-  | "all";
+  | "all"
+  | "loved";
 
 export type CatalogRecipe = {
   id: string;
   name: string;
   author: string;
-  category: Exclude<RecipeCategorySlug, "all">;
+  category: Exclude<RecipeCategorySlug, "all" | "loved">;
   /** Community bookmark baseline (other users). Current user save adds +1 at runtime. */
   bookmarkCount: number;
 };
@@ -41,30 +42,36 @@ export const RECIPE_CATEGORIES = [
   { label: "Toasty", slug: "toasty", icon: "/icons/recipes/toasty.png" },
   { label: "Savoury", slug: "savoury", icon: "/icons/recipes/savoury.png" },
   { label: "Pasta", slug: "pasta", icon: "/icons/recipes/pasta.png" },
-  { label: "All Recipes", slug: "all", icon: "/icons/recipes/all.png" },
+  { label: "More to Love", slug: "loved", icon: "/icons/recipes/all.png" },
 ] as const;
 
 /** Shared recipes that appear in Discover/Recipes and can be saved. */
 export const CATALOG_RECIPES: CatalogRecipe[] = [
-  { id: "1", name: "Ricotta Ravioli", author: "Username", category: "pasta", bookmarkCount: 128 },
-  { id: "2", name: "Egg on Toast", author: "ChefAmy", category: "toasty", bookmarkCount: 96 },
-  { id: "3", name: "Blueberry Pancakes", author: "BakerBen", category: "breakfast", bookmarkCount: 112 },
-  { id: "4", name: "Pasta Salad", author: "Username", category: "lunch", bookmarkCount: 74 },
-  { id: "5", name: "Pork Roast", author: "GrillGuy", category: "dinner", bookmarkCount: 88 },
-  { id: "6", name: "Chocolate Cookies", author: "SweetSue", category: "sweets", bookmarkCount: 141 },
-  { id: "7", name: "Traditional Ravioli", author: "Username", category: "pasta", bookmarkCount: 63 },
-  { id: "8", name: "Egg & Tomatoes on Toast", author: "ChefAmy", category: "toasty", bookmarkCount: 51 },
-  { id: "9", name: "Popcorn", author: "SnackSam", category: "snacks", bookmarkCount: 39 },
-  { id: "10", name: "Roast Pork", author: "GrillGuy", category: "dinner", bookmarkCount: 57 },
-  { id: "11", name: "Salmon with Roast Potatoes", author: "FishFan", category: "dinner", bookmarkCount: 82 },
-  { id: "12", name: "Steak and Potato Jacket", author: "GrillGuy", category: "savoury", bookmarkCount: 69 },
-  { id: "13", name: "Raspberry Cheesecake", author: "SweetSue", category: "fruity", bookmarkCount: 104 },
+  { id: "1", name: "Ricotta Ravioli", author: "courtneyhenry", category: "pasta", bookmarkCount: 128 },
+  { id: "2", name: "Egg on Toast", author: "chefamy", category: "toasty", bookmarkCount: 96 },
+  { id: "3", name: "Blueberry Pancakes", author: "bakerben", category: "breakfast", bookmarkCount: 112 },
+  { id: "4", name: "Pasta Salad", author: "courtneyhenry", category: "lunch", bookmarkCount: 74 },
+  { id: "5", name: "Pork Roast", author: "grillguy", category: "dinner", bookmarkCount: 88 },
+  { id: "6", name: "Chocolate Cookies", author: "sweetsue", category: "sweets", bookmarkCount: 141 },
+  { id: "7", name: "Traditional Ravioli", author: "courtneyhenry", category: "pasta", bookmarkCount: 63 },
+  { id: "8", name: "Egg & Tomatoes on Toast", author: "chefamy", category: "toasty", bookmarkCount: 51 },
+  { id: "9", name: "Popcorn", author: "snacksam", category: "snacks", bookmarkCount: 39 },
+  { id: "10", name: "Roast Pork", author: "grillguy", category: "dinner", bookmarkCount: 57 },
+  { id: "11", name: "Salmon with Roast Potatoes", author: "fishfan", category: "dinner", bookmarkCount: 82 },
+  { id: "12", name: "Steak and Potato Jacket", author: "grillguy", category: "savoury", bookmarkCount: 69 },
+  { id: "13", name: "Raspberry Cheesecake", author: "sweetsue", category: "fruity", bookmarkCount: 104 },
 ];
 
 export function getCategoryLabel(slug: string | undefined): string {
   if (!slug || slug === "all") return "More Recipes";
+  if (slug === "loved") return "More to Love";
   const match = RECIPE_CATEGORIES.find((c) => c.slug === slug);
   return match ? match.label : "More Recipes";
+}
+
+export function categoryHref(slug: string): string {
+  if (slug === "loved") return "/recipes/more?sort=loved";
+  return `/recipes/more?category=${slug}`;
 }
 
 export function filterRecipesByCategory(

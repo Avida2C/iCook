@@ -10,25 +10,46 @@ import RecipeThumbnail from "@/components/app/RecipeThumbnail";
 import UserAvatar from "@/components/app/UserAvatar";
 import UserNameLink from "@/components/app/UserNameLink";
 import { useLikedPosts } from "@/components/app/LikedPostsProvider";
-import { ACTIVITY_FEED, CURRENT_USER } from "./data";
+import { ACTIVITY_FEED } from "./data";
 import type { FeedItem, FeedUser } from "./types";
 import { filterActivityItems, searchActivityItems } from "./activityFilters";
 import { useActivityFilters } from "./ActivityFiltersProvider";
+import { withLiveProfile } from "./authors";
+import { useCurrentFeedUser } from "./useCurrentFeedUser";
 import { userProfilePath } from "@/lib/userProfile";
 
-function Avatar({ user, size = "md" }: { user: FeedUser; size?: "sm" | "md" }) {
+function Avatar({
+  user,
+  size = "md",
+  selfHandle,
+}: {
+  user: FeedUser;
+  size?: "sm" | "md";
+  selfHandle: string;
+}) {
   return (
-    <Link href={userProfilePath(user.handle)} aria-label={user.name}>
+    <Link
+      href={userProfilePath(user.handle, selfHandle)}
+      aria-label={user.name}
+    >
       <UserAvatar
         initials={user.initials}
         handle={user.handle}
+        src={user.avatarUrl}
         size={size}
+        me={user.handle === selfHandle}
       />
     </Link>
   );
 }
 
-function FeedCard({ item }: { item: FeedItem }) {
+function FeedCard({
+  item,
+  me,
+}: {
+  item: FeedItem;
+  me: FeedUser;
+}) {
   const unreadDot = item.unread ? (
     <span
       className="mt-1.5 size-2 shrink-0 rounded-full bg-brand"
@@ -37,13 +58,14 @@ function FeedCard({ item }: { item: FeedItem }) {
   ) : null;
 
   if (item.kind === "follow") {
+    const user = withLiveProfile(item.user, me);
     return (
       <article className="feed-card flex gap-3">
-        <Avatar user={item.user} />
+        <Avatar user={user} selfHandle={me.handle} />
         <div className="min-w-0 flex-1">
           <div className="flex items-start gap-2">
             <p className="min-w-0 flex-1 text-sm leading-5 text-ink">
-              <UserNameLink name={item.user.name} handle={item.user.handle} />{" "}
+              <UserNameLink name={user.name} handle={user.handle} />{" "}
               started following you
             </p>
             {unreadDot}
@@ -61,14 +83,15 @@ function FeedCard({ item }: { item: FeedItem }) {
   }
 
   if (item.kind === "recipe") {
+    const user = withLiveProfile(item.user, me);
     return (
       <article className="feed-card flex flex-col gap-2">
         <div className="flex gap-3">
-          <Avatar user={item.user} />
+          <Avatar user={user} selfHandle={me.handle} />
           <div className="min-w-0 flex-1">
             <div className="flex items-start gap-2">
               <p className="min-w-0 flex-1 text-sm leading-5 text-ink">
-                <UserNameLink name={item.user.name} handle={item.user.handle} />{" "}
+                <UserNameLink name={user.name} handle={user.handle} />{" "}
                 posted a new recipe
               </p>
               {unreadDot}
@@ -76,10 +99,10 @@ function FeedCard({ item }: { item: FeedItem }) {
             <p className="mt-0.5 flex items-center gap-0.5 text-xs leading-[14px]">
               <span className="text-brand-soft">@</span>
               <Link
-                href={userProfilePath(item.user.handle)}
+                href={userProfilePath(user.handle, me.handle)}
                 className="truncate text-placeholder"
               >
-                {item.user.handle}
+                {user.handle}
               </Link>
               <span className="text-muted"> · {item.time}</span>
             </p>
@@ -104,14 +127,15 @@ function FeedCard({ item }: { item: FeedItem }) {
   }
 
   if (item.kind === "post") {
+    const user = withLiveProfile(item.user, me);
     return (
       <article className="feed-card flex flex-col gap-2">
         <div className="flex gap-3">
-          <Avatar user={item.user} />
+          <Avatar user={user} selfHandle={me.handle} />
           <div className="min-w-0 flex-1">
             <div className="flex items-start gap-2">
               <p className="min-w-0 flex-1 text-sm leading-5 text-ink">
-                <UserNameLink name={item.user.name} handle={item.user.handle} />{" "}
+                <UserNameLink name={user.name} handle={user.handle} />{" "}
                 shared a post
               </p>
               {unreadDot}
@@ -119,10 +143,10 @@ function FeedCard({ item }: { item: FeedItem }) {
             <p className="mt-0.5 flex items-center gap-0.5 text-xs leading-[14px]">
               <span className="text-brand-soft">@</span>
               <Link
-                href={userProfilePath(item.user.handle)}
+                href={userProfilePath(user.handle, me.handle)}
                 className="truncate text-placeholder"
               >
-                {item.user.handle}
+                {user.handle}
               </Link>
               <span className="text-muted"> · {item.time}</span>
             </p>
@@ -151,10 +175,7 @@ function FeedCard({ item }: { item: FeedItem }) {
             : null;
 
       const title = href ? (
-        <Link
-          href={href}
-          className="font-bold italic text-brand"
-        >
+        <Link href={href} className="font-bold italic text-brand">
           {item.target}
         </Link>
       ) : (
@@ -165,10 +186,14 @@ function FeedCard({ item }: { item: FeedItem }) {
 
       return (
         <article className="feed-card flex gap-3">
-          <Link href={userProfilePath(CURRENT_USER.handle)} aria-label={CURRENT_USER.name}>
+          <Link
+            href={userProfilePath(me.handle, me.handle)}
+            aria-label={me.name}
+          >
             <UserAvatar
-              initials={CURRENT_USER.initials}
-              handle={CURRENT_USER.handle}
+              initials={me.initials}
+              handle={me.handle}
+              src={me.avatarUrl}
               me
             />
           </Link>
@@ -188,14 +213,15 @@ function FeedCard({ item }: { item: FeedItem }) {
       );
     }
 
+    const user = withLiveProfile(item.user, me);
     return (
       <article className="feed-card flex gap-3">
-        <Avatar user={item.user} size="sm" />
+        <Avatar user={user} size="sm" selfHandle={me.handle} />
         <div className="min-w-0 flex-1">
           <div className="flex items-start gap-2">
             <p className="min-w-0 flex-1 text-sm leading-5 text-ink">
-              <UserNameLink name={item.user.name} handle={item.user.handle} />{" "}
-              liked your recipe{" "}
+              <UserNameLink name={user.name} handle={user.handle} /> liked your
+              recipe{" "}
               {item.recipeId ? (
                 <Link
                   href={`/recipe/${item.recipeId}`}
@@ -220,14 +246,14 @@ function FeedCard({ item }: { item: FeedItem }) {
     );
   }
 
+  const user = withLiveProfile(item.user, me);
   return (
     <article className="feed-card flex gap-3">
-      <Avatar user={item.user} size="sm" />
+      <Avatar user={user} size="sm" selfHandle={me.handle} />
       <div className="min-w-0 flex-1">
         <div className="flex items-start gap-2">
           <p className="min-w-0 flex-1 text-sm leading-5 text-ink">
-            <UserNameLink name={item.user.name} handle={item.user.handle} />{" "}
-            commented on{" "}
+            <UserNameLink name={user.name} handle={user.handle} /> commented on{" "}
             {item.recipeId ? (
               <Link
                 href={`/recipe/${item.recipeId}`}
@@ -269,10 +295,15 @@ export default function ActivityFeed({
   items?: FeedItem[];
   searchQuery?: string;
 }) {
+  const me = useCurrentFeedUser();
   const { activityItems } = useLikedPosts();
   const { prefs } = useActivityFilters();
   const feed = searchActivityItems(
-    filterActivityItems(items ?? activityItems ?? ACTIVITY_FEED, prefs),
+    filterActivityItems(
+      items ?? activityItems ?? ACTIVITY_FEED,
+      prefs,
+      me.handle,
+    ),
     searchQuery,
   );
 
@@ -289,7 +320,7 @@ export default function ActivityFeed({
   return (
     <>
       {feed.map((item) => (
-        <FeedCard key={item.id} item={item} />
+        <FeedCard key={item.id} item={item} me={me} />
       ))}
     </>
   );

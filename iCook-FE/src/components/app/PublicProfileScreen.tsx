@@ -4,69 +4,28 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import UserAvatar from "@/components/app/UserAvatar";
-import { useAuth } from "@/components/auth/AuthProvider";
+import { COMMUNITY_AUTHORS } from "@/components/app/user/authors";
 import { CURRENT_USER } from "@/components/app/user/data";
-
-const KNOWN_USERS: Record<
-  string,
-  { name: string; handle: string; initials: string; bio: string }
-> = {
-  chefamy: {
-    name: "Chef Amy",
-    handle: "chefamy",
-    initials: "CA",
-    bio: "Weeknight dinners and spice-rack wisdom.",
-  },
-  bakerben: {
-    name: "Baker Ben",
-    handle: "bakerben",
-    initials: "BB",
-    bio: "Pancakes, cookies, and everything floury.",
-  },
-  sweetsue: {
-    name: "Sweet Sue",
-    handle: "sweetsue",
-    initials: "SS",
-    bio: "Dessert tips that actually work.",
-  },
-  grillguy: {
-    name: "Grill Guy",
-    handle: "grillguy",
-    initials: "GG",
-    bio: "Charcoal over gas. Fight me.",
-  },
-  fishfan: {
-    name: "Fish Fan",
-    handle: "fishfan",
-    initials: "FF",
-    bio: "Seafood and sheet-pan dinners.",
-  },
-  courtneyhenry: {
-    name: CURRENT_USER.name,
-    handle: CURRENT_USER.handle,
-    initials: CURRENT_USER.initials,
-    bio: "Passionate about cooking and sharing simple, delicious recipes.",
-  },
-};
+import { useCurrentFeedUser } from "@/components/app/user/useCurrentFeedUser";
 
 function resolveUser(handle: string) {
   const key = decodeURIComponent(handle).toLowerCase();
-  if (KNOWN_USERS[key]) return KNOWN_USERS[key];
+  if (COMMUNITY_AUTHORS[key]) return COMMUNITY_AUTHORS[key];
+  if (key === CURRENT_USER.handle) return CURRENT_USER;
   const initials = key.slice(0, 2).toUpperCase();
   return {
     name: key,
     handle: key,
     initials,
-    bio: "iCook community member.",
+    about: "iCook community member.",
   };
 }
 
 export default function PublicProfileScreen({ handle }: { handle: string }) {
   const router = useRouter();
-  const { user: authUser } = useAuth();
-  const myHandle = authUser?.username ?? CURRENT_USER.handle;
+  const me = useCurrentFeedUser();
   const user = resolveUser(handle);
-  const isSelf = user.handle === myHandle;
+  const isSelf = user.handle === me.handle;
 
   useEffect(() => {
     if (isSelf) {
@@ -85,6 +44,7 @@ export default function PublicProfileScreen({ handle }: { handle: string }) {
           <UserAvatar
             initials={user.initials}
             handle={user.handle}
+            src={user.avatarUrl}
             size="lg"
           />
           <div className="min-w-0 flex-1">
@@ -96,7 +56,9 @@ export default function PublicProfileScreen({ handle }: { handle: string }) {
           </div>
         </div>
 
-        <p className="text-sm italic leading-5 text-ink-secondary">{user.bio}</p>
+        <p className="text-sm italic leading-5 text-ink-secondary">
+          {user.about ?? "iCook community member."}
+        </p>
 
         <div className="grid grid-cols-2 gap-2">
           <button type="button" className="btn-primary">
