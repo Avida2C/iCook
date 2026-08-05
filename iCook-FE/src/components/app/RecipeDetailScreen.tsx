@@ -237,16 +237,7 @@ export default function RecipeDetailScreen({
                 <ShareIcon className="size-6" />
               </button>
             </div>
-            <p className="mt-2 flex items-center gap-0.5 text-xs leading-[14px]">
-              <span className="text-brand-soft">@</span>
-              <Link
-                href={userProfilePath(authorHandle)}
-                className="truncate text-placeholder"
-              >
-                {authorHandle}
-              </Link>
-            </p>
-            <p className="mt-1 flex gap-2 text-sm text-ink">
+            <p className="mt-2 flex gap-2 text-sm text-ink">
               <span className="font-bold text-ink-secondary">Category</span>
               <span className="italic text-muted">
                 {getCategoryLabel(recipe.category)}
