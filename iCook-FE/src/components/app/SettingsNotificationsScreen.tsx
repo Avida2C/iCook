@@ -1,42 +1,84 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
-type Option = { id: string; label: string };
+type Option = { id: string; label: string; hint?: string };
 type Group = { title: string; options: Option[] };
 
 const groups: Group[] = [
   {
     title: "Recipe Updates",
     options: [
-      { id: "new-recipes", label: "New recipes from followed creators." },
-      { id: "trending", label: "Trending or popular recipes." },
-      { id: "recommendations", label: "Recommendations based on user preferences." },
+      {
+        id: "new-recipes",
+        label: "New recipes",
+        hint: "From creators you follow",
+      },
+      {
+        id: "trending",
+        label: "Trending recipes",
+        hint: "Popular picks across the community",
+      },
+      {
+        id: "recommendations",
+        label: "Recommendations",
+        hint: "Suggestions based on your preferences",
+      },
     ],
   },
   {
     title: "Reminders",
     options: [
-      { id: "cooking", label: "Cooking reminders (e.g., timer alerts, planned meals)." },
-      { id: "saved", label: "Notifications for saved or favorited recipes." },
+      {
+        id: "cooking",
+        label: "Cooking reminders",
+        hint: "Timers and planned meals",
+      },
+      {
+        id: "saved",
+        label: "Saved recipes",
+        hint: "Updates for favorites and saved items",
+      },
     ],
   },
   {
     title: "Community Activity",
     options: [
-      { id: "comments", label: "Comments on your posts." },
-      { id: "likes", label: "Likes or reactions on your recipes or posts." },
-      { id: "replies", label: "Replies to your comments." },
+      {
+        id: "comments",
+        label: "Comments",
+        hint: "On your posts and recipes",
+      },
+      {
+        id: "likes",
+        label: "Likes & reactions",
+        hint: "On your recipes or posts",
+      },
+      {
+        id: "replies",
+        label: "Replies",
+        hint: "When someone replies to your comments",
+      },
     ],
   },
   {
     title: "App Announcements",
     options: [
-      { id: "features", label: "New features or updates." },
-      { id: "promotions", label: "Seasonal or special promotions." },
+      {
+        id: "features",
+        label: "New features",
+        hint: "Product updates and improvements",
+      },
+      {
+        id: "promotions",
+        label: "Promotions",
+        hint: "Seasonal or special offers",
+      },
     ],
   },
 ];
+
+const ALL_IDS = groups.flatMap((group) => group.options.map((o) => o.id));
 
 function Toggle({
   checked,
@@ -54,70 +96,105 @@ function Toggle({
       aria-checked={checked}
       aria-label={label}
       onClick={onChange}
-      className={`relative h-5 w-9 shrink-0 rounded-full border-2 border-ink transition-colors ${
-        checked ? "bg-brand" : "bg-surface-muted"
+      className={`relative h-5 w-9 shrink-0 rounded-full border border-muted transition-colors ${
+        checked ? "border-brand bg-brand" : "bg-surface-muted"
       }`}
     >
       <span
         className={`absolute top-1/2 size-3 -translate-y-1/2 rounded-full transition-all ${
-          checked ? "left-[18px] bg-white" : "left-[2px] bg-ink"
+          checked ? "left-[17px] bg-white" : "left-[2px] bg-muted"
         }`}
       />
     </button>
   );
 }
 
+function NotificationOption({
+  label,
+  hint,
+  checked,
+  onChange,
+}: {
+  label: string;
+  hint?: string;
+  checked: boolean;
+  onChange: () => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 py-2.5">
+      <div className="min-w-0 flex-1">
+        <p className="text-sm leading-5 text-ink">{label}</p>
+        {hint ? (
+          <p className="mt-0.5 text-xs leading-4 text-muted">{hint}</p>
+        ) : null}
+      </div>
+      <Toggle checked={checked} onChange={onChange} label={label} />
+    </div>
+  );
+}
+
 export default function SettingsNotificationsScreen() {
-  const [state, setState] = useState<Record<string, boolean>>({});
-  const [allOff, setAllOff] = useState(true);
+  const [state, setState] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(ALL_IDS.map((id) => [id, true])),
+  );
+  const [message, setMessage] = useState<string | null>(null);
+
+  const allEnabled = useMemo(
+    () => ALL_IDS.every((id) => state[id]),
+    [state],
+  );
 
   const toggle = (id: string) =>
     setState((prev) => ({ ...prev, [id]: !prev[id] }));
 
+  const toggleAll = () => {
+    const next = !allEnabled;
+    setState(Object.fromEntries(ALL_IDS.map((id) => [id, next])));
+  };
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setMessage("Notification preferences saved.");
+  }
+
   return (
-    <div className="flex min-h-full flex-col bg-app">
-      <form
-        className="flex flex-col gap-6 bg-surface p-2.5"
-        onSubmit={(e) => e.preventDefault()}
-      >
+    <div className="page">
+      <form className="list-stack py-2" onSubmit={handleSubmit}>
         {groups.map((group) => (
-          <section
-            key={group.title}
-            className="flex flex-col gap-4 border-b border-line pb-5"
-          >
-            <h2 className="text-base font-bold text-black">{group.title}</h2>
-            {group.options.map((option) => (
-              <div key={option.id} className="flex items-start gap-5">
-                <p className="flex-1 text-base italic text-black">
-                  {option.label}
-                </p>
-                <Toggle
+          <section key={group.title} className="feed-card flex flex-col">
+            <h2 className="section-title border-b border-line pb-2">
+              {group.title}
+            </h2>
+            <div className="divide-y divide-line">
+              {group.options.map((option) => (
+                <NotificationOption
+                  key={option.id}
+                  label={option.label}
+                  hint={option.hint}
                   checked={!!state[option.id]}
                   onChange={() => toggle(option.id)}
-                  label={option.label}
                 />
-              </div>
-            ))}
+              ))}
+            </div>
           </section>
         ))}
 
-        <div className="flex items-start gap-5">
-          <p className="flex-1 text-base italic text-black">
-            Turn-Off all Notifications.
-          </p>
-          <Toggle
-            checked={allOff}
-            onChange={() => setAllOff((v) => !v)}
-            label="Turn off all notifications"
+        <section className="feed-card flex flex-col gap-2.5">
+          <NotificationOption
+            label="All notifications"
+            hint="Turn every notification category on or off"
+            checked={allEnabled}
+            onChange={toggleAll}
           />
-        </div>
-
-        <button
-          type="submit"
-          className="w-full rounded-[5px] bg-brand px-5 py-1.5 text-xl font-bold text-white shadow-md transition-colors hover:bg-[#e85557]"
-        >
-          Save Notifications
-        </button>
+          {message ? (
+            <p role="status" className="text-sm font-bold text-ink-secondary">
+              {message}
+            </p>
+          ) : null}
+          <button type="submit" className="btn-primary w-full">
+            Save notifications
+          </button>
+        </section>
       </form>
     </div>
   );

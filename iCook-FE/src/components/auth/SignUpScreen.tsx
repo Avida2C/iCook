@@ -63,14 +63,6 @@ export default function SignUpScreen() {
           className="flex w-full flex-col gap-[15px]"
           onSubmit={(e) => void handleSubmit(e)}
         >
-          <AvatarPicker
-            initials={previewInitials}
-            handle={normalizeUsername(username) || undefined}
-            value={avatarUrl}
-            onChange={setAvatarUrl}
-            onError={(message) => setError(message || null)}
-            hint="Optional · JPG or PNG, up to 5MB"
-          />
 
           <div className="flex w-full gap-2.5">
             <div className="min-w-0 flex-1">
