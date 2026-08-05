@@ -113,6 +113,35 @@ export function filterActivityItems(
   return items.filter((item) => matchesActivityFilter(item, prefs));
 }
 
+function activitySearchText(item: FeedItem): string {
+  switch (item.kind) {
+    case "follow":
+      return `${item.user.name} ${item.user.handle} following`;
+    case "recipe":
+      return `${item.user.name} ${item.user.handle} ${item.recipeName} ${item.preview} recipe`;
+    case "post":
+      return `${item.user.name} ${item.user.handle} ${item.title} ${item.preview} post`;
+    case "like":
+      if (item.self) {
+        return `you liked ${item.target} ${item.targetKind ?? ""}`;
+      }
+      return `${item.user.name} ${item.user.handle} liked ${item.target}`;
+    case "comment":
+      return `${item.user.name} ${item.user.handle} commented ${item.target} ${item.preview}`;
+    default:
+      return "";
+  }
+}
+
+export function searchActivityItems(
+  items: FeedItem[],
+  query: string,
+): FeedItem[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return items;
+  return items.filter((item) => activitySearchText(item).toLowerCase().includes(q));
+}
+
 export function groupEnabled(
   prefs: ActivityFilterPrefs,
   keys: readonly (keyof ActivityFilterPrefs)[],

@@ -14,7 +14,7 @@ import ActivityFilterPanel from "@/components/app/user/ActivityFilterPanel";
 import PeoplePanel from "@/components/app/user/PeoplePanel";
 import UserProfileHeader from "@/components/app/user/UserProfileHeader";
 import UserTabBar from "@/components/app/user/UserTabBar";
-import { FilterIcon } from "@/components/app/icons";
+import { FilterIcon, SearchIcon } from "@/components/app/icons";
 import {
   INITIAL_FOLLOWERS,
   INITIAL_FOLLOWING,
@@ -27,6 +27,7 @@ import type { MeTab } from "@/components/app/user/types";
 export default function UserScreen() {
   const [tab, setTab] = useState<MeTab>("activity");
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [activityQuery, setActivityQuery] = useState("");
   const [followers] = useState(INITIAL_FOLLOWERS);
   const [following, setFollowing] = useState(INITIAL_FOLLOWING);
   const { savedRecipes } = useSavedRecipes();
@@ -56,11 +57,19 @@ export default function UserScreen() {
     );
   };
 
+  const onSelectTab = (next: MeTab) => {
+    setTab(next);
+    if (next !== "activity") {
+      setFiltersOpen(false);
+      setActivityQuery("");
+    }
+  };
+
   return (
     <div className="page-fill">
       <div className="surface-block shrink-0">
         <UserProfileHeader />
-        <UserTabBar tab={tab} counts={tabCounts} onSelect={setTab} />
+        <UserTabBar tab={tab} counts={tabCounts} onSelect={onSelectTab} />
       </div>
 
       <div className="feed-stack">
@@ -82,12 +91,27 @@ export default function UserScreen() {
           ) : null}
         </div>
 
+        {tab === "activity" ? (
+          <div className="px-3">
+            <div className="search-field">
+              <SearchIcon className="size-5 shrink-0 text-brand" />
+              <input
+                value={activityQuery}
+                onChange={(e) => setActivityQuery(e.target.value)}
+                className="flex-1 bg-transparent text-sm text-ink outline-none placeholder:italic placeholder:text-muted"
+                placeholder="Search activity"
+                aria-label="Search activity"
+              />
+            </div>
+          </div>
+        ) : null}
+
         {tab === "activity" && filtersOpen ? (
           <ActivityFilterPanel onClose={() => setFiltersOpen(false)} />
         ) : null}
 
         {tab === "activity" ? (
-          <ActivityFeed />
+          <ActivityFeed searchQuery={activityQuery} />
         ) : tab === "recipes" ? (
           <MyRecipesPanel />
         ) : tab === "saved" ? (

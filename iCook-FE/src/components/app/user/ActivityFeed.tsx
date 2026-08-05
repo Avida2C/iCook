@@ -12,7 +12,7 @@ import UserNameLink from "@/components/app/UserNameLink";
 import { useLikedPosts } from "@/components/app/LikedPostsProvider";
 import { ACTIVITY_FEED, CURRENT_USER } from "./data";
 import type { FeedItem, FeedUser } from "./types";
-import { filterActivityItems } from "./activityFilters";
+import { filterActivityItems, searchActivityItems } from "./activityFilters";
 import { useActivityFilters } from "./ActivityFiltersProvider";
 import { userProfilePath } from "@/lib/userProfile";
 
@@ -262,18 +262,26 @@ function FeedCard({ item }: { item: FeedItem }) {
   );
 }
 
-export default function ActivityFeed({ items }: { items?: FeedItem[] }) {
+export default function ActivityFeed({
+  items,
+  searchQuery = "",
+}: {
+  items?: FeedItem[];
+  searchQuery?: string;
+}) {
   const { activityItems } = useLikedPosts();
   const { prefs } = useActivityFilters();
-  const feed = filterActivityItems(
-    items ?? activityItems ?? ACTIVITY_FEED,
-    prefs,
+  const feed = searchActivityItems(
+    filterActivityItems(items ?? activityItems ?? ACTIVITY_FEED, prefs),
+    searchQuery,
   );
 
   if (feed.length === 0) {
     return (
       <p className="feed-card px-3 py-8 text-center text-base text-muted">
-        Nothing to show with your current filters.
+        {searchQuery.trim()
+          ? `No activity matches “${searchQuery.trim()}”.`
+          : "Nothing to show with your current filters."}
       </p>
     );
   }
