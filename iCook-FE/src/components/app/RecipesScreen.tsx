@@ -123,7 +123,7 @@ export default function RecipesScreen() {
             <Link
               key={cat.slug}
               href={`/recipes/more?category=${cat.slug}`}
-              className="flex flex-col items-center justify-center gap-1 px-2 py-1"
+              className="flex flex-col items-center justify-center gap-1 pt-4"
             >
               <span className="relative size-[55px] shrink-0 overflow-hidden">
                 <img

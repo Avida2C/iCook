@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 export default function PrivacyPage() {
   return (
     <div className="flex min-h-dvh justify-center bg-app-frame">
-      <div className="w-full max-w-[400px] bg-app shadow-xl">
+      <div className="flex min-h-dvh w-full max-w-[400px] flex-col bg-app shadow-xl">
         <LegalDocumentScreen doc="privacy" />
       </div>
     </div>

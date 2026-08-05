@@ -47,7 +47,7 @@ const tabs: Tab[] = [
 ];
 
 const itemClass =
-  "flex min-w-0 flex-1 flex-col items-center justify-end gap-1 overflow-hidden py-1";
+  "flex min-w-0 flex-1 flex-col items-center justify-end gap-1 overflow-hidden pb-2 pt-1";
 
 /** Detail routes that should not highlight any primary bottom-nav tab. */
 const NEUTRAL_PATHS = [/^\/recipe(\/|$)/, /^\/post(\/|$)/];

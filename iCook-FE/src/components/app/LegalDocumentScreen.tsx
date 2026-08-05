@@ -82,18 +82,18 @@ export default function LegalDocumentScreen({ doc }: { doc: LegalDoc }) {
   const content = DOCS[doc];
 
   return (
-    <div className="page">
-        <section className="feed-card">
-          <h1 className="text-lg font-bold">{content.title}</h1>
-          <p className="text-xs text-muted">Last updated {content.updated}</p>
-        </section>
+    <div className="flex min-h-full flex-col bg-surface">
+      <section className="feed-card">
+        <h1 className="text-lg font-bold">{content.title}</h1>
+        <p className="text-xs text-muted">Last updated {content.updated}</p>
+      </section>
 
-        {content.sections.map((section) => (
-          <section key={section.heading} className="feed-card flex flex-col">
-            <h2 className="text-sm font-bold text-brand">{section.heading}</h2>
-            <p className="text-sm leading-5 text-ink-secondary">{section.body}</p>
-          </section>
-        ))}
+      {content.sections.map((section) => (
+        <section key={section.heading} className="feed-card flex flex-col">
+          <h2 className="text-sm font-bold text-brand">{section.heading}</h2>
+          <p className="text-sm leading-5 text-ink-secondary">{section.body}</p>
+        </section>
+      ))}
     </div>
   );
 }

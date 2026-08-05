@@ -1,21 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import {
-  APP_NAME,
-  APP_SUPPORT_EMAIL,
-  APP_TAGLINE,
-  APP_VERSION,
-} from "@/lib/appInfo";
+import LogoSlogan from "@/components/LogoSlogan";
+import { APP_SUPPORT_EMAIL, APP_VERSION } from "@/lib/appInfo";
 
 export default function AboutScreen() {
   return (
-    <div className="page">
+    <div className="flex min-h-full flex-col bg-surface">
       <div className="list-stack py-2">
-        <section className="feed-card flex flex-col items-center gap-2 py-6 text-center">
-          <p className="text-3xl font-extrabold text-brand">{APP_NAME}</p>
-          <p className="text-sm text-ink-secondary">{APP_TAGLINE}</p>
-          <p className="mt-1 text-xs text-muted">Version {APP_VERSION}</p>
+        <section className="feed-card flex flex-col items-center gap-2 pb-6 text-center">
+          <LogoSlogan />
+          <p className="text-xs text-muted">Version {APP_VERSION}</p>
         </section>
 
         <section className="feed-card flex flex-col gap-2">
