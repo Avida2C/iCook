@@ -184,6 +184,11 @@ body {
     @apply grid size-14 shrink-0 place-items-center rounded-full bg-brand/15 text-lg font-bold text-brand;
   }
 
+  /* Logged-in user avatar accent */
+  .avatar-me {
+    @apply border-2 border-brand;
+  }
+
   /* Buttons */
   .btn-primary {
     @apply inline-flex items-center justify-center gap-2 rounded bg-brand px-3 py-2.5 text-sm font-bold text-white transition-colors hover:bg-brand-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand;

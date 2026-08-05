@@ -1,19 +1,18 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
 import {
   MY_RECIPES,
   MyRecipesPanel,
   SavedRecipesPanel,
 } from "@/components/app/UserCollectionScreens";
+import { useLikedPosts } from "@/components/app/LikedPostsProvider";
 import { useSavedRecipes } from "@/components/recipes/SavedRecipesProvider";
 import ActivityFeed from "@/components/app/user/ActivityFeed";
 import PeoplePanel from "@/components/app/user/PeoplePanel";
 import UserProfileHeader from "@/components/app/user/UserProfileHeader";
 import UserTabBar from "@/components/app/user/UserTabBar";
 import {
-  ACTIVITY_FEED,
   INITIAL_FOLLOWERS,
   INITIAL_FOLLOWING,
   PANEL_TITLE,
@@ -25,11 +24,12 @@ export default function UserScreen() {
   const [followers] = useState(INITIAL_FOLLOWERS);
   const [following, setFollowing] = useState(INITIAL_FOLLOWING);
   const { savedRecipes } = useSavedRecipes();
+  const { activityItems } = useLikedPosts();
 
   const followingSet = useMemo(() => new Set(following), [following]);
 
   const tabCounts: Record<MeTab, number> = {
-    activity: ACTIVITY_FEED.filter((item) => item.unread).length,
+    activity: activityItems.filter((item) => item.unread).length,
     recipes: MY_RECIPES.length,
     saved: savedRecipes.length,
     followers: followers.length,
@@ -54,14 +54,6 @@ export default function UserScreen() {
       <div className="feed-stack">
         <div className="flex items-center justify-between px-3">
           <h2 className="section-title">{PANEL_TITLE[tab]}</h2>
-          {tab === "activity" ? (
-            <Link
-              href="/notifications"
-              className="text-xs font-bold text-ink-secondary"
-            >
-              All notifications
-            </Link>
-          ) : null}
         </div>
 
         {tab === "activity" ? (

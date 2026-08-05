@@ -4,13 +4,12 @@ import Link from "next/link";
 import {
   SendIcon,
   HeartIcon,
+  HeartFillIcon,
   MessageIcon,
   ShareIcon,
   ClockIcon,
   PlayIcon,
   ServingIcon,
-  BookmarkIcon,
-  BookmarkFillIcon,
 } from "@/components/app/icons";
 import RecipeThumbnail from "@/components/app/RecipeThumbnail";
 import {
@@ -18,6 +17,10 @@ import {
   getCategoryLabel,
   useSavedRecipes,
 } from "@/components/recipes/SavedRecipesProvider";
+import UserAvatar from "@/components/app/UserAvatar";
+import UserNameLink from "@/components/app/UserNameLink";
+import { absoluteAppUrl, shareContent } from "@/lib/share";
+import { userProfilePath } from "@/lib/userProfile";
 
 const nutrition = [
   { label: "Fat", value: "5.8g" },
@@ -161,10 +164,20 @@ export default function RecipeDetailScreen({
     CATALOG_RECIPES.find((r) => r.id === recipeId) ?? CATALOG_RECIPES[0];
   const { isSaved, toggleSave } = useSavedRecipes();
   const saved = isSaved(recipe.id);
+  const authorHandle = recipe.author.replace(/\s+/g, "").toLowerCase();
+  const authorInitials = recipe.author.slice(0, 2).toUpperCase();
   const moreRecipes = CATALOG_RECIPES.filter((r) => r.id !== recipe.id).slice(
     0,
     6,
   );
+
+  const onShare = () => {
+    void shareContent({
+      title: recipe.name,
+      text: `Check out ${recipe.name} on iCook`,
+      url: absoluteAppUrl(`/recipe/${recipe.id}`),
+    });
+  };
 
   return (
     <div className="page">
@@ -190,21 +203,34 @@ export default function RecipeDetailScreen({
               </h1>
               <button
                 type="button"
-                aria-label={saved ? "Remove bookmark" : "Save recipe"}
+                aria-label={saved ? `Unsave ${recipe.name}` : `Save ${recipe.name}`}
                 aria-pressed={saved}
                 onClick={() => toggleSave(recipe)}
                 className="shrink-0 text-brand"
               >
                 {saved ? (
-                  <BookmarkFillIcon className="size-7" />
+                  <HeartFillIcon className="size-7" />
                 ) : (
-                  <BookmarkIcon className="size-7" />
+                  <HeartIcon className="size-7" />
                 )}
+              </button>
+              <button
+                type="button"
+                aria-label={`Share ${recipe.name}`}
+                onClick={onShare}
+                className="shrink-0 text-brand"
+              >
+                <ShareIcon className="size-6" />
               </button>
             </div>
             <p className="mt-2 flex items-center gap-0.5 text-xs leading-[14px]">
               <span className="text-brand-soft">@</span>
-              <span className="truncate text-placeholder">{recipe.author}</span>
+              <Link
+                href={userProfilePath(authorHandle)}
+                className="truncate text-placeholder"
+              >
+                {recipe.author}
+              </Link>
             </p>
             <p className="mt-1 flex gap-2 text-sm text-ink">
               <span className="font-bold text-ink-secondary">Category</span>
@@ -290,28 +316,51 @@ export default function RecipeDetailScreen({
         <section className="feed-card">
           <div className="flex gap-3 border-b border-line pb-3">
             <div className="flex flex-col items-center gap-3">
-              <Link href="/user" className="avatar-lg">
-                {recipe.author.slice(0, 2).toUpperCase()}
+              <Link
+                href={userProfilePath(authorHandle)}
+                aria-label={recipe.author}
+              >
+                <UserAvatar
+                  initials={authorInitials}
+                  handle={authorHandle}
+                  size="lg"
+                />
               </Link>
               <div className="flex flex-col items-center gap-2 text-brand">
-                <button type="button" aria-label="Like">
-                  <HeartIcon className="size-6" />
+                <button
+                  type="button"
+                  aria-label={saved ? `Unsave ${recipe.name}` : `Save ${recipe.name}`}
+                  aria-pressed={saved}
+                  onClick={() => toggleSave(recipe)}
+                >
+                  {saved ? (
+                    <HeartFillIcon className="size-6" />
+                  ) : (
+                    <HeartIcon className="size-6" />
+                  )}
                 </button>
                 <button type="button" aria-label="Message">
                   <MessageIcon className="size-6" />
                 </button>
-                <button type="button" aria-label="Share">
+                <button type="button" aria-label={`Share ${recipe.name}`} onClick={onShare}>
                   <ShareIcon className="size-5" />
                 </button>
               </div>
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-base font-bold text-brand">{recipe.author}</p>
+              <UserNameLink
+                name={recipe.author}
+                handle={authorHandle}
+                className="text-base font-bold text-brand"
+              />
               <p className="mt-0.5 flex items-center gap-0.5 text-xs leading-[14px]">
                 <span className="text-brand-soft">@</span>
-                <span className="truncate text-placeholder">
-                  {recipe.author.toLowerCase()}
-                </span>
+                <Link
+                  href={userProfilePath(authorHandle)}
+                  className="truncate text-placeholder"
+                >
+                  {authorHandle}
+                </Link>
               </p>
               <p className="mt-2 text-sm italic leading-5 text-ink-secondary">
                 Passionate about cooking and sharing simple, delicious recipes

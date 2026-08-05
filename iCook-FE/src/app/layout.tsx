@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Nunito } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
+import { LikedPostsProvider } from "@/components/app/LikedPostsProvider";
 import { SavedRecipesProvider } from "@/components/recipes/SavedRecipesProvider";
 
 const geistSans = Geist({
@@ -45,7 +46,9 @@ export default function RootLayout({
       <body className="flex min-h-full flex-col font-nunito">
         <ThemeProvider>
           <AuthProvider>
-            <SavedRecipesProvider>{children}</SavedRecipesProvider>
+            <SavedRecipesProvider>
+              <LikedPostsProvider>{children}</LikedPostsProvider>
+            </SavedRecipesProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

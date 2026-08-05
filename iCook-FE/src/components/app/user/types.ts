@@ -25,6 +25,7 @@ export type FeedItem =
       kind: "post";
       user: FeedUser;
       time: string;
+      postId: string;
       title: string;
       preview: string;
       unread?: boolean;
@@ -32,9 +33,24 @@ export type FeedItem =
   | {
       id: string;
       kind: "like";
+      self: true;
+      time: string;
+      target: string;
+      targetKind: "recipe" | "post";
+      postId?: string;
+      recipeId?: string;
+      unread?: boolean;
+    }
+  | {
+      id: string;
+      kind: "like";
+      self?: false;
       user: FeedUser;
       time: string;
       target: string;
+      targetKind?: "recipe" | "post";
+      postId?: string;
+      recipeId?: string;
       unread?: boolean;
     }
   | {
@@ -43,6 +59,8 @@ export type FeedItem =
       user: FeedUser;
       time: string;
       target: string;
+      recipeId?: string;
+      postId?: string;
       preview: string;
       unread?: boolean;
     };

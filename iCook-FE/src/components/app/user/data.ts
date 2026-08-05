@@ -51,6 +51,7 @@ export const ACTIVITY_FEED: FeedItem[] = [
     kind: "post",
     user: sue,
     time: "Yesterday",
+    postId: "1",
     title: "My go-to cookie tip",
     preview:
       "Chill your dough for at least 30 minutes — it keeps the cookies thick and chewy every time.",
@@ -61,6 +62,7 @@ export const ACTIVITY_FEED: FeedItem[] = [
     user: grill,
     time: "Yesterday",
     target: "Ricotta Ravioli",
+    recipeId: "1",
     preview: "Tried this last night — the filling was perfect!",
   },
   {
@@ -79,6 +81,8 @@ export const ACTIVITY_FEED: FeedItem[] = [
     user: amy,
     time: "3d ago",
     target: "Pasta Salad",
+    targetKind: "recipe",
+    recipeId: "4",
   },
   {
     id: "7",
@@ -91,6 +95,7 @@ export const ACTIVITY_FEED: FeedItem[] = [
     kind: "post",
     user: amy,
     time: "5d ago",
+    postId: "2",
     title: "Kitchen reset",
     preview:
       "Cleared out the spice rack this morning — sharing what stayed and what went.",

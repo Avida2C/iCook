@@ -1,8 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { SendIcon, BackIcon } from "@/components/app/icons";
+import UserAvatar from "@/components/app/UserAvatar";
+import UserNameLink from "@/components/app/UserNameLink";
+import { CURRENT_USER } from "@/components/app/user/data";
+import { userProfilePath } from "@/lib/userProfile";
 
 type Message = { from: "you" | "them"; text: string; time?: string };
 
@@ -61,12 +66,23 @@ export default function ChatboxScreen() {
         <button type="button" onClick={() => router.back()} aria-label="Back">
           <BackIcon className="size-6 text-ink" />
         </button>
-        <span className="avatar">EP</span>
+        <Link href={userProfilePath("eleanorpena")} aria-label="Eleanor Pena">
+          <UserAvatar initials="EP" handle="eleanorpena" />
+        </Link>
         <div className="min-w-0 flex-1 leading-tight">
-          <p className="truncate text-sm font-bold text-brand">Eleanor Pena</p>
+          <UserNameLink
+            name="Eleanor Pena"
+            handle="eleanorpena"
+            className="truncate text-sm font-bold text-brand"
+          />
           <p className="flex items-center gap-0.5 text-xs leading-[14px]">
             <span className="text-brand-soft">@</span>
-            <span className="truncate text-placeholder">eleanorpena</span>
+            <Link
+              href={userProfilePath("eleanorpena")}
+              className="truncate text-placeholder"
+            >
+              eleanorpena
+            </Link>
             <span className="text-muted"> · </span>
             <span className="italic text-online">Online</span>
           </p>
@@ -77,9 +93,14 @@ export default function ChatboxScreen() {
         {messages.map((message, i) => (
           <div key={i} className="feed-card flex items-start gap-3">
             {message.from === "them" ? (
-              <span className="avatar-sm">EP</span>
+              <UserAvatar initials="EP" size="sm" />
             ) : (
-              <span className="avatar-sm">CH</span>
+              <UserAvatar
+                initials={CURRENT_USER.initials}
+                handle={CURRENT_USER.handle}
+                size="sm"
+                me
+              />
             )}
             <div className="min-w-0 flex-1">
               <div className="flex items-baseline justify-between gap-2">

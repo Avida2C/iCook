@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { EditIcon, MessageIcon } from "@/components/app/icons";
+import UserAvatar from "@/components/app/UserAvatar";
 import { CURRENT_USER } from "./data";
 
 export default function UserProfileHeader() {
@@ -7,7 +8,12 @@ export default function UserProfileHeader() {
     <>
       <div className="px-4 pt-4 pb-3">
         <div className="flex items-center gap-3">
-          <span className="avatar-lg">{CURRENT_USER.initials}</span>
+          <UserAvatar
+            initials={CURRENT_USER.initials}
+            handle={CURRENT_USER.handle}
+            size="lg"
+            me
+          />
           <div className="min-w-0 flex-1">
             <p className="truncate text-xl font-bold text-brand">
               {CURRENT_USER.name}

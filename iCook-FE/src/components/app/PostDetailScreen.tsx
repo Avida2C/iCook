@@ -3,10 +3,16 @@
 import Link from "next/link";
 import {
   HeartIcon,
+  HeartFillIcon,
   CommentIcon,
   ShareIcon,
   SendIcon,
 } from "@/components/app/icons";
+import { useLikedPosts } from "@/components/app/LikedPostsProvider";
+import UserAvatar from "@/components/app/UserAvatar";
+import UserNameLink from "@/components/app/UserNameLink";
+import { absoluteAppUrl, shareContent } from "@/lib/share";
+import { userProfilePath } from "@/lib/userProfile";
 
 const POSTS: Record<
   string,
@@ -93,23 +99,46 @@ const POSTS: Record<
 
 export default function PostDetailScreen({ postId }: { postId: string }) {
   const post = POSTS[postId] ?? POSTS["1"];
+  const resolvedId = POSTS[postId] ? postId : "1";
+  const { isLiked, likeCount, toggleLike } = useLikedPosts();
+  const liked = isLiked(resolvedId);
+  const likes = likeCount(resolvedId, post.likes);
+
+  const onShare = () => {
+    void shareContent({
+      title: post.title,
+      text: post.body,
+      url: absoluteAppUrl(`/post/${resolvedId}`),
+    });
+  };
 
   return (
     <div className="page">
       <article className="feed-card flex flex-col gap-3">
         <div className="flex gap-3">
-          <Link href="/user" className="avatar">
-            {post.user.initials}
+          <Link
+            href={userProfilePath(post.user.handle)}
+            aria-label={post.user.name}
+          >
+            <UserAvatar
+              initials={post.user.initials}
+              handle={post.user.handle}
+            />
           </Link>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-bold text-brand">
-              {post.user.name}
-            </p>
+            <UserNameLink
+              name={post.user.name}
+              handle={post.user.handle}
+              className="truncate text-sm font-bold text-brand"
+            />
             <p className="mt-0.5 flex items-center gap-0.5 text-xs leading-[14px]">
               <span className="text-brand-soft">@</span>
-              <span className="truncate text-placeholder">
+              <Link
+                href={userProfilePath(post.user.handle)}
+                className="truncate text-placeholder"
+              >
                 {post.user.handle}
-              </span>
+              </Link>
               <span className="text-muted"> · {post.time}</span>
             </p>
           </div>
@@ -123,15 +152,30 @@ export default function PostDetailScreen({ postId }: { postId: string }) {
         </div>
 
         <div className="flex items-center gap-5 border-t border-line pt-3 text-brand">
-          <button type="button" aria-label="Like" className="inline-flex items-center gap-1.5 text-sm text-muted">
-            <HeartIcon className="size-5 text-brand" />
-            {post.likes}
+          <button
+            type="button"
+            aria-label={liked ? `Unlike ${post.title}` : `Like ${post.title}`}
+            aria-pressed={liked}
+            onClick={() => toggleLike({ id: resolvedId, title: post.title })}
+            className="inline-flex items-center gap-1.5 text-sm text-muted"
+          >
+            {liked ? (
+              <HeartFillIcon className="size-5 text-brand" />
+            ) : (
+              <HeartIcon className="size-5 text-brand" />
+            )}
+            {likes}
           </button>
           <span className="inline-flex items-center gap-1.5 text-sm text-muted">
             <CommentIcon className="size-5 text-brand" />
             {post.comments.length}
           </span>
-          <button type="button" aria-label="Share" className="ms-auto">
+          <button
+            type="button"
+            aria-label={`Share ${post.title}`}
+            onClick={onShare}
+            className="ms-auto"
+          >
             <ShareIcon className="size-5" />
           </button>
         </div>

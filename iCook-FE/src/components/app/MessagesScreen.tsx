@@ -1,6 +1,6 @@
 import Link from "next/link";
-import InboxTabs from "@/components/app/InboxTabs";
 import { SearchIcon } from "@/components/app/icons";
+import { CONVERSATIONS } from "@/components/app/messagesData";
 
 const friends = [
   { name: "Eleanor Pena", online: true },
@@ -8,30 +8,6 @@ const friends = [
   { name: "Bessie Cooper", online: false },
   { name: "Guy Hawkins", online: false },
   { name: "Savannah Nguyen", online: false },
-];
-
-const conversations = [
-  {
-    name: "Eleanor Pena",
-    handle: "eleanorpena",
-    last: "Anytime! Let me know how it turns out—I might have to come over for a taste!",
-    time: "NOW",
-    unread: true,
-  },
-  {
-    name: "Bessie Cooper",
-    handle: "bessiecooper",
-    last: "Alright! Talk Soon!",
-    time: "Dec 01",
-    unread: false,
-  },
-  {
-    name: "Guy Hawkins",
-    handle: "guyhawkins",
-    last: "Curry Chicken and White rice is the best, Absolutely Love it!",
-    time: "Nov 25",
-    unread: false,
-  },
 ];
 
 function initials(name: string) {
@@ -49,8 +25,6 @@ function handleFromName(name: string) {
 export default function MessagesScreen() {
   return (
     <div className="page">
-      <InboxTabs active="messages" />
-
       <div className="flex flex-col gap-2 py-2">
         <div className="px-3">
           <div className="search-field">
@@ -90,7 +64,7 @@ export default function MessagesScreen() {
         </div>
 
         <ul className="list-stack">
-          {conversations.map((c) => (
+          {CONVERSATIONS.map((c) => (
             <li key={c.name}>
               <Link
                 href="/messages/1"

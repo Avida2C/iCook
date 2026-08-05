@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { HeartIcon, HeartFillIcon } from "@/components/app/icons";
 import RecipeThumbnail from "@/components/app/RecipeThumbnail";
 import {
   CATALOG_RECIPES,
@@ -28,18 +29,13 @@ function DiscoverRecipeCard({ recipe }: { recipe: CatalogRecipe }) {
           aria-label={saved ? `Unsave ${recipe.name}` : `Save ${recipe.name}`}
           aria-pressed={saved}
           onClick={() => toggleSave(recipe)}
-          className="absolute top-1.5 right-1.5 flex size-7 items-center justify-center rounded bg-brand p-1.5"
+          className="absolute top-1.5 right-1.5 flex size-7 items-center justify-center rounded bg-brand text-white"
         >
-          <img
-            src={
-              saved
-                ? "/icons/recipes/bookmark-fill.svg"
-                : "/icons/recipes/bookmark-empty.svg"
-            }
-            alt=""
-            aria-hidden
-            className="h-[13.5px] w-[10.83px]"
-          />
+          {saved ? (
+            <HeartFillIcon className="size-3.5" />
+          ) : (
+            <HeartIcon className="size-3.5" />
+          )}
         </button>
       </div>
 

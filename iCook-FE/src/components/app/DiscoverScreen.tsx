@@ -3,15 +3,20 @@
 import Link from "next/link";
 import {
   HeartIcon,
+  HeartFillIcon,
   CommentIcon,
-  BookmarkIcon,
-  BookmarkFillIcon,
+  ShareIcon,
 } from "@/components/app/icons";
 import RecipeThumbnail from "@/components/app/RecipeThumbnail";
+import UserAvatar from "@/components/app/UserAvatar";
+import UserNameLink from "@/components/app/UserNameLink";
+import { useLikedPosts } from "@/components/app/LikedPostsProvider";
 import {
   CATALOG_RECIPES,
   useSavedRecipes,
 } from "@/components/recipes/SavedRecipesProvider";
+import { absoluteAppUrl, shareContent } from "@/lib/share";
+import { userProfilePath } from "@/lib/userProfile";
 
 type FeedUser = { name: string; handle: string; initials: string };
 
@@ -194,14 +199,23 @@ const COMMUNITY_FEED: CommunityItem[] = [
 ];
 
 function Avatar({ user }: { user: FeedUser }) {
-  return <span className="avatar">{user.initials}</span>;
+  return (
+    <Link href={userProfilePath(user.handle)} aria-label={user.name}>
+      <UserAvatar initials={user.initials} handle={user.handle} />
+    </Link>
+  );
 }
 
 function Handle({ handle, time }: { handle: string; time: string }) {
   return (
     <p className="mt-0.5 flex items-center gap-0.5 text-xs leading-[14px]">
       <span className="text-brand-soft">@</span>
-      <span className="truncate text-placeholder">{handle}</span>
+      <Link
+        href={userProfilePath(handle)}
+        className="truncate text-placeholder"
+      >
+        {handle}
+      </Link>
       <span className="text-muted"> · {time}</span>
     </p>
   );
@@ -212,6 +226,15 @@ function RecipeFeedCard({ item }: { item: Extract<CommunityItem, { kind: "recipe
     CATALOG_RECIPES.find((r) => r.id === item.recipeId) ?? CATALOG_RECIPES[0];
   const { isSaved, toggleSave } = useSavedRecipes();
   const saved = isSaved(recipe.id);
+  const likes = item.likes + (saved ? 1 : 0);
+
+  const onShare = () => {
+    void shareContent({
+      title: item.recipeName,
+      text: item.preview,
+      url: absoluteAppUrl(`/recipe/${item.recipeId}`),
+    });
+  };
 
   return (
     <article className="feed-card flex flex-col gap-2">
@@ -219,24 +242,11 @@ function RecipeFeedCard({ item }: { item: Extract<CommunityItem, { kind: "recipe
         <Avatar user={item.user} />
         <div className="min-w-0 flex-1">
           <p className="text-sm leading-5 text-ink">
-            <span className="font-bold text-brand">{item.user.name}</span>{" "}
+            <UserNameLink name={item.user.name} handle={item.user.handle} />{" "}
             shared a recipe
           </p>
           <Handle handle={item.user.handle} time={item.time} />
         </div>
-        <button
-          type="button"
-          aria-label={saved ? `Unsave ${item.recipeName}` : `Save ${item.recipeName}`}
-          aria-pressed={saved}
-          onClick={() => toggleSave(recipe)}
-          className="shrink-0 text-brand"
-        >
-          {saved ? (
-            <BookmarkFillIcon className="size-6" />
-          ) : (
-            <BookmarkIcon className="size-6" />
-          )}
-        </button>
       </div>
 
       <Link
@@ -253,28 +263,60 @@ function RecipeFeedCard({ item }: { item: Extract<CommunityItem, { kind: "recipe
         </Link>
 
       <div className="flex items-center gap-4 text-xs text-muted">
-        <span className="inline-flex items-center gap-1">
-          <HeartIcon className="size-3.5 text-brand" />
-          {item.likes}
-        </span>
+        <button
+          type="button"
+          aria-label={
+            saved ? `Unsave ${item.recipeName}` : `Save ${item.recipeName}`
+          }
+          aria-pressed={saved}
+          onClick={() => toggleSave(recipe)}
+          className="inline-flex items-center gap-1"
+        >
+          {saved ? (
+            <HeartFillIcon className="size-3.5 text-brand" />
+          ) : (
+            <HeartIcon className="size-3.5 text-brand" />
+          )}
+          {likes}
+        </button>
         <span className="inline-flex items-center gap-1">
           <CommentIcon className="size-3.5 text-brand" />
           {item.comments}
         </span>
+        <button
+          type="button"
+          aria-label={`Share ${item.recipeName}`}
+          onClick={onShare}
+          className="ms-auto inline-flex items-center text-brand"
+        >
+          <ShareIcon className="size-3.5" />
+        </button>
       </div>
     </article>
   );
 }
 
 function PostFeedCard({ item }: { item: Extract<CommunityItem, { kind: "post" }> }) {
+  const { isLiked, likeCount, toggleLike } = useLikedPosts();
+  const liked = isLiked(item.postId);
+  const likes = likeCount(item.postId, item.likes);
+
+  const onShare = () => {
+    void shareContent({
+      title: item.title,
+      text: item.preview,
+      url: absoluteAppUrl(`/post/${item.postId}`),
+    });
+  };
+
   return (
     <article className="feed-card flex flex-col gap-2">
       <div className="flex gap-3">
         <Avatar user={item.user} />
         <div className="min-w-0 flex-1">
           <p className="text-sm leading-5 text-ink">
-            <span className="font-bold text-brand">{item.user.name}</span> shared
-            a post
+            <UserNameLink name={item.user.name} handle={item.user.handle} />{" "}
+            shared a post
           </p>
           <Handle handle={item.user.handle} time={item.time} />
         </div>
@@ -291,14 +333,32 @@ function PostFeedCard({ item }: { item: Extract<CommunityItem, { kind: "post" }>
       </Link>
 
       <div className="flex items-center gap-4 text-xs text-muted">
-        <span className="inline-flex items-center gap-1">
-          <HeartIcon className="size-3.5 text-brand" />
-          {item.likes}
-        </span>
+        <button
+          type="button"
+          aria-label={liked ? `Unlike ${item.title}` : `Like ${item.title}`}
+          aria-pressed={liked}
+          onClick={() => toggleLike({ id: item.postId, title: item.title })}
+          className="inline-flex items-center gap-1"
+        >
+          {liked ? (
+            <HeartFillIcon className="size-3.5 text-brand" />
+          ) : (
+            <HeartIcon className="size-3.5 text-brand" />
+          )}
+          {likes}
+        </button>
         <span className="inline-flex items-center gap-1">
           <CommentIcon className="size-3.5 text-brand" />
           {item.comments}
         </span>
+        <button
+          type="button"
+          aria-label={`Share ${item.title}`}
+          onClick={onShare}
+          className="ms-auto inline-flex items-center text-brand"
+        >
+          <ShareIcon className="size-3.5" />
+        </button>
       </div>
     </article>
   );

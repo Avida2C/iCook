@@ -1,4 +1,7 @@
 import Link from "next/link";
+import UserAvatar from "@/components/app/UserAvatar";
+import UserNameLink from "@/components/app/UserNameLink";
+import { userProfilePath } from "@/lib/userProfile";
 
 function initials(name: string) {
   return name
@@ -30,16 +33,26 @@ export default function PeoplePanel({
       ) : (
         names.map((name) => {
           const isFollowing = followingSet.has(name);
+          const handle = handleFromName(name);
           return (
             <li key={name} className="feed-card flex items-center gap-3">
-              <span className="avatar">{initials(name)}</span>
+              <Link href={userProfilePath(handle)} aria-label={name}>
+                <UserAvatar initials={initials(name)} handle={handle} />
+              </Link>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-bold text-brand">{name}</p>
+                <UserNameLink
+                  name={name}
+                  handle={handle}
+                  className="block truncate text-sm font-bold text-brand"
+                />
                 <p className="flex items-center gap-0.5 text-xs leading-[14px]">
                   <span className="text-brand-soft">@</span>
-                  <span className="truncate text-placeholder">
-                    {handleFromName(name)}
-                  </span>
+                  <Link
+                    href={userProfilePath(handle)}
+                    className="truncate text-placeholder"
+                  >
+                    {handle}
+                  </Link>
                 </p>
               </div>
               <Link

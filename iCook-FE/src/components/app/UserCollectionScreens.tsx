@@ -132,8 +132,8 @@ export function SavedRecipesPanel() {
     <div className="grid w-full grid-cols-3 gap-x-2 gap-y-2 bg-surface px-2 pt-2 pb-2">
       {savedRecipes.length === 0 ? (
         <p className="col-span-3 py-8 text-center text-base text-muted">
-          No saved recipes yet. Bookmark recipes from Recipes or Discover to see
-          them here.
+          No saved recipes yet. Like a recipe from Discover or Recipes to save
+          it here.
         </p>
       ) : (
         savedRecipes.map((recipe) => (
