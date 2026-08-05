@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { HeartIcon, HeartFillIcon } from "@/components/app/icons";
 import RecipeThumbnail from "@/components/app/RecipeThumbnail";
@@ -17,7 +18,7 @@ function DiscoverRecipeCard({ recipe }: { recipe: CatalogRecipe }) {
 
   return (
     <div className="flex min-w-0 flex-1 flex-col items-center rounded">
-      <div className="relative w-full max-w-[135px]">
+      <div className="relative w-full max-w-33.75">
         <Link
           href={`/recipe/${recipe.id}`}
           className="relative block h-32 w-full overflow-hidden rounded border-2 border-line-soft"
@@ -39,14 +40,14 @@ function DiscoverRecipeCard({ recipe }: { recipe: CatalogRecipe }) {
         </button>
       </div>
 
-      <div className="w-full max-w-[135px] p-1">
+      <div className="w-full max-w-33.75 p-1">
         <Link
           href={`/recipe/${recipe.id}`}
           className="block truncate text-sm leading-[16.8px] text-ink-secondary"
         >
           {recipe.name}
         </Link>
-        <div className="flex items-center gap-0.5 py-0.5 text-xs leading-[14px]">
+        <div className="flex items-center gap-0.5 py-0.5 text-xs leading-3.5">
           <span className="text-brand-soft">@</span>
           <span className="truncate text-placeholder">{recipe.author}</span>
         </div>
@@ -87,7 +88,7 @@ function RecipeSection({
 function FeaturedRecipeCta({ recipe }: { recipe: CatalogRecipe }) {
   return (
     <section className="relative w-full overflow-hidden rounded">
-      <RecipeThumbnail className="h-[248px] w-full rounded" iconClassName="h-16 w-[72px]" />
+      <RecipeThumbnail className="h-62 w-full rounded" iconClassName="h-16 w-[72px]" />
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-brand/75 px-8 pt-10 pb-4 text-app">
         <div className="flex w-full flex-col items-start rounded-lg border-2 border-app px-5 py-4">
           <p className="text-base leading-[22.4px]">{recipe.name}</p>
@@ -125,11 +126,13 @@ export default function RecipesScreen() {
               href={`/recipes/more?category=${cat.slug}`}
               className="flex flex-col items-center justify-center gap-1 pt-4"
             >
-              <span className="relative size-[55px] shrink-0 overflow-hidden">
-                <img
+              <span className="relative size-13.75 shrink-0 overflow-hidden">
+                <Image
                   src={cat.icon}
                   alt=""
-                  className="absolute inset-0 size-full object-cover"
+                  fill
+                  sizes="55px"
+                  className="object-cover"
                 />
               </span>
               <span className="w-full truncate text-center text-[14px] leading-[16.8px] font-normal text-ink-secondary">

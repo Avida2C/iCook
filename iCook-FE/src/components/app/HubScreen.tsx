@@ -99,7 +99,7 @@ export default function HubScreen() {
           <div className="flex shrink-0 items-center gap-2 px-3 text-xs font-bold text-ink-secondary">
             <span className="min-w-0 flex-1">Ingredient</span>
             <span className="w-16 text-center">Amount</span>
-            <span className="w-[4.5rem] text-center">Unit</span>
+            <span className="w-18 text-center">Unit</span>
             <span className="w-8" />
           </div>
 
@@ -116,21 +116,21 @@ export default function HubScreen() {
                 >
                   <input
                     aria-label="Ingredient"
-                    className="field min-w-0 flex-1 !px-2.5 !py-2 text-sm"
+                    className="field min-w-0 flex-1 px-2.5! py-2! text-sm"
                     value={item.name}
                     onChange={(e) => updateItem(i, "name", e.target.value)}
                     placeholder="Ingredient"
                   />
                   <input
                     aria-label="Amount"
-                    className="field w-16 shrink-0 !px-2 !py-2 text-center text-sm font-bold"
+                    className="field w-16 shrink-0 px-2! py-2! text-center text-sm font-bold"
                     value={item.amount}
                     onChange={(e) => updateItem(i, "amount", e.target.value)}
                     placeholder="0"
                   />
                   <input
                     aria-label="Unit"
-                    className="field w-[4.5rem] shrink-0 !px-2 !py-2 text-center text-sm font-bold"
+                    className="field w-18 shrink-0 px-2! py-2! text-center text-sm font-bold"
                     value={item.unit}
                     onChange={(e) => updateItem(i, "unit", e.target.value)}
                     placeholder="unit"

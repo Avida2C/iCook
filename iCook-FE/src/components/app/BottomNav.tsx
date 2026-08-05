@@ -65,7 +65,7 @@ function NavIcon({
   leafClassName: string;
 }) {
   return (
-    <span className="relative flex size-[30px] shrink-0 items-center justify-center overflow-hidden px-1 py-0.5">
+    <span className="relative flex size-7.5 shrink-0 items-center justify-center overflow-hidden px-1 py-0.5">
       <span
         aria-hidden
         className={`relative block max-w-none shrink-0 bg-brand ${leafClassName}`}

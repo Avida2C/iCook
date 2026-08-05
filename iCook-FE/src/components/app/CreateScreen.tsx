@@ -15,9 +15,9 @@ export default function CreateScreen() {
   const [showGuidelines, setShowGuidelines] = useState(false);
 
   return (
-    <div className="min-h-full bg-surface p-[10px]">
+    <div className="min-h-full bg-surface p-2.5">
       <div className="flex flex-col gap-5 py-5">
-        <div className="flex flex-col gap-[5px]">
+        <div className="flex flex-col gap-1.25">
           <h1 className="text-base font-bold text-brand">Let&rsquo;s Create!</h1>
           <p className="text-base text-ink">
             Select an option to get started. You&rsquo;ll be guided
@@ -27,7 +27,7 @@ export default function CreateScreen() {
 
         <Link
           href="/create/recipe"
-          className="flex items-center gap-[15px] bg-brand px-4 py-2 text-white shadow-md transition-colors hover:bg-[#e85557]"
+          className="flex items-center gap-3.75 bg-brand px-4 py-2 text-white shadow-md transition-colors hover:bg-[#e85557]"
         >
           <EditIcon className="size-5" />
           <span className="text-2xl font-bold">Create a Recipe</span>
@@ -35,13 +35,13 @@ export default function CreateScreen() {
 
         <Link
           href="/create/post"
-          className="flex items-center gap-[15px] bg-brand px-4 py-2 text-white shadow-md transition-colors hover:bg-[#e85557]"
+          className="flex items-center gap-3.75 bg-brand px-4 py-2 text-white shadow-md transition-colors hover:bg-[#e85557]"
         >
           <EditIcon className="size-5" />
           <span className="text-2xl font-bold">Write a Post</span>
         </Link>
 
-        <div className="flex flex-col gap-[15px] py-2.5">
+        <div className="flex flex-col gap-3.75 py-2.5">
           <button
             type="button"
             onClick={() => setShowGuidelines((v) => !v)}

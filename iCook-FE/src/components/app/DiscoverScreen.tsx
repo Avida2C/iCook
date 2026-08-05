@@ -208,7 +208,7 @@ function Avatar({ user }: { user: FeedUser }) {
 
 function Handle({ handle, time }: { handle: string; time: string }) {
   return (
-    <p className="mt-0.5 flex items-center gap-0.5 text-xs leading-[14px]">
+    <p className="mt-0.5 flex items-center gap-0.5 text-xs leading-3.5">
       <span className="text-brand-soft">@</span>
       <Link
         href={userProfilePath(handle)}

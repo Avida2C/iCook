@@ -27,18 +27,24 @@ export default function SearchOverlay({
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
 
-  useEffect(() => {
-    if (open) {
-      const t = setTimeout(() => inputRef.current?.focus(), 200);
-      return () => clearTimeout(t);
-    }
+  const handleClose = () => {
     setQuery("");
+    onClose();
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    const t = setTimeout(() => inputRef.current?.focus(), 200);
+    return () => clearTimeout(t);
   }, [open]);
 
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        setQuery("");
+        onClose();
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -63,7 +69,7 @@ export default function SearchOverlay({
         type="button"
         aria-label="Close search"
         tabIndex={open ? 0 : -1}
-        onClick={onClose}
+        onClick={handleClose}
         className={`absolute inset-0 bg-black/40 transition-opacity duration-300 ${
           open ? "opacity-100" : "opacity-0"
         }`}
@@ -76,7 +82,7 @@ export default function SearchOverlay({
         }`}
       >
         <div className="flex shrink-0 items-center rounded-t-2xl bg-surface px-3 py-2.5 shadow-sm">
-          <div className="flex flex-1 items-center gap-2 rounded-[4px] border border-line bg-app px-3 py-2">
+          <div className="flex flex-1 items-center gap-2 rounded-sm border border-line bg-app px-3 py-2">
             <SearchIcon className="size-5 text-brand" />
             <input
               ref={inputRef}
@@ -110,7 +116,7 @@ export default function SearchOverlay({
                   <li key={`${r.type}-${r.name}`}>
                     <Link
                       href={r.href}
-                      onClick={onClose}
+                      onClick={handleClose}
                       className="flex items-center gap-3 rounded bg-surface p-2.5"
                     >
                       <RecipeThumbnail
