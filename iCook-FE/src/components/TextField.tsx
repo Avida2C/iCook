@@ -5,6 +5,8 @@ type TextFieldProps = {
   placeholder?: string;
   autoComplete?: string;
   required?: boolean;
+  value?: string;
+  onChange?: (value: string) => void;
 };
 
 export default function TextField({
@@ -14,7 +16,18 @@ export default function TextField({
   placeholder,
   autoComplete,
   required,
+  value,
+  onChange,
 }: TextFieldProps) {
+  const controlled =
+    value !== undefined
+      ? {
+          value,
+          onChange: (e: { target: { value: string } }) =>
+            onChange?.(e.target.value),
+        }
+      : {};
+
   return (
     <div className="flex w-full flex-col gap-1">
       <label htmlFor={name} className="text-base font-semibold text-muted">
@@ -28,6 +41,7 @@ export default function TextField({
         autoComplete={autoComplete}
         required={required}
         className="field"
+        {...controlled}
       />
     </div>
   );

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import {
   ShieldIcon,
   KeyIcon,
@@ -276,6 +277,12 @@ export default function SecurityScreen() {
               authenticator, or backup codes
             </p>
           ) : null}
+          <Link
+            href="/change-password"
+            className="mt-1 text-base font-bold text-brand"
+          >
+            Change Password
+          </Link>
         </Card>
 
         {/* Authenticator */}

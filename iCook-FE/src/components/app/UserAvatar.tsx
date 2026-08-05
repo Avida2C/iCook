@@ -21,23 +21,33 @@ export function isCurrentUser(user: {
 export default function UserAvatar({
   initials,
   handle,
+  src,
   size = "md",
   me,
   className = "",
 }: {
   initials: string;
   handle?: string;
+  /** Optional profile image URL / data URL. */
+  src?: string | null;
   size?: AvatarSize;
   /** Force logged-in styling; otherwise inferred from handle/initials. */
   me?: boolean;
   className?: string;
 }) {
   const self = me ?? isCurrentUser({ handle, initials });
-  return (
-    <span
-      className={`${SIZE_CLASS[size]}${self ? " avatar-me" : ""}${className ? ` ${className}` : ""}`}
-    >
-      {initials}
-    </span>
-  );
+  const classes = `${SIZE_CLASS[size]}${self ? " avatar-me" : ""}${className ? ` ${className}` : ""}`;
+
+  if (src) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={src}
+        alt=""
+        className={`${classes} object-cover p-0`}
+      />
+    );
+  }
+
+  return <span className={classes}>{initials}</span>;
 }

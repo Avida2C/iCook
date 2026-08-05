@@ -169,19 +169,19 @@ body {
 
   /* Avatars */
   .avatar {
-    @apply grid size-11 shrink-0 place-items-center rounded-full bg-brand/15 text-sm font-bold text-brand;
+    @apply grid size-11 shrink-0 place-items-center overflow-hidden rounded-full bg-brand/15 text-sm font-bold text-brand;
   }
 
   .avatar-sm {
-    @apply grid size-9 shrink-0 place-items-center rounded-full bg-brand/15 text-xs font-bold text-brand;
+    @apply grid size-9 shrink-0 place-items-center overflow-hidden rounded-full bg-brand/15 text-xs font-bold text-brand;
   }
 
   .avatar-xs {
-    @apply grid size-7.5 shrink-0 place-items-center rounded-full bg-brand/15 text-xs font-bold text-brand;
+    @apply grid size-7.5 shrink-0 place-items-center overflow-hidden rounded-full bg-brand/15 text-xs font-bold text-brand;
   }
 
   .avatar-lg {
-    @apply grid size-14 shrink-0 place-items-center rounded-full bg-brand/15 text-lg font-bold text-brand;
+    @apply grid size-14 shrink-0 place-items-center overflow-hidden rounded-full bg-brand/15 text-lg font-bold text-brand;
   }
 
   /* Logged-in user avatar accent */

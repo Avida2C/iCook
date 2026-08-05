@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useTheme } from "@/components/theme/ThemeProvider";
 import { MoonIcon, SunIcon } from "@/components/app/icons";
-import { APP_VERSION } from "@/lib/appInfo";
+import { APP_SUPPORT_EMAIL, APP_VERSION } from "@/lib/appInfo";
 
 type Row =
   | { kind: "link"; label: string; href: string }
@@ -21,6 +21,8 @@ const sections: Section[] = [
     title: "Account",
     rows: [
       { kind: "link", label: "User Details", href: "/settings/user" },
+      { kind: "link", label: "Change Email", href: "/change-email" },
+      { kind: "link", label: "Change Password", href: "/change-password" },
     ],
   },
   {
@@ -48,6 +50,11 @@ const sections: Section[] = [
       { kind: "meta", label: "App Version", value: APP_VERSION },
       { kind: "link", label: "Terms of Service", href: "/settings/terms" },
       { kind: "link", label: "Privacy Policy", href: "/settings/privacy" },
+      {
+        kind: "link",
+        label: "Contact Support",
+        href: `mailto:${APP_SUPPORT_EMAIL}`,
+      },
     ],
   },
 ];
@@ -60,7 +67,7 @@ export default function MorePanel({
   onClose: () => void;
 }) {
   const router = useRouter();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const { theme, toggleTheme, accent, accents, setAccent } = useTheme();
 
   useEffect(() => {
@@ -218,12 +225,12 @@ export default function MorePanel({
                         </span>
                         {isDark ? (
                           <SunIcon
-                            className="size-[18px] shrink-0 text-brand"
+                            className="size-4.5 shrink-0 text-brand"
                             aria-hidden
                           />
                         ) : (
                           <MoonIcon
-                            className="size-[18px] shrink-0 text-brand"
+                            className="size-4.5 shrink-0 text-brand"
                             aria-hidden
                           />
                         )}

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import UserAvatar from "@/components/app/UserAvatar";
+import { useAuth } from "@/components/auth/AuthProvider";
 import { CURRENT_USER } from "@/components/app/user/data";
 
 const KNOWN_USERS: Record<
@@ -62,15 +63,18 @@ function resolveUser(handle: string) {
 
 export default function PublicProfileScreen({ handle }: { handle: string }) {
   const router = useRouter();
+  const { user: authUser } = useAuth();
+  const myHandle = authUser?.username ?? CURRENT_USER.handle;
   const user = resolveUser(handle);
+  const isSelf = user.handle === myHandle;
 
   useEffect(() => {
-    if (user.handle === CURRENT_USER.handle) {
+    if (isSelf) {
       router.replace("/user");
     }
-  }, [user.handle, router]);
+  }, [isSelf, router]);
 
-  if (user.handle === CURRENT_USER.handle) {
+  if (isSelf) {
     return null;
   }
 

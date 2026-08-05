@@ -63,6 +63,19 @@ export function setSecurity(email: string, settings: SecuritySettings) {
   writeStore(store);
 }
 
+/** Move security settings when the account email changes. */
+export function moveSecurity(fromEmail: string, toEmail: string) {
+  const from = fromEmail.trim().toLowerCase();
+  const to = toEmail.trim().toLowerCase();
+  if (from === to) return;
+  const store = readStore();
+  if (store[from]) {
+    store[to] = store[from];
+    delete store[from];
+    writeStore(store);
+  }
+}
+
 export function updateSecurity(
   email: string,
   updater: (prev: SecuritySettings) => SecuritySettings,
