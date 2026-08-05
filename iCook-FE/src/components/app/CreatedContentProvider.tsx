@@ -66,7 +66,11 @@ function readRecipes(): CreatedRecipe[] {
     const raw = localStorage.getItem(RECIPES_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map((r) => ({
+      ...r,
+      ingredients: Array.isArray(r?.ingredients) ? r.ingredients : [],
+    }));
   } catch {
     return [];
   }
@@ -153,6 +157,7 @@ export function CreatedContentProvider({ children }: { children: ReactNode }) {
         author: me.handle,
         category: input.category,
         bookmarkCount: 0,
+        ingredients: [],
         preview:
           input.preview?.trim() ||
           `A new ${input.category} recipe from ${me.name}.`,

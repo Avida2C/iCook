@@ -2,84 +2,23 @@
 
 import { useMemo, useState } from "react";
 import { SearchIcon, MinusCircleIcon } from "@/components/app/icons";
-
-type Item = { name: string; amount: string; unit: string };
-
-const initialItems: Item[] = [
-  { name: "Lemon", amount: "5", unit: "Whole" },
-  { name: "Garlic Cloves", amount: "2", unit: "Whole" },
-  { name: "Olive Oil", amount: "2", unit: "L" },
-  { name: "Dried Thyme", amount: "100", unit: "g" },
-  { name: "Dried Rosemary", amount: "100", unit: "g" },
-  { name: "Salt", amount: "1/4", unit: "tsp" },
-  { name: "Black Pepper", amount: "1/4", unit: "tsp" },
-];
-
-const commonIngredients = [
-  "Almonds",
-  "Black Pepper",
-  "Basil",
-  "Boneless Chicken",
-  "Carrots",
-  "Cinnamon",
-  "Dill",
-  "Dried Thyme",
-  "Dried Rosemary",
-  "Eggs",
-  "Flour",
-  "Garlic Cloves",
-  "Honey",
-  "Iceberg Lettuce",
-  "Jalapeños",
-  "Kale",
-  "Lemon",
-  "Milk",
-  "Nutmeg",
-  "Olive Oil",
-  "Parsley",
-  "Quinoa",
-  "Rosemary",
-  "Salt",
-  "Sugar",
-  "Thyme",
-  "Ugli Fruit",
-  "Vanilla Extract",
-  "Walnuts",
-  "Xanthan Gum",
-  "Yogurt",
-  "Zucchini",
-];
+import {
+  COMMON_INGREDIENTS,
+  usePantry,
+} from "@/components/pantry/PantryProvider";
 
 export default function HubScreen() {
-  const [items, setItems] = useState<Item[]>(initialItems);
+  const { items, addItem, removeItem, removeItemByName, updateItem } =
+    usePantry();
   const [query, setQuery] = useState("");
 
   const filtered = useMemo(
     () =>
-      commonIngredients.filter((i) =>
+      COMMON_INGREDIENTS.filter((i) =>
         i.toLowerCase().includes(query.trim().toLowerCase()),
       ),
     [query],
   );
-
-  function addItem(name: string) {
-    setItems((prev) =>
-      prev.some((i) => i.name === name)
-        ? prev
-        : [...prev, { name, amount: "1", unit: "" }],
-    );
-  }
-  function removeItem(index: number) {
-    setItems((prev) => prev.filter((_, i) => i !== index));
-  }
-  function removeItemByName(name: string) {
-    setItems((prev) => prev.filter((i) => i.name !== name));
-  }
-  function updateItem(index: number, key: keyof Item, value: string) {
-    setItems((prev) =>
-      prev.map((it, i) => (i === index ? { ...it, [key]: value } : it)),
-    );
-  }
 
   const addedNames = useMemo(
     () => new Set(items.map((i) => i.name.toLowerCase())),

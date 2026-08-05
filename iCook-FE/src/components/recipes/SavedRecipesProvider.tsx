@@ -30,6 +30,8 @@ export type CatalogRecipe = {
   category: Exclude<RecipeCategorySlug, "all" | "loved">;
   /** Community bookmark baseline (other users). Current user save adds +1 at runtime. */
   bookmarkCount: number;
+  /** Ingredient names used for pantry matching in search. */
+  ingredients: string[];
 };
 
 export const RECIPE_CATEGORIES = [
@@ -47,19 +49,110 @@ export const RECIPE_CATEGORIES = [
 
 /** Shared recipes that appear in Discover/Recipes and can be saved. */
 export const CATALOG_RECIPES: CatalogRecipe[] = [
-  { id: "1", name: "Ricotta Ravioli", author: "courtneyhenry", category: "pasta", bookmarkCount: 128 },
-  { id: "2", name: "Egg on Toast", author: "chefamy", category: "toasty", bookmarkCount: 96 },
-  { id: "3", name: "Blueberry Pancakes", author: "bakerben", category: "breakfast", bookmarkCount: 112 },
-  { id: "4", name: "Pasta Salad", author: "courtneyhenry", category: "lunch", bookmarkCount: 74 },
-  { id: "5", name: "Pork Roast", author: "grillguy", category: "dinner", bookmarkCount: 88 },
-  { id: "6", name: "Chocolate Cookies", author: "sweetsue", category: "sweets", bookmarkCount: 141 },
-  { id: "7", name: "Traditional Ravioli", author: "courtneyhenry", category: "pasta", bookmarkCount: 63 },
-  { id: "8", name: "Egg & Tomatoes on Toast", author: "chefamy", category: "toasty", bookmarkCount: 51 },
-  { id: "9", name: "Popcorn", author: "snacksam", category: "snacks", bookmarkCount: 39 },
-  { id: "10", name: "Roast Pork", author: "grillguy", category: "dinner", bookmarkCount: 57 },
-  { id: "11", name: "Salmon with Roast Potatoes", author: "fishfan", category: "dinner", bookmarkCount: 82 },
-  { id: "12", name: "Steak and Potato Jacket", author: "grillguy", category: "savoury", bookmarkCount: 69 },
-  { id: "13", name: "Raspberry Cheesecake", author: "sweetsue", category: "fruity", bookmarkCount: 104 },
+  {
+    id: "1",
+    name: "Ricotta Ravioli",
+    author: "courtneyhenry",
+    category: "pasta",
+    bookmarkCount: 128,
+    ingredients: ["Flour", "Eggs", "Ricotta", "Basil", "Olive Oil", "Salt", "Black Pepper", "Spinach", "Nutmeg"],
+  },
+  {
+    id: "2",
+    name: "Egg on Toast",
+    author: "chefamy",
+    category: "toasty",
+    bookmarkCount: 96,
+    ingredients: ["Eggs", "Olive Oil", "Salt", "Black Pepper", "Butter"],
+  },
+  {
+    id: "3",
+    name: "Blueberry Pancakes",
+    author: "bakerben",
+    category: "breakfast",
+    bookmarkCount: 112,
+    ingredients: ["Flour", "Eggs", "Milk", "Butter", "Sugar", "Blueberries", "Lemon"],
+  },
+  {
+    id: "4",
+    name: "Pasta Salad",
+    author: "courtneyhenry",
+    category: "lunch",
+    bookmarkCount: 74,
+    ingredients: ["Pasta", "Olive Oil", "Lemon", "Garlic Cloves", "Parsley", "Salt", "Black Pepper", "Tomatoes"],
+  },
+  {
+    id: "5",
+    name: "Pork Roast",
+    author: "grillguy",
+    category: "dinner",
+    bookmarkCount: 88,
+    ingredients: ["Pork", "Garlic Cloves", "Dried Rosemary", "Dried Thyme", "Olive Oil", "Salt", "Black Pepper"],
+  },
+  {
+    id: "6",
+    name: "Chocolate Cookies",
+    author: "sweetsue",
+    category: "sweets",
+    bookmarkCount: 141,
+    ingredients: ["Flour", "Butter", "Sugar", "Eggs", "Chocolate", "Vanilla Extract", "Salt"],
+  },
+  {
+    id: "7",
+    name: "Traditional Ravioli",
+    author: "courtneyhenry",
+    category: "pasta",
+    bookmarkCount: 63,
+    ingredients: ["Flour", "Eggs", "Ricotta", "Olive Oil", "Salt", "Basil"],
+  },
+  {
+    id: "8",
+    name: "Egg & Tomatoes on Toast",
+    author: "chefamy",
+    category: "toasty",
+    bookmarkCount: 51,
+    ingredients: ["Eggs", "Tomatoes", "Olive Oil", "Garlic Cloves", "Salt", "Black Pepper", "Basil"],
+  },
+  {
+    id: "9",
+    name: "Popcorn",
+    author: "snacksam",
+    category: "snacks",
+    bookmarkCount: 39,
+    ingredients: ["Olive Oil", "Salt", "Butter"],
+  },
+  {
+    id: "10",
+    name: "Roast Pork",
+    author: "grillguy",
+    category: "dinner",
+    bookmarkCount: 57,
+    ingredients: ["Pork", "Garlic Cloves", "Dried Rosemary", "Olive Oil", "Salt", "Black Pepper", "Lemon"],
+  },
+  {
+    id: "11",
+    name: "Salmon with Roast Potatoes",
+    author: "fishfan",
+    category: "dinner",
+    bookmarkCount: 82,
+    ingredients: ["Salmon", "Potatoes", "Olive Oil", "Lemon", "Dill", "Salt", "Black Pepper", "Garlic Cloves"],
+  },
+  {
+    id: "12",
+    name: "Steak and Potato Jacket",
+    author: "grillguy",
+    category: "savoury",
+    bookmarkCount: 69,
+    ingredients: ["Steak", "Potatoes", "Olive Oil", "Salt", "Black Pepper", "Garlic Cloves", "Butter"],
+  },
+  {
+    id: "13",
+    name: "Raspberry Cheesecake",
+    author: "sweetsue",
+    category: "fruity",
+    bookmarkCount: 104,
+    ingredients: ["Raspberries", "Sugar", "Butter", "Vanilla Extract", "Lemon", "Yogurt"],
+  },
 ];
 
 export function getCategoryLabel(slug: string | undefined): string {

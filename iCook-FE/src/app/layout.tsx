@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { LikedPostsProvider } from "@/components/app/LikedPostsProvider";
 import { CreatedContentProvider } from "@/components/app/CreatedContentProvider";
 import { ActivityFiltersProvider } from "@/components/app/user/ActivityFiltersProvider";
+import { PantryProvider } from "@/components/pantry/PantryProvider";
 import { SavedRecipesProvider } from "@/components/recipes/SavedRecipesProvider";
 
 const geistSans = Geist({
@@ -49,11 +50,15 @@ export default function RootLayout({
         <ThemeProvider>
           <AuthProvider>
             <SavedRecipesProvider>
-              <CreatedContentProvider>
-                <LikedPostsProvider>
-                  <ActivityFiltersProvider>{children}</ActivityFiltersProvider>
-                </LikedPostsProvider>
-              </CreatedContentProvider>
+              <PantryProvider>
+                <CreatedContentProvider>
+                  <LikedPostsProvider>
+                    <ActivityFiltersProvider>
+                      {children}
+                    </ActivityFiltersProvider>
+                  </LikedPostsProvider>
+                </CreatedContentProvider>
+              </PantryProvider>
             </SavedRecipesProvider>
           </AuthProvider>
         </ThemeProvider>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { HeartIcon, HeartFillIcon } from "@/components/app/icons";
 import RecipeAuthor from "@/components/app/RecipeAuthor";
 import RecipeThumbnail from "@/components/app/RecipeThumbnail";
+import { usePantry } from "@/components/pantry/PantryProvider";
 import {
   CATALOG_RECIPES,
   filterRecipesByCategory,
@@ -12,6 +13,7 @@ import {
   useSavedRecipes,
   type CatalogRecipe,
 } from "@/components/recipes/SavedRecipesProvider";
+import { rankRecipesByPantry } from "@/lib/pantryMatch";
 
 function MoreRecipeCard({ recipe }: { recipe: CatalogRecipe }) {
   const { isSaved, toggleSave } = useSavedRecipes();
@@ -62,26 +64,50 @@ export default function MoreRecipesScreen({
   sort?: string;
 }) {
   const { savedIds } = useSavedRecipes();
+  const { items: pantryItems } = usePantry();
   const byLoved = sort === "loved";
+  const byPantry = sort === "pantry";
 
+  const pantryNames = pantryItems.map((i) => i.name).filter((n) => n.trim());
   const scoped = filterRecipesByCategory(CATALOG_RECIPES, category);
-  const recipes = byLoved
-    ? sortByMostBookmarked(scoped, savedIds)
-    : scoped;
 
-  const title = byLoved
-    ? category && category !== "all"
-      ? `More to Love · ${getCategoryLabel(category)}`
-      : "More to Love!"
-    : getCategoryLabel(category);
+  const recipes: CatalogRecipe[] = byPantry
+    ? rankRecipesByPantry(CATALOG_RECIPES, pantryNames)
+    : byLoved
+      ? sortByMostBookmarked(scoped, savedIds)
+      : scoped;
+
+  const title = byPantry
+    ? "Recipes from my pantry"
+    : byLoved
+      ? category && category !== "all"
+        ? `More to Love · ${getCategoryLabel(category)}`
+        : "More to Love!"
+      : getCategoryLabel(category);
+
+  const emptyMessage = byPantry
+    ? pantryNames.length === 0
+      ? "Your pantry is empty — add ingredients to find matching recipes."
+      : "No recipes match your pantry ingredients yet."
+    : "No recipes in this category yet.";
 
   return (
     <div className="page">
       <section className="flex w-full flex-col gap-2 bg-surface px-2 pt-2 pb-4">
         <h1 className="text-xl leading-6 text-brand">{title}</h1>
-        {recipes.length === 0 ? (
+        {byPantry && pantryNames.length === 0 ? (
+          <div className="flex flex-col items-center gap-3 px-1 py-6">
+            <p className="text-center text-sm text-muted">{emptyMessage}</p>
+            <Link
+              href="/hub"
+              className="rounded bg-brand px-4 py-2 text-sm font-bold text-white"
+            >
+              Open pantry
+            </Link>
+          </div>
+        ) : recipes.length === 0 ? (
           <p className="px-1 py-6 text-center text-sm text-muted">
-            No recipes in this category yet.
+            {emptyMessage}
           </p>
         ) : (
           <div className="grid grid-cols-3 gap-2">
