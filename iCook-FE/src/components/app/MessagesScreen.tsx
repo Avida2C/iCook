@@ -30,6 +30,8 @@ export default function MessagesScreen() {
           <div className="search-field">
             <SearchIcon className="size-5 shrink-0 text-brand" />
             <input
+              id="messages-search"
+              name="messages-search"
               className="flex-1 bg-transparent text-sm text-ink outline-none placeholder:italic placeholder:text-muted"
               placeholder="Search messages"
               aria-label="Search messages"

@@ -62,6 +62,7 @@ export default function CreatePostScreen() {
           </button>
         </div>
         <input
+          id="post-title"
           name="title"
           required
           placeholder="5 Tips for Baking Perfect Cakes"
@@ -75,6 +76,7 @@ export default function CreatePostScreen() {
           Category <span className="text-brand">*</span>
         </span>
         <select
+          id="post-category"
           name="category"
           defaultValue=""
           required
@@ -110,6 +112,7 @@ export default function CreatePostScreen() {
             ))}
           </div>
           <textarea
+            id="post-content"
             name="content"
             rows={10}
             required

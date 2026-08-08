@@ -96,6 +96,8 @@ export default function UserScreen() {
             <div className="search-field">
               <SearchIcon className="size-5 shrink-0 text-brand" />
               <input
+                id="activity-search"
+                name="activity-search"
                 value={activityQuery}
                 onChange={(e) => setActivityQuery(e.target.value)}
                 className="flex-1 bg-transparent text-sm text-ink outline-none placeholder:italic placeholder:text-muted"

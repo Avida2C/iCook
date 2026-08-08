@@ -58,6 +58,7 @@ export default function CreateRecipeScreen() {
             </button>
           </div>
           <input
+            id="recipe-title"
             name="title"
             required
             placeholder="Traditional Garlic Bread"
@@ -71,6 +72,7 @@ export default function CreateRecipeScreen() {
             Category <span className="font-bold text-brand">*</span>
           </span>
           <select
+            id="recipe-category"
             name="category"
             defaultValue=""
             required

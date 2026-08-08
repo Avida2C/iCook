@@ -129,6 +129,8 @@ export default function ChatboxScreen() {
         onSubmit={send}
       >
         <input
+          id="chat-message"
+          name="message"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           className="field flex-1 !py-2 text-sm"

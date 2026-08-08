@@ -139,6 +139,8 @@ export default function SearchOverlay({
             <SearchIcon className="size-5 text-brand" />
             <input
               ref={inputRef}
+              id="global-search"
+              name="global-search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search recipes, creators, posts"

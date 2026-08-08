@@ -98,6 +98,8 @@ export default function SettingsUserScreen() {
               @
             </span>
             <input
+              id="username"
+              name="username"
               type="text"
               value={profile.username}
               readOnly
@@ -123,6 +125,7 @@ export default function SettingsUserScreen() {
               required
             />
             <input
+              id="lastName"
               name="lastName"
               className="field-sm"
               placeholder="Last name"

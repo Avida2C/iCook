@@ -387,6 +387,8 @@ export default function RecipeDetailScreen({
               onSubmit={(e) => e.preventDefault()}
             >
               <input
+                id="recipe-comment"
+                name="comment"
                 className="flex-1 bg-transparent py-1.5 text-base font-bold text-ink outline-none placeholder:text-muted"
                 placeholder="Write a comment!"
                 aria-label="Write a comment"

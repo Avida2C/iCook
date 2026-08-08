@@ -223,6 +223,8 @@ export default function PostDetailScreen({ postId }: { postId: string }) {
           onSubmit={(e) => e.preventDefault()}
         >
           <input
+            id="post-comment"
+            name="comment"
             className="flex-1 rounded bg-app px-2.5 py-2 text-base font-bold text-ink outline-none placeholder:text-muted"
             placeholder="Write a comment!"
             aria-label="Write a comment"

@@ -54,6 +54,8 @@ export default function HubScreen() {
                   className="feed-card flex items-center gap-2"
                 >
                   <input
+                    id={`pantry-name-${i}`}
+                    name={`pantry-name-${i}`}
                     aria-label="Ingredient"
                     className="field min-w-0 flex-1 px-2.5! py-2! text-sm"
                     value={item.name}
@@ -61,6 +63,8 @@ export default function HubScreen() {
                     placeholder="Ingredient"
                   />
                   <input
+                    id={`pantry-amount-${i}`}
+                    name={`pantry-amount-${i}`}
                     aria-label="Amount"
                     className="field w-16 shrink-0 px-2! py-2! text-center text-sm font-bold"
                     value={item.amount}
@@ -68,6 +72,8 @@ export default function HubScreen() {
                     placeholder="0"
                   />
                   <input
+                    id={`pantry-unit-${i}`}
+                    name={`pantry-unit-${i}`}
                     aria-label="Unit"
                     className="field w-18 shrink-0 px-2! py-2! text-center text-sm font-bold"
                     value={item.unit}
@@ -96,6 +102,8 @@ export default function HubScreen() {
             <div className="search-field">
               <SearchIcon className="size-5 shrink-0 text-brand" />
               <input
+                id="pantry-search"
+                name="pantry-search"
                 className="flex-1 bg-transparent text-sm text-ink outline-none placeholder:italic placeholder:text-muted"
                 placeholder="Search ingredients"
                 value={query}

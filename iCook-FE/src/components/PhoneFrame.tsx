@@ -54,9 +54,9 @@ function StatusBar({ chrome }: { chrome: "surface" | "clear" }) {
           : "text-white"
       }`}
     >
-      <span className="min-w-[3.25rem] tabular-nums">{time || "\u00a0"}</span>
+      <span className="min-w-13 tabular-nums">{time || "\u00a0"}</span>
 
-      <div className="absolute top-2.5 left-1/2 h-[1.65rem] w-[7.25rem] -translate-x-1/2 rounded-full bg-black">
+      <div className="absolute top-2.5 left-1/2 h-[1.65rem] w-29 -translate-x-1/2 rounded-full bg-black">
         <span className="absolute top-1/2 right-3 size-2 -translate-y-1/2 rounded-full bg-[#1a1a1c] ring-1 ring-[#2a2a2e]" />
       </div>
 
@@ -86,10 +86,10 @@ function StatusBar({ chrome }: { chrome: "surface" | "clear" }) {
           <path d="M7.5.4C3.35.4.05 2.85.05 2.85L1 3.8S3.85 1.7 7.5 1.7s6.5 2.1 6.5 2.1l.95-.95S11.65.4 7.5.4Z" />
         </svg>
         <span className="flex items-center gap-0.5">
-          <span className="relative flex h-[11px] w-[24px] items-center rounded-[3px] border border-current/40 p-px">
+          <span className="relative flex h-2.75 w-6 items-center rounded-[3px] border border-current/40 p-px">
             <span className="h-full w-[80%] rounded-[1.5px] bg-current" />
           </span>
-          <span className="h-[4px] w-[1.5px] rounded-r-sm bg-current/40" />
+          <span className="h-1 w-[1.5px] rounded-r-sm bg-current/40" />
         </span>
       </div>
     </div>
@@ -104,7 +104,7 @@ function HomeIndicator({ chrome }: { chrome: "surface" | "clear" }) {
         chrome === "surface" ? "bg-surface" : ""
       }`}
     >
-      <span className="h-[5px] w-[8.25rem] rounded-full bg-ink/30 dark:bg-white/35" />
+      <span className="h-1.25 w-33 rounded-full bg-ink/30 dark:bg-white/35" />
     </div>
   );
 }
@@ -132,24 +132,24 @@ export default function PhoneFrame({
       } sm:px-4 sm:py-5`}
     >
       <div
-        className={`phone-device relative w-full max-w-[400px] overflow-hidden bg-app shadow-xl sm:max-w-[24.375rem] sm:rounded-[2.75rem] sm:border-[0.625rem] sm:border-[#1a1c1e] sm:bg-[#1a1c1e] sm:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.35),0_0_0_1px_rgba(255,255,255,0.06)_inset] dark:sm:border-[#0c0d0f] dark:sm:bg-[#0c0d0f] ${heightClass} ${className}`}
+        className={`phone-device relative w-full max-w-100 overflow-hidden bg-app shadow-xl sm:max-w-97.5 sm:rounded-[2.75rem] sm:border-[0.625rem] sm:border-[#1a1c1e] sm:bg-[#1a1c1e] sm:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.35),0_0_0_1px_rgba(255,255,255,0.06)_inset] dark:sm:border-[#0c0d0f] dark:sm:bg-[#0c0d0f] ${heightClass} ${className}`}
       >
         {/* Side buttons */}
         <span
           aria-hidden
-          className="pointer-events-none absolute top-[7.5rem] -left-[0.8rem] hidden h-7 w-[0.18rem] rounded-l-sm bg-[#2a2d31] sm:block"
+          className="pointer-events-none absolute top-30 left-[-0.8rem] hidden h-7 w-[0.18rem] rounded-l-sm bg-[#2a2d31] sm:block"
         />
         <span
           aria-hidden
-          className="pointer-events-none absolute top-[10.25rem] -left-[0.8rem] hidden h-14 w-[0.18rem] rounded-l-sm bg-[#2a2d31] sm:block"
+          className="pointer-events-none absolute top-41 left-[-0.8rem] hidden h-14 w-[0.18rem] rounded-l-sm bg-[#2a2d31] sm:block"
         />
         <span
           aria-hidden
-          className="pointer-events-none absolute top-[14.5rem] -left-[0.8rem] hidden h-14 w-[0.18rem] rounded-l-sm bg-[#2a2d31] sm:block"
+          className="pointer-events-none absolute top-58 left-[-0.8rem] hidden h-14 w-[0.18rem] rounded-l-sm bg-[#2a2d31] sm:block"
         />
         <span
           aria-hidden
-          className="pointer-events-none absolute top-[11.5rem] -right-[0.8rem] hidden h-20 w-[0.18rem] rounded-r-sm bg-[#2a2d31] sm:block"
+          className="pointer-events-none absolute top-46 right-[-0.8rem] hidden h-20 w-[0.18rem] rounded-r-sm bg-[#2a2d31] sm:block"
         />
 
         {/* Screen */}

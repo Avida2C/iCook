@@ -323,11 +323,13 @@ export default function SecurityScreen() {
               <p className="break-all text-center font-mono text-xs text-muted">
                 {pendingSecret}
               </p>
-              <label className="flex flex-col gap-1">
+              <label htmlFor="authenticator-code" className="flex flex-col gap-1">
                 <span className="text-sm font-semibold text-muted">
                   Verification code
                 </span>
                 <input
+                  id="authenticator-code"
+                  name="authenticator-code"
                   value={verifyCode}
                   onChange={(e) => setVerifyCode(e.target.value)}
                   inputMode="numeric"

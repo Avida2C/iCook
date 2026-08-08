@@ -68,6 +68,7 @@ export default function AvatarPicker({
         <input
           ref={inputRef}
           id={inputId}
+          name="avatar"
           type="file"
           accept="image/jpeg,image/png,image/webp"
           className="sr-only"
