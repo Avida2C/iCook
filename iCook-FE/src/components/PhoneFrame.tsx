@@ -49,9 +49,7 @@ function StatusBar({ chrome }: { chrome: "surface" | "clear" }) {
     <div
       aria-hidden
       className={`pointer-events-none absolute inset-x-0 top-0 z-40 hidden h-11 items-end px-3 pb-3 text-[12px] font-semibold leading-none tracking-tight sm:flex ${
-        chrome === "surface"
-          ? "bg-surface text-ink dark:text-white"
-          : "text-white"
+        chrome === "surface" ? "text-muted" : "text-white/80"
       }`}
     >
       <span className="min-w-13 tabular-nums">{time || "\u00a0"}</span>
@@ -96,13 +94,11 @@ function StatusBar({ chrome }: { chrome: "surface" | "clear" }) {
   );
 }
 
-function HomeIndicator({ chrome }: { chrome: "surface" | "clear" }) {
+function HomeIndicator() {
   return (
     <div
       aria-hidden
-      className={`pointer-events-none absolute inset-x-0 bottom-0 z-40 hidden h-5 items-start justify-center pt-1.5 sm:flex ${
-        chrome === "surface" ? "bg-surface" : ""
-      }`}
+      className="pointer-events-none absolute inset-x-0 bottom-0 z-40 hidden h-5 items-start justify-center pt-1.5 sm:flex"
     >
       <span className="h-1.25 w-33 rounded-full bg-ink/30 dark:bg-white/35" />
     </div>
@@ -132,7 +128,7 @@ export default function PhoneFrame({
       } sm:px-4 sm:py-5`}
     >
       <div
-        className={`phone-device relative w-full max-w-100 overflow-hidden bg-app shadow-xl sm:max-w-97.5 sm:rounded-[2.75rem] sm:border-[0.625rem] sm:border-[#1a1c1e] sm:bg-[#1a1c1e] sm:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.35),0_0_0_1px_rgba(255,255,255,0.06)_inset] dark:sm:border-[#0c0d0f] dark:sm:bg-[#0c0d0f] ${heightClass} ${className}`}
+        className={`phone-device relative w-full max-w-100 overflow-hidden bg-app sm:max-w-97.5 sm:rounded-[2.75rem] sm:border-[0.625rem] sm:border-[#1a1c1e] sm:bg-[#1a1c1e] dark:sm:border-[#0c0d0f] dark:sm:bg-[#0c0d0f] ${heightClass} ${className}`}
       >
         {/* Side buttons */}
         <span
@@ -153,9 +149,9 @@ export default function PhoneFrame({
         />
 
         {/* Screen */}
-        <div className="relative flex h-full min-h-0 w-full flex-col overflow-hidden sm:rounded-[2.1rem]">
+        <div className="relative flex h-full min-h-0 w-full flex-col overflow-hidden pb-3 pt-2 sm:rounded-[2.1rem]">
           <StatusBar chrome={chrome} />
-          <HomeIndicator chrome={chrome} />
+          <HomeIndicator />
           {/* Safe-area insets reserve room for status bar + home indicator */}
           <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden sm:pt-11 sm:pb-5">
             {children}
