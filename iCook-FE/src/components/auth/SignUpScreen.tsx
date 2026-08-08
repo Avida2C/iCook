@@ -53,10 +53,8 @@ export default function SignUpScreen() {
   }
 
   return (
-    <>
-      {preparing ? <GettingAppReady /> : null}
-      <AuthCard>
-        <LogoSlogan />
+    <AuthCard overlay={preparing ? <GettingAppReady /> : null}>
+      <LogoSlogan />
         <h1 className="w-full text-2xl font-bold text-brand">Sign Up</h1>
 
         <form
@@ -182,6 +180,5 @@ export default function SignUpScreen() {
           </Link>
         </div>
       </AuthCard>
-    </>
   );
 }

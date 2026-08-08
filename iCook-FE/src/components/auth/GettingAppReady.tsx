@@ -12,10 +12,10 @@ export default function GettingAppReady({
       role="status"
       aria-live="polite"
       aria-busy="true"
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-5 bg-[linear-gradient(87.99deg,var(--brand)_39.02%,var(--brand-soft)_94.45%)]"
+      className="absolute inset-0 z-50 flex flex-col items-center justify-center gap-5 bg-[linear-gradient(87.99deg,var(--brand)_39.02%,var(--brand-soft)_94.45%)]"
     >
       <div
-        className="size-12 animate-spin rounded-full border-4 border-white/25 border-t-white"
+        className="size-[126px] animate-spin rounded-full border-[10px] border-white/25 border-t-white"
         aria-hidden
       />
       <div className="flex flex-col items-center gap-1 px-6 text-center">

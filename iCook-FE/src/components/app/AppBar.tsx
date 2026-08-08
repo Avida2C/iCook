@@ -12,7 +12,7 @@ export default function AppBar({
   const unreadUsers = unreadMessageUsers();
 
   return (
-    <header className="relative z-10 flex shrink-0 items-center justify-between bg-surface px-3 pb-1 pt-4 shadow-bar">
+    <header className="relative z-10 flex shrink-0 items-center justify-between bg-surface px-3 pt-4 pb-1 shadow-bar sm:pt-2">
       <Link href="/recipes" aria-label="iCook home">
         <Logo className="text-3xl" />
       </Link>

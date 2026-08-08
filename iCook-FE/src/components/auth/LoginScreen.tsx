@@ -194,21 +194,11 @@ export default function LoginScreen() {
   }
 
   return (
-    <>
-      {preparing ? <GettingAppReady /> : null}
-      <AuthCard>
+    <AuthCard overlay={preparing ? <GettingAppReady /> : null}>
       <LogoSlogan />
       <h1 className="w-full text-3xl font-bold text-brand">Log In</h1>
 
-      {step.kind !== "identifier" ? (
-        <button
-          type="button"
-          onClick={goBack}
-          className="flex items-center gap-1 self-start text-sm font-bold text-muted"
-        >
-          <BackIcon className="size-4" /> Back
-        </button>
-      ) : null}
+
 
       {step.kind === "identifier" ? (
         <form className="flex w-full flex-col gap-4" onSubmit={handleIdentifier}>
@@ -364,7 +354,15 @@ export default function LoginScreen() {
           ) : null}
         </div>
       ) : null}
-
+      {step.kind !== "identifier" ? (
+        <button
+          type="button"
+          onClick={goBack}
+          className="flex items-center mt-4 gap-1 self-start text-sm font-bold text-muted"
+        >
+          <BackIcon className="size-4" /> Return To Login
+        </button>
+      ) : null}
       {step.kind === "identifier" ? (
         <>
           <p className="mb-6 w-full rounded-sm bg-app px-3 py-2 text-center text-sm text-muted">
@@ -381,6 +379,5 @@ export default function LoginScreen() {
         </>
       ) : null}
     </AuthCard>
-    </>
   );
 }

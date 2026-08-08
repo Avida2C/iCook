@@ -6,12 +6,13 @@ import AppBar from "@/components/app/AppBar";
 import BottomNav from "@/components/app/BottomNav";
 import MorePanel from "@/components/app/MorePanel";
 import SearchOverlay from "@/components/app/SearchOverlay";
+import PhoneFrame from "@/components/PhoneFrame";
 import { useAuth } from "@/components/auth/AuthProvider";
 
 /**
  * Logged-in app frame: protects the route (redirects to /login when there's no
  * session), renders the shared top app bar and bottom navigation, and presents
- * a phone-width column centered on desktop.
+ * the UI inside a phone device on desktop.
  */
 export default function AppShell({ children }: { children: ReactNode }) {
   const router = useRouter();
@@ -26,8 +27,8 @@ export default function AppShell({ children }: { children: ReactNode }) {
   }, [loading, user, router]);
 
   return (
-    <div className="flex h-dvh justify-center bg-app-frame">
-      <div className="relative flex h-dvh w-full max-w-[400px] flex-col overflow-hidden bg-app shadow-xl">
+    <PhoneFrame>
+      <div className="relative flex h-full min-h-0 w-full flex-col overflow-hidden bg-app">
         {loading || !user ? (
           <div className="grid flex-1 place-items-center text-muted">
             Loading&hellip;
@@ -48,6 +49,6 @@ export default function AppShell({ children }: { children: ReactNode }) {
           </>
         )}
       </div>
-    </div>
+    </PhoneFrame>
   );
 }

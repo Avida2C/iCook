@@ -1,0 +1,90 @@
+================================================================================
+  iCook: Introduction & Overview
+  “Your Kitchen, Your Creativity.”
+================================================================================
+
+
+INTRODUCTION
+------------
+
+iCook is a social cooking app built for home cooks.
+
+Cooking at home is rarely just about following a recipe. It’s also about
+inspiration, the ingredients you already have, and the people you cook
+alongside: friends, family, or a wider community. iCook brings those
+pieces together in one place.
+
+The app is designed as a everyday kitchen companion: discover recipes,
+cook smarter with your pantry, share what you make, and stay connected
+with other cooks. The focus is creativity in your own kitchen, not
+restaurant cooking or professional meal prep.
+
+
+THE IDEA
+--------
+
+Most cooking apps lean hard in one direction: either a recipe library,
+a meal planner, or a social feed. iCook’s concept is to combine the
+practical and the social:
+
+  • Practical: find recipes, track what’s in your pantry, and match
+    dishes to ingredients you already own.
+  • Creative: save favorites, create your own recipes, and post what
+    you’re cooking.
+  • Social: follow other cooks, explore a community feed, and message
+    people who share your taste in food.
+
+The product vision is simple: help people cook more often, with more
+confidence, using what they have, and feel part of a cooking community
+while they do it.
+
+
+OVERVIEW
+--------
+
+iCook is organized around a few core experiences:
+
+  Discover
+    Browse recipes and cooking posts from the community. Like, comment,
+    and share content that inspires you.
+
+  Recipes
+    Explore recipes by category, open detailed guides with ingredients
+    and steps, and save the ones you want to cook later.
+
+  Pantry
+    Keep track of ingredients at home. Search and suggestions can favor
+    recipes that fit what you already have, so less food goes to waste
+    and planning feels easier.
+
+  Create
+    Publish your own recipes or short cooking posts. Your kitchen
+    becomes part of the feed, not only a place you consume content.
+
+  Profile & community
+    Build a cook profile, follow others, see activity, and browse saved
+    or created recipes. Messaging lets you stay in touch with cooks you
+    connect with.
+
+  Personalization
+    Themes, accents, and settings let the app feel like yours; security
+    options support a proper account experience.
+
+
+WHO IT’S FOR
+------------
+
+iCook is aimed at everyday home cooks: people who want ideas for dinner,
+help using what’s in the fridge, a place to save what works, and a light
+social layer around cooking. It is not aimed at professional chefs or
+commercial kitchens.
+
+
+IN ONE LINE
+-----------
+
+iCook is a social kitchen app that connects recipe discovery, pantry-smart
+cooking, and a community of home cooks.
+
+
+================================================================================

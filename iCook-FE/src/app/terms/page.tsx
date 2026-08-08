@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import LegalDocumentScreen from "@/components/app/LegalDocumentScreen";
+import PhoneFrame from "@/components/PhoneFrame";
 import { APP_NAME } from "@/lib/appInfo";
 
 export const metadata: Metadata = {
@@ -8,10 +9,10 @@ export const metadata: Metadata = {
 
 export default function TermsPage() {
   return (
-    <div className="flex min-h-dvh justify-center bg-app-frame">
-      <div className="flex min-h-dvh w-full max-w-100 flex-col bg-app shadow-xl">
+    <PhoneFrame>
+      <div className="flex h-full min-h-0 w-full flex-col overflow-y-auto bg-app">
         <LegalDocumentScreen doc="terms" />
       </div>
-    </div>
+    </PhoneFrame>
   );
 }

@@ -87,6 +87,20 @@ export type PasswordUpdate = {
   reauth: ReauthProof;
 };
 
+/** Proof required to reset a forgotten password (no password method). */
+export type RecoveryProof =
+  | { method: "authenticator"; code: string }
+  | { method: "passkey"; credentialId: string }
+  | { method: "backup"; code: string }
+  | { method: "email"; code: string };
+
+export type PasswordReset = {
+  email: string;
+  newPassword: string;
+  confirmPassword: string;
+  proof: RecoveryProof;
+};
+
 type StoredUser = User & { password?: string };
 type AuthResult = { ok: true } | { ok: false; error: string };
 
@@ -97,11 +111,26 @@ const MIN_PASSWORD_LENGTH = 8;
 /** Methods allowed to confirm sensitive account changes (no backup codes). */
 export type ReauthMethod = "authenticator" | "passkey" | "password";
 
+/** Methods for forgot-password recovery (never password). */
+export type RecoveryMethod =
+  | "authenticator"
+  | "passkey"
+  | "backup"
+  | "email";
+
 /** Prefer stronger / MFA options; password last and only when enabled. */
 const REAUTH_PRIORITY: ReauthMethod[] = [
   "authenticator",
   "passkey",
   "password",
+];
+
+/** Security methods first; Authenticate via Email always last. */
+const RECOVERY_PRIORITY: RecoveryMethod[] = [
+  "authenticator",
+  "passkey",
+  "backup",
+  "email",
 ];
 
 export const DEMO_CREDENTIALS = {
@@ -278,6 +307,71 @@ function listReauthMethods(found: StoredUser): ReauthMethod[] {
   return REAUTH_PRIORITY.filter((m) => available.has(m));
 }
 
+function listRecoveryMethods(found: StoredUser): RecoveryMethod[] {
+  const settings = getSecurity(found.email);
+  const available = new Set<RecoveryMethod>(["email"]);
+  if (settings.authenticator.enabled && settings.authenticator.secret) {
+    available.add("authenticator");
+  }
+  if (settings.passkeys.length > 0) available.add("passkey");
+  if (settings.backupCodes.length > 0) available.add("backup");
+  return RECOVERY_PRIORITY.filter((m) => available.has(m));
+}
+
+function checkRecoveryProof(
+  found: StoredUser,
+  proof: RecoveryProof,
+): AuthResult {
+  const settings = getSecurity(found.email);
+
+  if (proof.method === "passkey") {
+    const match = settings.passkeys.some(
+      (p) => p.credentialId === proof.credentialId,
+    );
+    if (!match) return { ok: false, error: "Unrecognized passkey." };
+    return { ok: true };
+  }
+
+  if (proof.method === "authenticator") {
+    if (!settings.authenticator.enabled || !settings.authenticator.secret) {
+      return {
+        ok: false,
+        error: "Authenticator app is not set up for this account.",
+      };
+    }
+    if (!verifyTotp(settings.authenticator.secret, proof.code)) {
+      return { ok: false, error: "Invalid or expired authentication code." };
+    }
+    return { ok: true };
+  }
+
+  if (proof.method === "backup") {
+    const remaining = consumeBackupCode(settings.backupCodes, proof.code);
+    if (!remaining) {
+      return { ok: false, error: "Invalid or already used backup code." };
+    }
+    return { ok: true };
+  }
+
+  // Email OTP requires a real mail backend — never accept a local/demo code.
+  return {
+    ok: false,
+    error:
+      "Email verification isn’t available yet. Use authenticator, passkey, or a backup code.",
+  };
+}
+
+/** Consume single-use recovery proofs after a successful password reset. */
+function consumeRecoveryProof(found: StoredUser, proof: RecoveryProof) {
+  if (proof.method === "backup") {
+    const settings = getSecurity(found.email);
+    const remaining = consumeBackupCode(settings.backupCodes, proof.code);
+    if (remaining) {
+      setSecurity(found.email, { ...settings, backupCodes: remaining });
+    }
+  }
+}
+
 type AuthContextValue = {
   user: User | null;
   loading: boolean;
@@ -301,6 +395,22 @@ type AuthContextValue = {
     | { ok: true; proof: Extract<ReauthProof, { method: "passkey" }> }
     | { ok: false; error: string }
   >;
+  /** Resolve recovery methods for forgot-password (email always included). */
+  resolveRecoveryMethods: (
+    identifier: string,
+  ) =>
+    | { ok: true; email: string; name?: string; methods: RecoveryMethod[] }
+    | { ok: false; error: string; demoLocked?: boolean; email?: string };
+  /** Simulate sending a recovery email (no local/demo OTP is issued). */
+  sendRecoveryEmailCode: (email: string) => AuthResult;
+  /** Prompt passkey for unauthenticated password recovery. */
+  confirmPasskeyRecovery: (email: string) => Promise<
+    | { ok: true; proof: Extract<RecoveryProof, { method: "passkey" }> }
+    | { ok: false; error: string }
+  >;
+  /** Validate a recovery proof without consuming single-use codes. */
+  validateRecoveryProof: (email: string, proof: RecoveryProof) => AuthResult;
+  resetPassword: (update: PasswordReset) => AuthResult;
   signup: (input: SignupInput) => AuthResult;
   updateProfile: (update: ProfileUpdate) => AuthResult;
   updateEmail: (update: EmailUpdate) => AuthResult;
@@ -614,6 +724,128 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [user?.email]);
 
+  const resolveRecoveryMethods = useCallback((identifier: string) => {
+    const id = identifier.trim();
+    if (!id) {
+      return { ok: false as const, error: "Enter your email or username." };
+    }
+    const found = findUser(id);
+    if (!found) {
+      return {
+        ok: false as const,
+        error: "No account found for that email.",
+      };
+    }
+    if (isDemoAccount(found.email)) {
+      return {
+        ok: false as const,
+        error: DEMO_LOCK_ERROR,
+        demoLocked: true as const,
+        email: found.email,
+      };
+    }
+    return {
+      ok: true as const,
+      email: found.email,
+      name: found.name,
+      methods: listRecoveryMethods(found),
+    };
+  }, []);
+
+  const sendRecoveryEmailCode = useCallback((email: string): AuthResult => {
+    const found = findUser(email);
+    if (!found) return { ok: false, error: "No account found." };
+    if (isDemoAccount(found.email)) {
+      return { ok: false, error: DEMO_LOCK_ERROR };
+    }
+    // Stand-in only: no code is stored or returned. Real delivery needs a backend.
+    return { ok: true };
+  }, []);
+
+  const confirmPasskeyRecovery = useCallback(async (email: string) => {
+    const found = findUser(email);
+    if (!found) return { ok: false as const, error: "No account found." };
+    if (isDemoAccount(found.email)) {
+      return { ok: false as const, error: DEMO_LOCK_ERROR };
+    }
+    const settings = getSecurity(found.email);
+    if (settings.passkeys.length === 0) {
+      return { ok: false as const, error: "No passkeys registered." };
+    }
+    try {
+      const credentialId = await assertPasskey(
+        settings.passkeys.map((p) => p.credentialId),
+      );
+      const match = settings.passkeys.some(
+        (p) => p.credentialId === credentialId,
+      );
+      if (!match) {
+        return { ok: false as const, error: "Unrecognized passkey." };
+      }
+      return {
+        ok: true as const,
+        proof: { method: "passkey" as const, credentialId },
+      };
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Passkey confirmation failed.";
+      return { ok: false as const, error: message };
+    }
+  }, []);
+
+  const validateRecoveryProof = useCallback(
+    (email: string, proof: RecoveryProof): AuthResult => {
+      const found = findUser(email);
+      if (!found) return { ok: false, error: "No account found." };
+      if (isDemoAccount(found.email)) {
+        return { ok: false, error: DEMO_LOCK_ERROR };
+      }
+      return checkRecoveryProof(found, proof);
+    },
+    [],
+  );
+
+  const resetPassword = useCallback((update: PasswordReset): AuthResult => {
+    const found = findUser(update.email);
+    if (!found) return { ok: false, error: "No account found." };
+    if (isDemoAccount(found.email)) {
+      return { ok: false, error: DEMO_LOCK_ERROR };
+    }
+
+    const passwordError = validateNewPassword(update.newPassword);
+    if (passwordError) return { ok: false, error: passwordError };
+    if (update.newPassword !== update.confirmPassword) {
+      return { ok: false, error: "New passwords do not match." };
+    }
+    if (found.password && found.password === update.newPassword) {
+      return {
+        ok: false,
+        error: "New password must be different from your current password.",
+      };
+    }
+
+    const verified = checkRecoveryProof(found, update.proof);
+    if (!verified.ok) return verified;
+
+    const users = readUsers();
+    const idx = users.findIndex(
+      (u) => u.email.toLowerCase() === found.email.toLowerCase(),
+    );
+    if (idx < 0) return { ok: false, error: "Account not found." };
+
+    const next: StoredUser = { ...users[idx], password: update.newPassword };
+    users[idx] = next;
+    writeUsers(users);
+    consumeRecoveryProof(found, update.proof);
+
+    const settings = getSecurity(next.email);
+    if (!settings.passwordEnabled) {
+      setSecurity(next.email, { ...settings, passwordEnabled: true });
+    }
+
+    return { ok: true };
+  }, []);
+
   const updateEmail = useCallback(
     (update: EmailUpdate): AuthResult => {
       if (!user?.email) {
@@ -726,6 +958,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         saveSecuritySettings,
         getReauthMethods,
         confirmPasskeyReauth,
+        resolveRecoveryMethods,
+        sendRecoveryEmailCode,
+        confirmPasskeyRecovery,
+        validateRecoveryProof,
+        resetPassword,
         signup,
         updateProfile,
         updateEmail,

@@ -99,7 +99,7 @@ export default function BottomNav({
   const neutral = isNeutralPath(pathname);
 
   return (
-    <nav className="flex shrink-0 items-start gap-2 bg-surface px-2 pb-4 pt-2 shadow-nav">
+    <nav className="flex shrink-0 items-start gap-2 bg-surface px-2 pt-2 pb-4 shadow-nav sm:pb-2">
       {tabs.map((tab) => {
         if (tab.more) {
           return (
