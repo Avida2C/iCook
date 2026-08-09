@@ -32,6 +32,13 @@ type Step =
       name?: string;
       methods: LoginMethod[];
       method: LoginMethod;
+    }
+  | {
+      kind: "emailCode";
+      email: string;
+      name?: string;
+      methods: LoginMethod[];
+      demoCode: string;
     };
 
 const METHOD_META: Record<
@@ -65,6 +72,8 @@ export default function LoginScreen() {
   const {
     resolveLoginMethods,
     loginWithPassword,
+    resendLoginEmailCode,
+    confirmLoginEmailCode,
     loginWithAuthenticator,
     loginWithBackupCode,
     loginWithPasskey,
@@ -134,13 +143,27 @@ export default function LoginScreen() {
     const data = new FormData(event.currentTarget);
 
     try {
-      let result;
       if (step.method === "password") {
-        result = loginWithPassword(
+        const result = loginWithPassword(
           step.email,
           String(data.get("password") ?? ""),
         );
-      } else if (step.method === "authenticator") {
+        if (!result.ok) {
+          setError(result.error);
+          return;
+        }
+        setStep({
+          kind: "emailCode",
+          email: result.email,
+          name: step.name,
+          methods: step.methods,
+          demoCode: result.demoCode,
+        });
+        return;
+      }
+
+      let result;
+      if (step.method === "authenticator") {
         result = loginWithAuthenticator(
           step.email,
           String(data.get("code") ?? ""),
@@ -164,8 +187,50 @@ export default function LoginScreen() {
     }
   }
 
+  async function handleEmailCode(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (step.kind !== "emailCode") return;
+    setError(null);
+    setBusy(true);
+    const data = new FormData(event.currentTarget);
+    try {
+      const result = confirmLoginEmailCode(
+        step.email,
+        String(data.get("code") ?? ""),
+      );
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      await succeed();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function resendCode() {
+    if (step.kind !== "emailCode") return;
+    setError(null);
+    const result = resendLoginEmailCode(step.email);
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+    setStep({ ...step, demoCode: result.demoCode });
+  }
+
   function goBack() {
     setError(null);
+    if (step.kind === "emailCode") {
+      setStep({
+        kind: "challenge",
+        email: step.email,
+        name: step.name,
+        methods: step.methods,
+        method: "password",
+      });
+      return;
+    }
     if (step.kind === "challenge" && step.methods.length > 1) {
       setStep({
         kind: "methods",
@@ -197,8 +262,6 @@ export default function LoginScreen() {
     <AuthCard overlay={preparing ? <GettingAppReady /> : null}>
       <LogoSlogan />
       <h1 className="w-full text-3xl font-bold text-brand">Log In</h1>
-
-
 
       {step.kind === "identifier" ? (
         <form className="flex w-full flex-col gap-4" onSubmit={handleIdentifier}>
@@ -296,17 +359,23 @@ export default function LoginScreen() {
           ) : (
             <form
               className="flex w-full flex-col gap-4"
-              onSubmit={handleChallenge}
+              onSubmit={(e) => void handleChallenge(e)}
             >
               {step.method === "password" ? (
-                <TextField
-                  label="Password"
-                  name="password"
-                  type="password"
-                  placeholder="password"
-                  autoComplete="current-password"
-                  required
-                />
+                <>
+                  <TextField
+                    label="Password"
+                    name="password"
+                    type="password"
+                    placeholder="password"
+                    autoComplete="current-password"
+                    required
+                  />
+                  <p className="text-sm text-muted">
+                    After your password is verified, we’ll email a code to
+                    confirm it’s you.
+                  </p>
+                </>
               ) : (
                 <TextField
                   label={
@@ -330,7 +399,11 @@ export default function LoginScreen() {
                 </p>
               ) : null}
               <PrimaryButton>
-                {busy ? "Signing in…" : "Log In"}
+                {busy
+                  ? "Checking…"
+                  : step.method === "password"
+                    ? "Continue"
+                    : "Log In"}
               </PrimaryButton>
             </form>
           )}
@@ -354,6 +427,64 @@ export default function LoginScreen() {
           ) : null}
         </div>
       ) : null}
+
+      {step.kind === "emailCode" ? (
+        <form
+          className="flex w-full flex-col gap-4"
+          onSubmit={(e) => void handleEmailCode(e)}
+        >
+          <p className="text-base text-muted">
+            Email verification ·{" "}
+            <span className="font-bold text-ink">{step.email}</span>
+          </p>
+          <p className="text-sm text-muted">
+            Enter the 6-digit code we sent to your email to finish signing in.
+          </p>
+          <p className="rounded border border-line bg-app px-3 py-2 text-sm text-muted">
+            Email delivery isn’t connected in this local build. Your code is{" "}
+            <span className="font-bold text-ink">{step.demoCode}</span> (expires
+            in 10 minutes).
+          </p>
+          <TextField
+            label="Verification code"
+            name="code"
+            placeholder="6-digit code"
+            autoComplete="one-time-code"
+            required
+          />
+          {error ? (
+            <p role="alert" className="text-base font-bold text-brand">
+              {error}
+            </p>
+          ) : null}
+          <PrimaryButton>{busy ? "Signing in…" : "Log In"}</PrimaryButton>
+          <button
+            type="button"
+            onClick={resendCode}
+            className="text-sm font-bold text-brand self-start"
+          >
+            Resend code
+          </button>
+          {step.methods.length > 1 ? (
+            <button
+              type="button"
+              onClick={() => {
+                setError(null);
+                setStep({
+                  kind: "methods",
+                  email: step.email,
+                  name: step.name,
+                  methods: step.methods,
+                });
+              }}
+              className="text-sm font-bold text-brand self-start"
+            >
+              Try another method
+            </button>
+          ) : null}
+        </form>
+      ) : null}
+
       {step.kind !== "identifier" ? (
         <button
           type="button"

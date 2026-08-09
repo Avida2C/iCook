@@ -1,3 +1,8 @@
+"use client";
+
+import { useState } from "react";
+import { EyeIcon, EyeOffIcon } from "@/components/app/icons";
+
 type TextFieldProps = {
   label: string;
   name: string;
@@ -19,6 +24,9 @@ export default function TextField({
   value,
   onChange,
 }: TextFieldProps) {
+  const isPassword = type === "password";
+  const [visible, setVisible] = useState(false);
+
   const controlled =
     value !== undefined
       ? {
@@ -33,16 +41,33 @@ export default function TextField({
       <label htmlFor={name} className="text-base font-semibold text-muted">
         {label}
       </label>
-      <input
-        id={name}
-        name={name}
-        type={type}
-        placeholder={placeholder}
-        autoComplete={autoComplete}
-        required={required}
-        className="field"
-        {...controlled}
-      />
+      <div className={isPassword ? "relative" : undefined}>
+        <input
+          id={name}
+          name={name}
+          type={isPassword && visible ? "text" : type}
+          placeholder={placeholder}
+          autoComplete={autoComplete}
+          required={required}
+          className={isPassword ? "field pr-11" : "field"}
+          {...controlled}
+        />
+        {isPassword ? (
+          <button
+            type="button"
+            onClick={() => setVisible((v) => !v)}
+            className="absolute top-1/2 right-2.5 -translate-y-1/2 rounded p-1 text-muted transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+            aria-label={visible ? "Hide password" : "Show password"}
+            aria-pressed={visible}
+          >
+            {visible ? (
+              <EyeOffIcon className="size-5" aria-hidden />
+            ) : (
+              <EyeIcon className="size-5" aria-hidden />
+            )}
+          </button>
+        ) : null}
+      </div>
     </div>
   );
 }

@@ -16,6 +16,7 @@ import {
 import {
   BackIcon,
   KeyIcon,
+  MailIcon,
   ShieldIcon,
   SmartphoneIcon,
 } from "@/components/app/icons";
@@ -24,20 +25,25 @@ const METHOD_META: Record<
   ReauthMethod,
   { label: string; hint: string; icon: React.ReactNode }
 > = {
-  authenticator: {
-    label: "Authenticator app",
-    hint: "6-digit code from your authenticator",
-    icon: <ShieldIcon className="size-5" />,
-  },
   passkey: {
     label: "Passkey",
     hint: "Face ID, fingerprint, or security key",
     icon: <SmartphoneIcon className="size-5" />,
   },
-  password: {
-    label: "Password",
-    hint: "Use your account password",
+  authenticator: {
+    label: "Authenticator app",
+    hint: "6-digit code from your authenticator",
+    icon: <ShieldIcon className="size-5" />,
+  },
+  backup: {
+    label: "Backup code",
+    hint: "One-time authentication code",
     icon: <KeyIcon className="size-5" />,
+  },
+  email: {
+    label: "Authenticate via Email",
+    hint: "Send a one-time code to your email",
+    icon: <MailIcon className="size-5" />,
   },
 };
 
@@ -58,6 +64,7 @@ export default function ChangePasswordScreen() {
     loading,
     getReauthMethods,
     confirmPasskeyReauth,
+    sendRecoveryEmailCode,
     changePassword,
   } = useAuth();
 
@@ -66,6 +73,7 @@ export default function ChangePasswordScreen() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
@@ -75,6 +83,7 @@ export default function ChangePasswordScreen() {
 
   function goToPreviousStep() {
     setError(null);
+    setEmailSent(false);
     if (step.kind === "challenge" && step.methods.length > 1) {
       setStep({ kind: "methods", methods: step.methods });
       return;
@@ -84,9 +93,22 @@ export default function ChangePasswordScreen() {
     }
   }
 
+  function notifyEmailSent() {
+    if (!user?.email) return;
+    setError(null);
+    const result = sendRecoveryEmailCode(user.email);
+    if (!result.ok) {
+      setEmailSent(false);
+      setError(result.error);
+      return;
+    }
+    setEmailSent(true);
+  }
+
   function handleDetails(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    setEmailSent(false);
     if (newPassword.length < 8) {
       setError("Password must be at least 8 characters.");
       return;
@@ -98,12 +120,18 @@ export default function ChangePasswordScreen() {
     const methods = getReauthMethods();
     if (methods.length === 0) {
       setError(
-        "Set up an authenticator or passkey in Security before changing your password.",
+        "Set up a passkey, authenticator, or backup codes in Security before changing your password.",
       );
       return;
     }
     if (methods.length === 1) {
-      setStep({ kind: "challenge", methods, method: methods[0] });
+      const method = methods[0];
+      setStep({ kind: "challenge", methods, method });
+      if (method === "email") {
+        notifyEmailSent();
+      } else if (method === "passkey") {
+        void runWithProof({ method: "passkey", credentialId: "" }, true);
+      }
       return;
     }
     setStep({ kind: "methods", methods });
@@ -112,9 +140,12 @@ export default function ChangePasswordScreen() {
   function pickMethod(method: ReauthMethod) {
     if (step.kind !== "methods") return;
     setError(null);
+    setEmailSent(false);
     setStep({ kind: "challenge", methods: step.methods, method });
     if (method === "passkey") {
       void runWithProof({ method: "passkey", credentialId: "" }, true);
+    } else if (method === "email") {
+      notifyEmailSent();
     }
   }
 
@@ -162,10 +193,12 @@ export default function ChangePasswordScreen() {
       });
       return;
     }
-    await runWithProof({
-      method: "password",
-      password: String(data.get("password") ?? ""),
-    });
+    if (step.method === "backup") {
+      await runWithProof({
+        method: "backup",
+        code: String(data.get("code") ?? ""),
+      });
+    }
   }
 
   if (loading || !user) {
@@ -238,8 +271,7 @@ export default function ChangePasswordScreen() {
             Confirm it’s you before updating your password.
           </p>
           <p className="text-sm text-muted">
-            Choose how you want to confirm. Methods come from your Security
-            settings.
+            Select your preferred verification method to proceed:
           </p>
           <ul className="flex flex-col gap-2">
             {step.methods.map((method) => {
@@ -306,29 +338,49 @@ export default function ChangePasswordScreen() {
                 </p>
               ) : null}
             </div>
+          ) : step.method === "email" ? (
+            <div className="flex w-full flex-col gap-4">
+              <p className="text-sm text-muted">
+                {emailSent ? (
+                  <>
+                    If an account exists for{" "}
+                    <span className="font-bold text-ink">{user.email}</span>, a
+                    verification message would be sent there. Email delivery
+                    isn’t connected in this local build, so this method can’t
+                    change your password here.
+                  </>
+                ) : (
+                  "Sending verification email…"
+                )}
+              </p>
+              <p className="text-sm text-muted">
+                To change your password in this demo, use authenticator, passkey,
+                or a backup code from Security settings.
+              </p>
+              {error ? (
+                <p role="alert" className="text-base font-bold text-brand">
+                  {error}
+                </p>
+              ) : null}
+            </div>
           ) : (
             <form
               className="flex w-full flex-col gap-4"
               onSubmit={(e) => void handleChallenge(e)}
             >
-              {step.method === "password" ? (
-                <TextField
-                  label="Current password"
-                  name="password"
-                  type="password"
-                  placeholder="password"
-                  autoComplete="current-password"
-                  required
-                />
-              ) : (
-                <TextField
-                  label="Authentication code"
-                  name="code"
-                  placeholder="6-digit code"
-                  autoComplete="one-time-code"
-                  required
-                />
-              )}
+              <TextField
+                label={
+                  step.method === "authenticator"
+                    ? "Authentication code"
+                    : "Backup code"
+                }
+                name="code"
+                placeholder={
+                  step.method === "authenticator" ? "6-digit code" : "XXXX-XXXX"
+                }
+                autoComplete="one-time-code"
+                required
+              />
               {error ? (
                 <p role="alert" className="text-base font-bold text-brand">
                   {error}
@@ -345,6 +397,7 @@ export default function ChangePasswordScreen() {
               type="button"
               onClick={() => {
                 setError(null);
+                setEmailSent(false);
                 setStep({ kind: "methods", methods: step.methods });
               }}
               className="text-sm font-bold text-brand"

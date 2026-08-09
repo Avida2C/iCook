@@ -44,6 +44,8 @@ import {
   FiSun,
   FiMoon,
   FiFilter,
+  FiEye,
+  FiEyeOff,
 } from "react-icons/fi";
 import {
   FaPlay,
@@ -104,6 +106,8 @@ export const ShieldIcon = FiShield;
 export const KeyIcon = FiKey;
 export const SmartphoneIcon = FiSmartphone;
 export const MailIcon = FiMail;
+export const EyeIcon = FiEye;
+export const EyeOffIcon = FiEyeOff;
 export const CopyIcon = FiCopy;
 export const RefreshIcon = FiRefreshCw;
 export const CheckIcon = FiCheck;

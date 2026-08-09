@@ -69,11 +69,15 @@ export type ProfileUpdate = {
   avatarUrl?: string | null;
 };
 
-/** Proof required before changing email or password. */
-export type ReauthProof =
-  | { method: "password"; password: string }
+/** Proof required to reset a forgotten password (no password method). */
+export type RecoveryProof =
   | { method: "authenticator"; code: string }
-  | { method: "passkey"; credentialId: string };
+  | { method: "passkey"; credentialId: string }
+  | { method: "backup"; code: string }
+  | { method: "email"; code: string };
+
+/** Proof required before changing email or password (same as recovery). */
+export type ReauthProof = RecoveryProof;
 
 export type EmailUpdate = {
   email: string;
@@ -87,13 +91,6 @@ export type PasswordUpdate = {
   reauth: ReauthProof;
 };
 
-/** Proof required to reset a forgotten password (no password method). */
-export type RecoveryProof =
-  | { method: "authenticator"; code: string }
-  | { method: "passkey"; credentialId: string }
-  | { method: "backup"; code: string }
-  | { method: "email"; code: string };
-
 export type PasswordReset = {
   email: string;
   newPassword: string;
@@ -104,31 +101,42 @@ export type PasswordReset = {
 type StoredUser = User & { password?: string };
 type AuthResult = { ok: true } | { ok: false; error: string };
 
+/** Password check succeeded — email OTP is required before the session starts. */
+type PasswordLoginChallenge = {
+  ok: true;
+  requiresEmailCode: true;
+  email: string;
+  demoCode: string;
+};
+
+type PasswordLoginResult = PasswordLoginChallenge | { ok: false; error: string };
+
 const USERS_KEY = "icook.users";
 const SESSION_KEY = "icook.session";
+const LOGIN_EMAIL_OTP_KEY = "icook.loginEmailOtp";
 const MIN_PASSWORD_LENGTH = 8;
+const LOGIN_OTP_TTL_MS = 10 * 60 * 1000;
 
-/** Methods allowed to confirm sensitive account changes (no backup codes). */
-export type ReauthMethod = "authenticator" | "passkey" | "password";
+type PendingLoginEmailOtp = {
+  email: string;
+  code: string;
+  expiresAt: number;
+};
 
-/** Methods for forgot-password recovery (never password). */
+/** Methods for forgot-password recovery and sensitive reauth (never password). */
 export type RecoveryMethod =
   | "authenticator"
   | "passkey"
   | "backup"
   | "email";
 
-/** Prefer stronger / MFA options; password last and only when enabled. */
-const REAUTH_PRIORITY: ReauthMethod[] = [
-  "authenticator",
-  "passkey",
-  "password",
-];
+/** Same as recovery — confirm with passkey, authenticator, backup, or email. */
+export type ReauthMethod = RecoveryMethod;
 
-/** Security methods first; Authenticate via Email always last. */
+/** Passkey first; Authenticate via Email always last. */
 const RECOVERY_PRIORITY: RecoveryMethod[] = [
-  "authenticator",
   "passkey",
+  "authenticator",
   "backup",
   "email",
 ];
@@ -250,61 +258,53 @@ function validateNewPassword(password: string): string | null {
   return null;
 }
 
-function verifyReauth(found: StoredUser, proof: ReauthProof): AuthResult {
-  const settings = getSecurity(found.email);
-
-  if (proof.method === "password") {
-    if (!settings.passwordEnabled) {
-      return {
-        ok: false,
-        error:
-          "Password sign-in is turned off. Confirm with a passkey or authenticator instead.",
-      };
-    }
-    const password = proof.password;
-    if (!password) return { ok: false, error: "Enter your password." };
-    if (!found.password) {
-      return {
-        ok: false,
-        error: "This account has no password. Use a passkey or authenticator.",
-      };
-    }
-    if (found.password !== password) {
-      return { ok: false, error: "Incorrect password." };
-    }
-    return { ok: true };
-  }
-
-  if (proof.method === "passkey") {
-    const match = settings.passkeys.some(
-      (p) => p.credentialId === proof.credentialId,
-    );
-    if (!match) return { ok: false, error: "Unrecognized passkey." };
-    return { ok: true };
-  }
-
-  if (!settings.authenticator.enabled || !settings.authenticator.secret) {
-    return {
-      ok: false,
-      error: "Authenticator app is not set up for this account.",
-    };
-  }
-  if (!verifyTotp(settings.authenticator.secret, proof.code)) {
-    return { ok: false, error: "Invalid or expired authentication code." };
-  }
-  return { ok: true };
+function makeLoginEmailCode(): string {
+  return String(Math.floor(100000 + Math.random() * 900000));
 }
 
-function listReauthMethods(found: StoredUser): ReauthMethod[] {
-  const settings = getSecurity(found.email);
-  const available = new Set<ReauthMethod>();
-  if (settings.authenticator.enabled && settings.authenticator.secret) {
-    available.add("authenticator");
+function readPendingLoginOtp(): PendingLoginEmailOtp | null {
+  try {
+    const raw = sessionStorage.getItem(LOGIN_EMAIL_OTP_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as PendingLoginEmailOtp;
+    if (
+      typeof parsed.email !== "string" ||
+      typeof parsed.code !== "string" ||
+      typeof parsed.expiresAt !== "number"
+    ) {
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
   }
-  if (settings.passkeys.length > 0) available.add("passkey");
-  if (settings.passwordEnabled && found.password) available.add("password");
+}
 
-  return REAUTH_PRIORITY.filter((m) => available.has(m));
+function writePendingLoginOtp(pending: PendingLoginEmailOtp) {
+  sessionStorage.setItem(LOGIN_EMAIL_OTP_KEY, JSON.stringify(pending));
+}
+
+function clearPendingLoginOtp() {
+  sessionStorage.removeItem(LOGIN_EMAIL_OTP_KEY);
+}
+
+function issueLoginEmailOtp(email: string): PasswordLoginChallenge {
+  const code = makeLoginEmailCode();
+  writePendingLoginOtp({
+    email: email.trim().toLowerCase(),
+    code,
+    expiresAt: Date.now() + LOGIN_OTP_TTL_MS,
+  });
+  return {
+    ok: true,
+    requiresEmailCode: true,
+    email,
+    demoCode: code,
+  };
+}
+
+function verifyReauth(found: StoredUser, proof: ReauthProof): AuthResult {
+  return checkRecoveryProof(found, proof);
 }
 
 function listRecoveryMethods(found: StoredUser): RecoveryMethod[] {
@@ -316,6 +316,10 @@ function listRecoveryMethods(found: StoredUser): RecoveryMethod[] {
   if (settings.passkeys.length > 0) available.add("passkey");
   if (settings.backupCodes.length > 0) available.add("backup");
   return RECOVERY_PRIORITY.filter((m) => available.has(m));
+}
+
+function listReauthMethods(found: StoredUser): ReauthMethod[] {
+  return listRecoveryMethods(found);
 }
 
 function checkRecoveryProof(
@@ -382,7 +386,12 @@ type AuthContextValue = {
   ) =>
     | { ok: true; email: string; name?: string; methods: LoginMethod[] }
     | { ok: false; error: string };
-  loginWithPassword: (email: string, password: string) => AuthResult;
+  /** Validate password, then require an email OTP before signing in. */
+  loginWithPassword: (email: string, password: string) => PasswordLoginResult;
+  /** Resend the login email OTP after a successful password check. */
+  resendLoginEmailCode: (email: string) => PasswordLoginResult;
+  /** Complete password login with the email OTP. */
+  confirmLoginEmailCode: (email: string, code: string) => AuthResult;
   loginWithAuthenticator: (email: string, code: string) => AuthResult;
   loginWithBackupCode: (email: string, code: string) => AuthResult;
   loginWithPasskey: (email: string) => Promise<AuthResult>;
@@ -495,7 +504,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const loginWithPassword = useCallback(
-    (email: string, password: string): AuthResult => {
+    (email: string, password: string): PasswordLoginResult => {
       const found = findUser(email);
       if (!found) return { ok: false, error: "No account found." };
       const settings = getSecurity(found.email);
@@ -505,9 +514,66 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           error: "Password sign-in is turned off for this account.",
         };
       }
-      if (found.password && found.password !== password) {
+      if (!found.password) {
+        return {
+          ok: false,
+          error: "This account has no password. Use another sign-in method.",
+        };
+      }
+      if (found.password !== password) {
         return { ok: false, error: "Incorrect password." };
       }
+      return issueLoginEmailOtp(found.email);
+    },
+    [],
+  );
+
+  const resendLoginEmailCode = useCallback(
+    (email: string): PasswordLoginResult => {
+      const found = findUser(email);
+      if (!found) return { ok: false, error: "No account found." };
+      const pending = readPendingLoginOtp();
+      if (
+        !pending ||
+        pending.email !== found.email.toLowerCase() ||
+        pending.expiresAt < Date.now()
+      ) {
+        return {
+          ok: false,
+          error: "Enter your password again to request a new code.",
+        };
+      }
+      return issueLoginEmailOtp(found.email);
+    },
+    [],
+  );
+
+  const confirmLoginEmailCode = useCallback(
+    (email: string, code: string): AuthResult => {
+      const found = findUser(email);
+      if (!found) return { ok: false, error: "No account found." };
+      const pending = readPendingLoginOtp();
+      if (
+        !pending ||
+        pending.email !== found.email.toLowerCase()
+      ) {
+        return {
+          ok: false,
+          error: "Enter your password again to request a verification code.",
+        };
+      }
+      if (pending.expiresAt < Date.now()) {
+        clearPendingLoginOtp();
+        return {
+          ok: false,
+          error: "That code has expired. Enter your password again.",
+        };
+      }
+      const cleaned = code.trim().replace(/\s+/g, "");
+      if (cleaned !== pending.code) {
+        return { ok: false, error: "Incorrect verification code." };
+      }
+      clearPendingLoginOtp();
       return startSession(found);
     },
     [startSession],
@@ -578,9 +644,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     (identifier: string, password: string): AuthResult => {
       const resolved = resolveLoginMethods(identifier);
       if (!resolved.ok) return resolved;
-      return loginWithPassword(resolved.email, password);
+      const challenged = loginWithPassword(resolved.email, password);
+      if (!challenged.ok) return challenged;
+      // Older callers expect an immediate session; complete with the issued demo OTP.
+      return confirmLoginEmailCode(challenged.email, challenged.demoCode);
     },
-    [resolveLoginMethods, loginWithPassword],
+    [resolveLoginMethods, loginWithPassword, confirmLoginEmailCode],
   );
 
   const getSecuritySettings = useCallback(
@@ -882,6 +951,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const next: StoredUser = { ...current, email };
       users[idx] = next;
       writeUsers(users);
+      consumeRecoveryProof(current, update.reauth);
       moveSecurity(current.email, email);
       persistSession(toPublicUser(next));
       return { ok: true };
@@ -917,10 +987,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const reauth = verifyReauth(current, update.reauth);
       if (!reauth.ok) return reauth;
 
-      if (
-        update.reauth.method === "password" &&
-        current.password === update.newPassword
-      ) {
+      if (current.password && current.password === update.newPassword) {
         return {
           ok: false,
           error: "New password must be different from your current password.",
@@ -930,6 +997,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const next: StoredUser = { ...current, password: update.newPassword };
       users[idx] = next;
       writeUsers(users);
+      consumeRecoveryProof(current, update.reauth);
 
       const settings = getSecurity(next.email);
       if (!settings.passwordEnabled) {
@@ -951,6 +1019,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         resolveLoginMethods,
         loginWithPassword,
+        resendLoginEmailCode,
+        confirmLoginEmailCode,
         loginWithAuthenticator,
         loginWithBackupCode,
         loginWithPasskey,

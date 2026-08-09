@@ -23,15 +23,15 @@ const METHOD_META: Record<
   RecoveryMethod,
   { label: string; hint: string; icon: React.ReactNode }
 > = {
-  authenticator: {
-    label: "Authenticator app",
-    hint: "6-digit code from your authenticator",
-    icon: <ShieldIcon className="size-5" />,
-  },
   passkey: {
     label: "Passkey",
     hint: "Face ID, fingerprint, or security key",
     icon: <SmartphoneIcon className="size-5" />,
+  },
+  authenticator: {
+    label: "Authenticator app",
+    hint: "6-digit code from your authenticator",
+    icon: <ShieldIcon className="size-5" />,
   },
   backup: {
     label: "Backup code",
