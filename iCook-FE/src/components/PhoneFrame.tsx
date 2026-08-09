@@ -98,9 +98,9 @@ function HomeIndicator() {
   return (
     <div
       aria-hidden
-      className="pointer-events-none absolute inset-x-0 bottom-0 z-40 hidden h-5 items-start justify-center pt-1.5 sm:flex"
+      className="pointer-events-none absolute inset-x-0 bottom-0 z-40 hidden h-5 items-start justify-center pt-4 pb-4 sm:flex bg-[#1a1c1e] dark:bg-[#0c0d0f]"
     >
-      <span className="h-1.25 w-33 rounded-full bg-ink/30 dark:bg-white/35" />
+      <span className="h-1.25 w-33 rounded-full bg-ink/30 dark:bg-white/35 bg-white/35" />
     </div>
   );
 }
@@ -149,11 +149,11 @@ export default function PhoneFrame({
         />
 
         {/* Screen */}
-        <div className="relative flex h-full min-h-0 w-full flex-col overflow-hidden pb-3 pt-2 sm:rounded-[2.1rem]">
+        <div className="relative flex h-full min-h-0 w-full flex-col overflow-hidden sm:rounded-[2.1rem]">
           <StatusBar chrome={chrome} />
           <HomeIndicator />
           {/* Safe-area insets reserve room for status bar + home indicator */}
-          <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden sm:pt-11 sm:pb-5">
+          <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden sm:pt-11 sm:pb-6">
             {children}
           </div>
         </div>
