@@ -64,8 +64,9 @@ export default function SettingsUserScreen() {
   return (
     <div className="page">
       <div className="surface-block shrink-0">
-        <div className="flex flex-col items-center gap-3 px-4 pt-4 pb-5">
+        <div className="flex flex-col items-center gap-4 px-2 pb-2 pt-8">
           <AvatarPicker
+            variant="profile"
             initials={initials}
             handle={profile.username}
             value={avatarUrl}
@@ -76,13 +77,13 @@ export default function SettingsUserScreen() {
             onError={(msg) => setError(msg || null)}
             actionHint="Tap photo to change"
           />
-          <div className="text-center">
-            <p className="text-xl font-bold text-brand">
+          <div className="flex flex-col items-center">
+            <p className="text-xl leading-6 text-brand">
               {[firstName, lastName].filter(Boolean).join(" ") || profile.name}
             </p>
-            <p className="flex items-center justify-center gap-0.5 text-sm leading-3.5">
+            <p className="flex items-center justify-center gap-0 py-1 pr-3 text-xs leading-3.5">
               <span className="text-brand-soft">@</span>
-              <span className="text-placeholder">{profile.username}</span>
+              <span className="text-muted">{profile.username}</span>
             </p>
           </div>
         </div>
