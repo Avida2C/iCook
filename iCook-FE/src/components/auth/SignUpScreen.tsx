@@ -23,7 +23,12 @@ export default function SignUpScreen() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
+  const passwordsMismatch =
+    confirmPassword.length > 0 && password !== confirmPassword;
 
   const previewInitials = useMemo(
     () => initialsFromName(firstName, lastName),
@@ -33,14 +38,18 @@ export default function SignUpScreen() {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    if (passwordsMismatch) {
+      setError("Passwords do not match.");
+      return;
+    }
     const data = new FormData(event.currentTarget);
     const result = signup({
       email: String(data.get("email") ?? ""),
       username: String(data.get("username") ?? ""),
       firstName: String(data.get("firstName") ?? ""),
       lastName: String(data.get("lastName") ?? ""),
-      password: String(data.get("password") ?? ""),
-      confirmPassword: String(data.get("confirmPassword") ?? ""),
+      password,
+      confirmPassword,
       avatarUrl: avatarUrl ?? undefined,
     });
     if (!result.ok) {
@@ -138,6 +147,9 @@ export default function SignUpScreen() {
             placeholder="at least 8 characters"
             autoComplete="new-password"
             required
+            value={password}
+            onChange={setPassword}
+            invalid={passwordsMismatch}
           />
 
           <TextField
@@ -147,7 +159,15 @@ export default function SignUpScreen() {
             placeholder="confirm password"
             autoComplete="new-password"
             required
+            value={confirmPassword}
+            onChange={setConfirmPassword}
+            invalid={passwordsMismatch}
           />
+          {passwordsMismatch ? (
+            <p role="alert" className="text-sm font-bold text-brand">
+              Passwords do not match.
+            </p>
+          ) : null}
 
           <p className="auth-copy text-xs text-muted">
             By clicking Sign Up, you agree to our{" "}

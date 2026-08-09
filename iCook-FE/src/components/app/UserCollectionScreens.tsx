@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import RecipeAuthor from "@/components/app/RecipeAuthor";
 import RecipeThumbnail from "@/components/app/RecipeThumbnail";
@@ -9,6 +10,7 @@ import {
   useSavedRecipes,
   type CatalogRecipe,
 } from "@/components/recipes/SavedRecipesProvider";
+import { isProfileSeedEnabled } from "@/lib/accountData";
 
 export const MY_RECIPES = CATALOG_RECIPES.slice(0, 9).map((r) => ({
   ...r,
@@ -102,7 +104,15 @@ function RecipeCard({
 
 export function MyRecipesPanel() {
   const { recipes: createdRecipes } = useCreatedContent();
-  const recipes = [...createdRecipes, ...MY_RECIPES];
+  const [includeSeeded, setIncludeSeeded] = useState(true);
+
+  useEffect(() => {
+    setIncludeSeeded(isProfileSeedEnabled());
+  }, []);
+
+  const recipes = includeSeeded
+    ? [...createdRecipes, ...MY_RECIPES]
+    : createdRecipes;
 
   return (
     <div className="grid w-full grid-cols-3 gap-x-2 gap-y-2 bg-surface px-2 pt-2 pb-2">

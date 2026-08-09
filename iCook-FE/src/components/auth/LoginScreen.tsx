@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AuthCard from "@/components/AuthCard";
@@ -12,16 +12,15 @@ import GettingAppReady, {
   waitForAppReady,
 } from "@/components/auth/GettingAppReady";
 import {
+  AuthChallenge,
+  AuthMethodList,
+} from "@/components/auth/AuthVerify";
+import {
   useAuth,
   DEMO_CREDENTIALS,
   type LoginMethod,
 } from "@/components/auth/AuthProvider";
-import {
-  KeyIcon,
-  ShieldIcon,
-  SmartphoneIcon,
-  BackIcon,
-} from "@/components/app/icons";
+import { BackIcon } from "@/components/app/icons";
 
 type Step =
   | { kind: "identifier" }
@@ -41,32 +40,6 @@ type Step =
       demoCode: string;
     };
 
-const METHOD_META: Record<
-  LoginMethod,
-  { label: string; hint: string; icon: React.ReactNode }
-> = {
-  password: {
-    label: "Password",
-    hint: "Use your account password",
-    icon: <KeyIcon className="size-5" />,
-  },
-  passkey: {
-    label: "Passkey",
-    hint: "Face ID, fingerprint, or security key",
-    icon: <SmartphoneIcon className="size-5" />,
-  },
-  authenticator: {
-    label: "Authenticator app",
-    hint: "6-digit code from your authenticator",
-    icon: <ShieldIcon className="size-5" />,
-  },
-  backup: {
-    label: "Backup code",
-    hint: "One-time authentication code",
-    icon: <KeyIcon className="size-5" />,
-  },
-};
-
 export default function LoginScreen() {
   const router = useRouter();
   const {
@@ -77,6 +50,7 @@ export default function LoginScreen() {
     loginWithAuthenticator,
     loginWithBackupCode,
     loginWithPasskey,
+    getPendingDeletion,
   } = useAuth();
 
   const [step, setStep] = useState<Step>({ kind: "identifier" });
@@ -84,7 +58,17 @@ export default function LoginScreen() {
   const [busy, setBusy] = useState(false);
   const [preparing, setPreparing] = useState(false);
 
-  async function succeed() {
+  useEffect(() => {
+    if (getPendingDeletion()) {
+      router.replace("/restore-account");
+    }
+  }, [getPendingDeletion, router]);
+
+  async function succeed(pendingRestore?: boolean) {
+    if (pendingRestore || getPendingDeletion()) {
+      router.push("/restore-account");
+      return;
+    }
     setPreparing(true);
     await waitForAppReady();
     router.push("/recipes");
@@ -129,59 +113,52 @@ export default function LoginScreen() {
         setError(result.error);
         return;
       }
-      await succeed();
+      await succeed(result.pendingRestore);
     } finally {
       setBusy(false);
     }
   }
 
-  async function handleChallenge(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function submitPassword(password: string) {
     if (step.kind !== "challenge") return;
     setError(null);
     setBusy(true);
-    const data = new FormData(event.currentTarget);
-
     try {
-      if (step.method === "password") {
-        const result = loginWithPassword(
-          step.email,
-          String(data.get("password") ?? ""),
-        );
-        if (!result.ok) {
-          setError(result.error);
-          return;
-        }
-        setStep({
-          kind: "emailCode",
-          email: result.email,
-          name: step.name,
-          methods: step.methods,
-          demoCode: result.demoCode,
-        });
-        return;
-      }
-
-      let result;
-      if (step.method === "authenticator") {
-        result = loginWithAuthenticator(
-          step.email,
-          String(data.get("code") ?? ""),
-        );
-      } else if (step.method === "backup") {
-        result = loginWithBackupCode(
-          step.email,
-          String(data.get("code") ?? ""),
-        );
-      } else {
-        result = await loginWithPasskey(step.email);
-      }
-
+      const result = loginWithPassword(step.email, password);
       if (!result.ok) {
         setError(result.error);
         return;
       }
-      await succeed();
+      setStep({
+        kind: "emailCode",
+        email: result.email,
+        name: step.name,
+        methods: step.methods,
+        demoCode: result.demoCode,
+      });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function submitCode(code: string) {
+    if (step.kind !== "challenge") return;
+    setError(null);
+    setBusy(true);
+    try {
+      let result;
+      if (step.method === "authenticator") {
+        result = loginWithAuthenticator(step.email, code);
+      } else if (step.method === "backup") {
+        result = loginWithBackupCode(step.email, code);
+      } else {
+        return;
+      }
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      await succeed(result.pendingRestore);
     } finally {
       setBusy(false);
     }
@@ -202,7 +179,7 @@ export default function LoginScreen() {
         setError(result.error);
         return;
       }
-      await succeed();
+      await succeed(result.pendingRestore);
     } finally {
       setBusy(false);
     }
@@ -258,6 +235,17 @@ export default function LoginScreen() {
     }
   }
 
+  function backToMethods() {
+    if (step.kind !== "challenge" && step.kind !== "emailCode") return;
+    setError(null);
+    setStep({
+      kind: "methods",
+      email: step.email,
+      name: step.name,
+      methods: step.methods,
+    });
+  }
+
   return (
     <AuthCard overlay={preparing ? <GettingAppReady /> : null}>
       <LogoSlogan />
@@ -288,144 +276,42 @@ export default function LoginScreen() {
       ) : null}
 
       {step.kind === "methods" ? (
-        <div className="flex w-full flex-col gap-3">
-          <p className="text-base text-muted">
-            Sign in as{" "}
-            <span className="font-bold text-ink">
-              {step.name ?? step.email}
-            </span>
-          </p>
-          <p className="text-sm text-muted">
-            Choose how you want to sign in. Methods come from your Security
-            settings.
-          </p>
-          <ul className="flex flex-col gap-2">
-            {step.methods.map((method) => {
-              const meta = METHOD_META[method];
-              return (
-                <li key={method}>
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => pickMethod(method)}
-                    className="flex w-full items-center gap-3 rounded border border-line bg-surface px-3 py-3 text-left transition-colors hover:border-brand"
-                  >
-                    <span className="text-brand">{meta.icon}</span>
-                    <span className="flex flex-col">
-                      <span className="text-base font-bold text-ink">
-                        {meta.label}
-                      </span>
-                      <span className="text-sm text-muted">{meta.hint}</span>
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-          {error ? (
-            <p role="alert" className="text-base font-bold text-brand">
-              {error}
-            </p>
-          ) : null}
-        </div>
+        <AuthMethodList
+          methods={step.methods}
+          busy={busy}
+          error={error}
+          heading={
+            <>
+              Hello,{" "}
+              <span className="font-bold text-ink">
+                {step.name ?? step.email}
+              </span>
+            </>
+          }
+          onPick={pickMethod}
+        />
       ) : null}
 
       {step.kind === "challenge" ? (
-        <div className="flex w-full flex-col gap-4">
-          <p className="text-base text-muted">
-            {METHOD_META[step.method].label} ·{" "}
-            <span className="font-bold text-ink">{step.email}</span>
-          </p>
-
-          {step.method === "passkey" ? (
-            <div className="flex flex-col gap-3">
-              <p className="text-sm text-muted">
-                Use your device biometrics or security key to continue.
-              </p>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => void runPasskey(step.email)}
-                className="btn-primary-lg mb-4"
-              >
-                {busy ? "Waiting for passkey…" : "Continue with passkey"}
-              </button>
-              {error ? (
-                <p role="alert" className="text-base font-bold text-brand">
-                  {error}
-                </p>
-              ) : null}
-            </div>
-          ) : (
-            <form
-              className="flex w-full flex-col gap-4"
-              onSubmit={(e) => void handleChallenge(e)}
-            >
-              {step.method === "password" ? (
-                <>
-                  <TextField
-                    label="Password"
-                    name="password"
-                    type="password"
-                    placeholder="password"
-                    autoComplete="current-password"
-                    required
-                  />
-                  <p className="text-sm text-muted">
-                    After your password is verified, we’ll email a code to
-                    confirm it’s you.
-                  </p>
-                </>
-              ) : (
-                <TextField
-                  label={
-                    step.method === "authenticator"
-                      ? "Authentication code"
-                      : "Backup code"
-                  }
-                  name="code"
-                  placeholder={
-                    step.method === "authenticator"
-                      ? "6-digit code"
-                      : "XXXX-XXXX"
-                  }
-                  autoComplete="one-time-code"
-                  required
-                />
-              )}
-              {error ? (
-                <p role="alert" className="text-base font-bold text-brand">
-                  {error}
-                </p>
-              ) : null}
-              <PrimaryButton>
-                {busy
-                  ? "Checking…"
-                  : step.method === "password"
-                    ? "Continue"
-                    : "Log In"}
-              </PrimaryButton>
-            </form>
-          )}
-
-          {step.methods.length > 1 ? (
-            <button
-              type="button"
-              onClick={() => {
-                setError(null);
-                setStep({
-                  kind: "methods",
-                  email: step.email,
-                  name: step.name,
-                  methods: step.methods,
-                });
-              }}
-              className="text-sm font-bold text-brand"
-            >
-              Try another method
-            </button>
-          ) : null}
-        </div>
+        <AuthChallenge
+          method={step.method}
+          email={step.email}
+          busy={busy}
+          error={error}
+          passwordHint="After your password is verified, we’ll email a code to confirm it’s you."
+          submitLabel={
+            busy
+              ? "Checking…"
+              : step.method === "password"
+                ? "Continue"
+                : "Log In"
+          }
+          methodsCount={step.methods.length}
+          onTryAnother={backToMethods}
+          onPasskey={() => void runPasskey(step.email)}
+          onSubmitCode={(code) => void submitCode(code)}
+          onSubmitPassword={(password) => void submitPassword(password)}
+        />
       ) : null}
 
       {step.kind === "emailCode" ? (
@@ -468,15 +354,7 @@ export default function LoginScreen() {
           {step.methods.length > 1 ? (
             <button
               type="button"
-              onClick={() => {
-                setError(null);
-                setStep({
-                  kind: "methods",
-                  email: step.email,
-                  name: step.name,
-                  methods: step.methods,
-                });
-              }}
+              onClick={backToMethods}
               className="text-sm font-bold text-brand self-start"
             >
               Try another method

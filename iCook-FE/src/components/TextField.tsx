@@ -12,6 +12,8 @@ type TextFieldProps = {
   required?: boolean;
   value?: string;
   onChange?: (value: string) => void;
+  /** When true, the field border uses the brand/error colour. */
+  invalid?: boolean;
 };
 
 export default function TextField({
@@ -23,6 +25,7 @@ export default function TextField({
   required,
   value,
   onChange,
+  invalid = false,
 }: TextFieldProps) {
   const isPassword = type === "password";
   const [visible, setVisible] = useState(false);
@@ -35,6 +38,14 @@ export default function TextField({
             onChange?.(e.target.value),
         }
       : {};
+
+  const fieldClass = [
+    "field",
+    isPassword ? "pr-11" : "",
+    invalid ? "field-invalid" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <div className="flex w-full flex-col gap-1">
@@ -49,7 +60,8 @@ export default function TextField({
           placeholder={placeholder}
           autoComplete={autoComplete}
           required={required}
-          className={isPassword ? "field pr-11" : "field"}
+          aria-invalid={invalid || undefined}
+          className={fieldClass}
           {...controlled}
         />
         {isPassword ? (

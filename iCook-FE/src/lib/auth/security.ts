@@ -76,6 +76,15 @@ export function moveSecurity(fromEmail: string, toEmail: string) {
   }
 }
 
+/** Remove security settings when an account is permanently deleted. */
+export function clearSecurity(email: string) {
+  const key = email.trim().toLowerCase();
+  const store = readStore();
+  if (!(key in store)) return;
+  delete store[key];
+  writeStore(store);
+}
+
 export function updateSecurity(
   email: string,
   updater: (prev: SecuritySettings) => SecuritySettings,

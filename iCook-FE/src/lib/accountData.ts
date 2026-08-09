@@ -1,0 +1,75 @@
+/**
+ * Local content keys wiped on account reset (device-global, not per-email).
+ * Profile seed (demo activity / starter recipes / social lists) is turned off on reset.
+ */
+
+import {
+  INITIAL_FOLLOWERS,
+  INITIAL_FOLLOWING,
+} from "@/components/app/user/data";
+
+export const ACCOUNT_CONTENT_KEYS = [
+  "icook.pantry",
+  "icook.savedRecipes",
+  "icook.likedPosts",
+  "icook.createdPosts",
+  "icook.createdRecipes",
+  "icook.activityFilters",
+] as const;
+
+const FOLLOWERS_KEY = "icook.followers";
+const FOLLOWING_KEY = "icook.following";
+/** When `"0"`, seeded activity / starter recipes / default social lists are off. */
+const SEEDED_PROFILE_KEY = "icook.seededProfile";
+
+function readNameList(key: string, fallback: string[]): string[] {
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw !== null) {
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return [];
+      return parsed.filter((n): n is string => typeof n === "string");
+    }
+  } catch {
+    // fall through
+  }
+  return isProfileSeedEnabled() ? [...fallback] : [];
+}
+
+/** Demo feed, starter recipes, and default followers/following until reset. */
+export function isProfileSeedEnabled(): boolean {
+  try {
+    return localStorage.getItem(SEEDED_PROFILE_KEY) !== "0";
+  } catch {
+    return true;
+  }
+}
+
+export function readFollowers(): string[] {
+  return readNameList(FOLLOWERS_KEY, INITIAL_FOLLOWERS);
+}
+
+export function readFollowing(): string[] {
+  return readNameList(FOLLOWING_KEY, INITIAL_FOLLOWING);
+}
+
+export function writeFollowers(names: string[]) {
+  localStorage.setItem(FOLLOWERS_KEY, JSON.stringify(names));
+}
+
+export function writeFollowing(names: string[]) {
+  localStorage.setItem(FOLLOWING_KEY, JSON.stringify(names));
+}
+
+/**
+ * Clear pantry, saved/liked/created content, activity filters, followers,
+ * following, and seeded profile demo data. Keeps auth + theme.
+ */
+export function wipeAccountContent() {
+  for (const key of ACCOUNT_CONTENT_KEYS) {
+    localStorage.removeItem(key);
+  }
+  localStorage.setItem(SEEDED_PROFILE_KEY, "0");
+  writeFollowers([]);
+  writeFollowing([]);
+}

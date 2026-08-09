@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import ForgotPasswordScreen from "@/components/auth/ForgotPasswordScreen";
+import ResetPasswordScreen from "@/components/auth/ResetPasswordScreen";
 
 export const metadata: Metadata = {
   title: "Forgot Password · iCook",
@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function ForgotPasswordPage() {
-  return <ForgotPasswordScreen />;
+  return <ResetPasswordScreen />;
 }

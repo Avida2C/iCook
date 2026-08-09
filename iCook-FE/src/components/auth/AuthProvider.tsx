@@ -10,6 +10,7 @@ import {
 } from "react";
 import {
   availableLoginMethods,
+  clearSecurity,
   consumeBackupCode,
   getSecurity,
   moveSecurity,
@@ -19,6 +20,7 @@ import {
   type SecuritySettings,
 } from "@/lib/auth/security";
 import { assertPasskey } from "@/lib/auth/passkeys";
+import { wipeAccountContent } from "@/lib/accountData";
 import {
   displayName,
   normalizeUsername,
@@ -98,8 +100,20 @@ export type PasswordReset = {
   proof: RecoveryProof;
 };
 
-type StoredUser = User & { password?: string };
-type AuthResult = { ok: true } | { ok: false; error: string };
+type StoredUser = User & {
+  password?: string;
+  /** Soft-delete timestamp (epoch ms). Cleared on restore; purged after grace. */
+  deletedAt?: number;
+};
+type AuthResult =
+  | { ok: true; pendingRestore?: boolean }
+  | { ok: false; error: string };
+
+export type PendingDeletion = {
+  email: string;
+  deletedAt: number;
+  daysLeft: number;
+};
 
 /** Password check succeeded — email OTP is required before the session starts. */
 type PasswordLoginChallenge = {
@@ -113,9 +127,17 @@ type PasswordLoginResult = PasswordLoginChallenge | { ok: false; error: string }
 
 const USERS_KEY = "icook.users";
 const SESSION_KEY = "icook.session";
+const PENDING_RESTORE_KEY = "icook.pendingRestore";
 const LOGIN_EMAIL_OTP_KEY = "icook.loginEmailOtp";
 const MIN_PASSWORD_LENGTH = 8;
 const LOGIN_OTP_TTL_MS = 10 * 60 * 1000;
+const ACCOUNT_DELETION_GRACE_MS = 30 * 24 * 60 * 60 * 1000;
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+type PendingRestoreRecord = {
+  email: string;
+  deletedAt: number;
+};
 
 type PendingLoginEmailOtp = {
   email: string;
@@ -152,6 +174,8 @@ export function isDemoAccount(email: string | null | undefined): boolean {
 
 const DEMO_LOCK_ERROR =
   "The demo account’s email and password can’t be changed.";
+const DEMO_ACCOUNT_LOCK_ERROR =
+  "The demo account can’t be reset or deleted.";
 
 const DEMO_USER: StoredUser = {
   email: DEMO_CREDENTIALS.email,
@@ -207,14 +231,71 @@ function migrateUser(raw: Record<string, unknown>): StoredUser | null {
     avatarUrl: typeof raw.avatarUrl === "string" ? raw.avatarUrl : undefined,
     about: typeof raw.about === "string" ? raw.about : undefined,
     password: typeof raw.password === "string" ? raw.password : undefined,
+    deletedAt:
+      typeof raw.deletedAt === "number" && Number.isFinite(raw.deletedAt)
+        ? raw.deletedAt
+        : undefined,
   };
+}
+
+function daysLeftForDeletion(deletedAt: number, now = Date.now()): number {
+  return Math.max(
+    0,
+    Math.ceil((deletedAt + ACCOUNT_DELETION_GRACE_MS - now) / MS_PER_DAY),
+  );
+}
+
+function isWithinDeletionGrace(deletedAt: number, now = Date.now()): boolean {
+  return now - deletedAt < ACCOUNT_DELETION_GRACE_MS;
+}
+
+function purgeExpiredUsers(users: StoredUser[]): StoredUser[] {
+  const now = Date.now();
+  const kept: StoredUser[] = [];
+  for (const user of users) {
+    if (
+      user.deletedAt &&
+      !isDemoAccount(user.email) &&
+      !isWithinDeletionGrace(user.deletedAt, now)
+    ) {
+      clearSecurity(user.email);
+      continue;
+    }
+    kept.push(user);
+  }
+  return kept;
+}
+
+function readPendingRestore(): PendingRestoreRecord | null {
+  try {
+    const raw = sessionStorage.getItem(PENDING_RESTORE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as PendingRestoreRecord;
+    if (
+      typeof parsed.email !== "string" ||
+      typeof parsed.deletedAt !== "number"
+    ) {
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function writePendingRestore(record: PendingRestoreRecord) {
+  sessionStorage.setItem(PENDING_RESTORE_KEY, JSON.stringify(record));
+}
+
+function clearPendingRestore() {
+  sessionStorage.removeItem(PENDING_RESTORE_KEY);
 }
 
 function readUsers(): StoredUser[] {
   try {
     const raw = localStorage.getItem(USERS_KEY);
     const parsed: unknown[] = raw ? JSON.parse(raw) : [];
-    const users = parsed
+    let users = parsed
       .map((u) =>
         u && typeof u === "object"
           ? migrateUser(u as Record<string, unknown>)
@@ -222,12 +303,25 @@ function readUsers(): StoredUser[] {
       )
       .filter((u): u is StoredUser => !!u);
 
+    const before = users.length;
+    users = purgeExpiredUsers(users);
+    if (users.length !== before) {
+      localStorage.setItem(USERS_KEY, JSON.stringify(users));
+    }
+
     if (!users.some((u) => u.email === DEMO_USER.email)) {
       users.unshift(DEMO_USER);
     } else {
       const idx = users.findIndex((u) => u.email === DEMO_USER.email);
       if (idx >= 0 && !users[idx].username) {
-        users[idx] = { ...users[idx], ...DEMO_USER, password: users[idx].password };
+        users[idx] = {
+          ...users[idx],
+          ...DEMO_USER,
+          password: users[idx].password,
+        };
+      }
+      if (idx >= 0 && users[idx].deletedAt) {
+        users[idx] = { ...users[idx], deletedAt: undefined };
       }
     }
     return users;
@@ -424,6 +518,14 @@ type AuthContextValue = {
   updateProfile: (update: ProfileUpdate) => AuthResult;
   updateEmail: (update: EmailUpdate) => AuthResult;
   changePassword: (update: PasswordUpdate) => AuthResult;
+  /** Wipe local content data; keep credentials and security. */
+  resetAccount: (reauth: ReauthProof) => AuthResult;
+  /** Soft-delete the signed-in account (30-day restore window). */
+  deleteAccount: (reauth: ReauthProof) => AuthResult;
+  /** Restore a soft-deleted account from the pending-restore login state. */
+  restoreAccount: () => AuthResult;
+  /** Active soft-delete pending restore after login (null if none). */
+  getPendingDeletion: () => PendingDeletion | null;
   logout: () => void;
 };
 
@@ -436,16 +538,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     writeUsers(readUsers());
     try {
+      const pending = readPendingRestore();
+      if (pending) {
+        const found = findUser(pending.email);
+        if (
+          found?.deletedAt &&
+          isWithinDeletionGrace(found.deletedAt) &&
+          found.deletedAt === pending.deletedAt
+        ) {
+          // Keep pending restore; do not enter a normal app session.
+          setLoading(false);
+          return;
+        }
+        clearPendingRestore();
+      }
+
       const raw = localStorage.getItem(SESSION_KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as Record<string, unknown>;
         const email = typeof parsed.email === "string" ? parsed.email : "";
         const found = email ? findUser(email) : undefined;
-        if (found) {
+        if (found?.deletedAt && isWithinDeletionGrace(found.deletedAt)) {
+          writePendingRestore({
+            email: found.email,
+            deletedAt: found.deletedAt,
+          });
+          localStorage.removeItem(SESSION_KEY);
+        } else if (found && !found.deletedAt) {
           setUser(toPublicUser(found));
-        } else {
+        } else if (!found) {
           const migrated = migrateUser(parsed);
-          if (migrated) setUser(toPublicUser(migrated));
+          if (migrated && !migrated.deletedAt) setUser(toPublicUser(migrated));
         }
       }
     } catch {
@@ -465,6 +588,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const startSession = useCallback(
     (found: StoredUser): AuthResult => {
+      if (found.deletedAt) {
+        if (!isWithinDeletionGrace(found.deletedAt)) {
+          // Should already be purged; treat as missing.
+          return { ok: false, error: "No account found." };
+        }
+        writePendingRestore({
+          email: found.email,
+          deletedAt: found.deletedAt,
+        });
+        persistSession(null);
+        return { ok: true, pendingRestore: true };
+      }
+      clearPendingRestore();
       persistSession(toPublicUser(found));
       return { ok: true };
     },
@@ -967,14 +1103,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           error: "You must be signed in to change your password.",
         };
       }
-      if (isDemoAccount(user.email)) {
-        return { ok: false, error: DEMO_LOCK_ERROR };
-      }
+      return resetPassword({
+        email: user.email,
+        newPassword: update.newPassword,
+        confirmPassword: update.confirmPassword,
+        proof: update.reauth,
+      });
+    },
+    [resetPassword, user?.email],
+  );
 
-      const passwordError = validateNewPassword(update.newPassword);
-      if (passwordError) return { ok: false, error: passwordError };
-      if (update.newPassword !== update.confirmPassword) {
-        return { ok: false, error: "New passwords do not match." };
+  const getPendingDeletion = useCallback((): PendingDeletion | null => {
+    const pending = readPendingRestore();
+    if (!pending) return null;
+    const found = findUser(pending.email);
+    if (
+      !found?.deletedAt ||
+      found.deletedAt !== pending.deletedAt ||
+      !isWithinDeletionGrace(found.deletedAt)
+    ) {
+      clearPendingRestore();
+      return null;
+    }
+    return {
+      email: found.email,
+      deletedAt: found.deletedAt,
+      daysLeft: daysLeftForDeletion(found.deletedAt),
+    };
+  }, []);
+
+  const resetAccount = useCallback(
+    (reauth: ReauthProof): AuthResult => {
+      if (!user?.email) {
+        return { ok: false, error: "You must be signed in to reset your account." };
+      }
+      if (isDemoAccount(user.email)) {
+        return { ok: false, error: DEMO_ACCOUNT_LOCK_ERROR };
       }
 
       const users = readUsers();
@@ -984,32 +1148,107 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (idx < 0) return { ok: false, error: "Account not found." };
 
       const current = users[idx];
-      const reauth = verifyReauth(current, update.reauth);
-      if (!reauth.ok) return reauth;
-
-      if (current.password && current.password === update.newPassword) {
+      if (current.deletedAt) {
         return {
           ok: false,
-          error: "New password must be different from your current password.",
+          error: "This account is scheduled for deletion. Restore it first.",
         };
       }
 
-      const next: StoredUser = { ...current, password: update.newPassword };
+      const verified = verifyReauth(current, reauth);
+      if (!verified.ok) return verified;
+
+      wipeAccountContent();
+
+      const next: StoredUser = {
+        ...current,
+        about: undefined,
+        avatarUrl: undefined,
+      };
       users[idx] = next;
       writeUsers(users);
-      consumeRecoveryProof(current, update.reauth);
-
-      const settings = getSecurity(next.email);
-      if (!settings.passwordEnabled) {
-        setSecurity(next.email, { ...settings, passwordEnabled: true });
-      }
-
+      consumeRecoveryProof(current, reauth);
+      persistSession(toPublicUser(next));
       return { ok: true };
     },
-    [user?.email],
+    [persistSession, user?.email],
   );
 
-  const logout = useCallback(() => persistSession(null), [persistSession]);
+  const deleteAccount = useCallback(
+    (reauth: ReauthProof): AuthResult => {
+      if (!user?.email) {
+        return {
+          ok: false,
+          error: "You must be signed in to delete your account.",
+        };
+      }
+      if (isDemoAccount(user.email)) {
+        return { ok: false, error: DEMO_ACCOUNT_LOCK_ERROR };
+      }
+
+      const users = readUsers();
+      const idx = users.findIndex(
+        (u) => u.email.toLowerCase() === user.email.toLowerCase(),
+      );
+      if (idx < 0) return { ok: false, error: "Account not found." };
+
+      const current = users[idx];
+      if (current.deletedAt) {
+        return {
+          ok: false,
+          error: "This account is already scheduled for deletion.",
+        };
+      }
+
+      const verified = verifyReauth(current, reauth);
+      if (!verified.ok) return verified;
+
+      users[idx] = { ...current, deletedAt: Date.now() };
+      writeUsers(users);
+      consumeRecoveryProof(current, reauth);
+      clearPendingRestore();
+      persistSession(null);
+      return { ok: true };
+    },
+    [persistSession, user?.email],
+  );
+
+  const restoreAccount = useCallback((): AuthResult => {
+    const pending = readPendingRestore();
+    if (!pending) {
+      return { ok: false, error: "No account is waiting to be restored." };
+    }
+
+    const users = readUsers();
+    const idx = users.findIndex(
+      (u) => u.email.toLowerCase() === pending.email.toLowerCase(),
+    );
+    if (idx < 0) {
+      clearPendingRestore();
+      return { ok: false, error: "Account not found." };
+    }
+
+    const current = users[idx];
+    if (!current.deletedAt || !isWithinDeletionGrace(current.deletedAt)) {
+      clearPendingRestore();
+      return {
+        ok: false,
+        error: "The restore window has ended and this account was deleted.",
+      };
+    }
+
+    const next: StoredUser = { ...current, deletedAt: undefined };
+    users[idx] = next;
+    writeUsers(users);
+    clearPendingRestore();
+    persistSession(toPublicUser(next));
+    return { ok: true };
+  }, [persistSession]);
+
+  const logout = useCallback(() => {
+    clearPendingRestore();
+    persistSession(null);
+  }, [persistSession]);
 
   return (
     <AuthContext.Provider
@@ -1037,6 +1276,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         updateProfile,
         updateEmail,
         changePassword,
+        resetAccount,
+        deleteAccount,
+        restoreAccount,
+        getPendingDeletion,
         logout,
       }}
     >

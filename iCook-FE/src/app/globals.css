@@ -207,6 +207,10 @@ body {
     @apply w-full rounded border border-line bg-app px-3 py-2.5 text-base text-ink outline-none placeholder:text-muted focus:border-brand;
   }
 
+  .field-invalid {
+    @apply border-brand focus:border-brand;
+  }
+
   .field-sm {
     @apply w-full rounded border border-line bg-app px-2 py-1.5 text-base text-ink outline-none placeholder:italic placeholder:text-muted focus:border-brand;
   }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   MY_RECIPES,
   MyRecipesPanel,
@@ -15,25 +15,34 @@ import PeoplePanel from "@/components/app/user/PeoplePanel";
 import UserProfileHeader from "@/components/app/user/UserProfileHeader";
 import UserTabBar from "@/components/app/user/UserTabBar";
 import { FilterIcon, SearchIcon } from "@/components/app/icons";
-import {
-  INITIAL_FOLLOWERS,
-  INITIAL_FOLLOWING,
-  PANEL_TITLE,
-} from "@/components/app/user/data";
+import { PANEL_TITLE } from "@/components/app/user/data";
 import { filterActivityItems } from "@/components/app/user/activityFilters";
 import { useActivityFilters } from "@/components/app/user/ActivityFiltersProvider";
 import type { MeTab } from "@/components/app/user/types";
+import {
+  isProfileSeedEnabled,
+  readFollowers,
+  readFollowing,
+  writeFollowing,
+} from "@/lib/accountData";
 
 export default function UserScreen() {
   const [tab, setTab] = useState<MeTab>("activity");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [activityQuery, setActivityQuery] = useState("");
-  const [followers] = useState(INITIAL_FOLLOWERS);
-  const [following, setFollowing] = useState(INITIAL_FOLLOWING);
+  const [followers, setFollowers] = useState<string[]>([]);
+  const [following, setFollowing] = useState<string[]>([]);
+  const [seededRecipes, setSeededRecipes] = useState(true);
   const { savedRecipes } = useSavedRecipes();
   const { activityItems } = useLikedPosts();
   const { recipes: createdRecipes } = useCreatedContent();
   const { prefs } = useActivityFilters();
+
+  useEffect(() => {
+    setFollowers(readFollowers());
+    setFollowing(readFollowing());
+    setSeededRecipes(isProfileSeedEnabled());
+  }, []);
 
   const followingSet = useMemo(() => new Set(following), [following]);
   const visibleActivity = useMemo(
@@ -43,18 +52,21 @@ export default function UserScreen() {
 
   const tabCounts: Record<MeTab, number> = {
     activity: visibleActivity.filter((item) => item.unread).length,
-    recipes: createdRecipes.length + MY_RECIPES.length,
+    recipes:
+      createdRecipes.length + (seededRecipes ? MY_RECIPES.length : 0),
     saved: savedRecipes.length,
     followers: followers.length,
     following: following.length,
   };
 
   const toggleFollow = (name: string) => {
-    setFollowing((prev) =>
-      prev.includes(name)
+    setFollowing((prev) => {
+      const next = prev.includes(name)
         ? prev.filter((n) => n !== name)
-        : [...prev, name],
-    );
+        : [...prev, name];
+      writeFollowing(next);
+      return next;
+    });
   };
 
   const onSelectTab = (next: MeTab) => {

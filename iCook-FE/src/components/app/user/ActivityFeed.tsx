@@ -10,7 +10,6 @@ import RecipeThumbnail from "@/components/app/RecipeThumbnail";
 import UserAvatar from "@/components/app/UserAvatar";
 import UserNameLink from "@/components/app/UserNameLink";
 import { useLikedPosts } from "@/components/app/LikedPostsProvider";
-import { ACTIVITY_FEED } from "./data";
 import type { FeedItem, FeedUser } from "./types";
 import { filterActivityItems, searchActivityItems } from "./activityFilters";
 import { useActivityFilters } from "./ActivityFiltersProvider";
@@ -300,7 +299,7 @@ export default function ActivityFeed({
   const { prefs } = useActivityFilters();
   const feed = searchActivityItems(
     filterActivityItems(
-      items ?? activityItems ?? ACTIVITY_FEED,
+      items ?? activityItems,
       prefs,
       me.handle,
     ),

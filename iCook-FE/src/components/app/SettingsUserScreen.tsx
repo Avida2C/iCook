@@ -3,12 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import AvatarPicker from "@/components/AvatarPicker";
-import { useAuth } from "@/components/auth/AuthProvider";
+import { useAuth, isDemoAccount } from "@/components/auth/AuthProvider";
 import { CURRENT_USER } from "@/components/app/user/data";
 import { initialsFromName } from "@/lib/username";
 
 export default function SettingsUserScreen() {
   const { user, updateProfile } = useAuth();
+  const isDemo = isDemoAccount(user?.email);
 
   const profile = user ?? {
     email: `${CURRENT_USER.handle}@email.com`,
@@ -180,6 +181,36 @@ export default function SettingsUserScreen() {
           >
             Change Password
           </Link>
+        </section>
+
+        <section className="feed-card flex flex-col gap-1">
+          <h2 className="text-xs font-bold text-brand-soft">Account</h2>
+          {isDemo ? (
+            <p className="py-2 text-sm text-muted">
+              Reset and delete aren&rsquo;t available for the demo account.
+              Create your own account to manage these options.
+            </p>
+          ) : (
+            <>
+              <p className="py-1 text-sm text-muted">
+                Reset clears activity, recipes, saved items, followers,
+                following, pantry, and posts, but keeps your login. Delete
+                schedules permanent removal after 30 days.
+              </p>
+              <Link
+                href="/reset-account"
+                className="py-2 text-base font-bold text-brand"
+              >
+                Reset account
+              </Link>
+              <Link
+                href="/delete-account"
+                className="py-2 text-base font-bold text-brand"
+              >
+                Delete account
+              </Link>
+            </>
+          )}
         </section>
       </div>
     </div>
