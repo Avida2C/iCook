@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Switch from "@/components/Switch";
 
 type Option = { id: string; label: string; hint?: string };
 type Group = { title: string; options: Option[] };
@@ -80,35 +81,6 @@ const groups: Group[] = [
 
 const ALL_IDS = groups.flatMap((group) => group.options.map((o) => o.id));
 
-function Toggle({
-  checked,
-  onChange,
-  label,
-}: {
-  checked: boolean;
-  onChange: () => void;
-  label: string;
-}) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      aria-label={label}
-      onClick={onChange}
-      className={`relative h-5 w-9 shrink-0 rounded-full border border-muted transition-colors ${
-        checked ? "border-brand bg-brand" : "bg-surface-muted"
-      }`}
-    >
-      <span
-        className={`absolute top-1/2 size-3 -translate-y-1/2 rounded-full transition-all ${
-          checked ? "left-[17px] bg-white" : "left-[2px] bg-muted"
-        }`}
-      />
-    </button>
-  );
-}
-
 function NotificationOption({
   label,
   hint,
@@ -128,7 +100,7 @@ function NotificationOption({
           <p className="mt-0.5 text-xs leading-4 text-muted">{hint}</p>
         ) : null}
       </div>
-      <Toggle checked={checked} onChange={onChange} label={label} />
+      <Switch checked={checked} onChange={onChange} label={label} />
     </div>
   );
 }

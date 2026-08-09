@@ -8,35 +8,7 @@ import {
   type ActivityFilterPrefs,
 } from "./activityFilters";
 import { useActivityFilters } from "./ActivityFiltersProvider";
-
-function Toggle({
-  checked,
-  onChange,
-  label,
-}: {
-  checked: boolean;
-  onChange: () => void;
-  label: string;
-}) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      aria-label={label}
-      onClick={onChange}
-      className={`relative h-5 w-9 shrink-0 rounded-full border border-muted transition-colors ${
-        checked ? "border-brand bg-brand" : "bg-surface-muted"
-      }`}
-    >
-      <span
-        className={`absolute top-1/2 size-3 -translate-y-1/2 rounded-full transition-all ${
-          checked ? "left-[17px] bg-white" : "left-[2px] bg-muted"
-        }`}
-      />
-    </button>
-  );
-}
+import Switch from "@/components/Switch";
 
 function FilterOption({
   label,
@@ -57,7 +29,7 @@ function FilterOption({
           <p className="mt-0.5 text-xs leading-4 text-muted">{hint}</p>
         ) : null}
       </div>
-      <Toggle checked={checked} onChange={onChange} label={label} />
+      <Switch checked={checked} onChange={onChange} label={label} />
     </div>
   );
 }

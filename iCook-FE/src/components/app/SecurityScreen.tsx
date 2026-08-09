@@ -26,38 +26,7 @@ import {
   DEFAULT_SECURITY,
 } from "@/lib/auth/security";
 import { passkeysSupported, registerPasskey } from "@/lib/auth/passkeys";
-
-function Toggle({
-  checked,
-  onChange,
-  label,
-  disabled,
-}: {
-  checked: boolean;
-  onChange: () => void;
-  label: string;
-  disabled?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      aria-label={label}
-      disabled={disabled}
-      onClick={onChange}
-      className={`relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-40 ${
-        checked ? "bg-brand" : "bg-line"
-      }`}
-    >
-      <span
-        className={`absolute top-0.5 size-5 rounded-full bg-white shadow transition-all ${
-          checked ? "left-[22px]" : "left-0.5"
-        }`}
-      />
-    </button>
-  );
-}
+import Switch from "@/components/Switch";
 
 function Card({
   icon,
@@ -265,7 +234,7 @@ export default function SecurityScreen() {
             <span className="text-base font-bold text-ink">
               Password sign-in
             </span>
-            <Toggle
+            <Switch
               checked={settings.passwordEnabled}
               onChange={togglePassword}
               label="Toggle password sign-in"
@@ -295,7 +264,7 @@ export default function SecurityScreen() {
             <>
               <div className="flex items-center justify-between">
                 <span className="text-base font-bold text-ink">Connected</span>
-                <Toggle
+                <Switch
                   checked
                   onChange={disableAuthenticator}
                   label="Disable authenticator app"
