@@ -7,6 +7,7 @@ import RecipeAuthor from "@/components/app/RecipeAuthor";
 import RecipeThumbnail from "@/components/app/RecipeThumbnail";
 import UserAvatar from "@/components/app/UserAvatar";
 import { useCreatedContent } from "@/components/app/CreatedContentProvider";
+import { MessageIcon, UserAddIcon, UserCheckIcon, UsersIcon } from "@/components/app/icons";
 import {
   COMMUNITY_AUTHORS,
   normalizeAuthorKey,
@@ -23,8 +24,25 @@ import {
   readFeaturedRecipePrefs,
   type FeaturedRecipePrefs,
 } from "@/lib/featuredRecipePrefs";
-import { isProfileSeedEnabled } from "@/lib/accountData";
+import {
+  isProfileSeedEnabled,
+  readFollowers,
+  readFollowing,
+  writeFollowing,
+} from "@/lib/accountData";
 import { MY_RECIPES } from "@/components/app/UserCollectionScreens";
+
+/** Stable demo follower/following counts for other users' public profiles. */
+function demoSocialCounts(handle: string) {
+  let hash = 0;
+  for (const ch of handle) {
+    hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
+  }
+  return {
+    followers: 12 + (hash % 80),
+    following: 8 + ((hash >>> 8) % 40),
+  };
+}
 
 function resolveUser(handle: string) {
   const key = decodeURIComponent(handle).toLowerCase();
@@ -41,7 +59,7 @@ function resolveUser(handle: string) {
 
 function ProfileRecipeCard({ recipe }: { recipe: CatalogRecipe }) {
   return (
-    <div className="flex w-[30%] flex-col items-center">
+    <div className="flex w-full flex-col items-start">
       <Link
         href={`/recipe/${recipe.id}`}
         className="relative aspect-square w-full overflow-hidden rounded border border-line"
@@ -54,7 +72,7 @@ function ProfileRecipeCard({ recipe }: { recipe: CatalogRecipe }) {
           alt={recipe.name}
         />
       </Link>
-      <p className="mt-1 w-full truncate text-sm text-ink-secondary">
+      <p className="mt-1 w-full truncate text-left text-sm text-ink-secondary">
         {recipe.name}
       </p>
       <RecipeAuthor author={recipe.author} className="w-full" />
@@ -77,11 +95,51 @@ export default function PublicProfileScreen({ handle }: { handle: string }) {
     DEFAULT_FEATURED_RECIPE_PREFS,
   );
   const [includeSeeded, setIncludeSeeded] = useState(false);
+  const [socialCounts, setSocialCounts] = useState({
+    followers: 0,
+    following: 0,
+  });
+  const [showAllRecipes, setShowAllRecipes] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
 
   useEffect(() => {
     setPrefs(readFeaturedRecipePrefs(user.handle));
     setIncludeSeeded(isSelf && isProfileSeedEnabled());
-  }, [user.handle, isSelf]);
+    setShowAllRecipes(false);
+    if (isSelf) {
+      setIsFollowing(false);
+      setSocialCounts({
+        followers: readFollowers().length,
+        following: readFollowing().length,
+      });
+    } else {
+      const following = readFollowing().includes(user.name);
+      setIsFollowing(following);
+      const demo = demoSocialCounts(profileHandle);
+      setSocialCounts({
+        followers: demo.followers + (following ? 1 : 0),
+        following: demo.following,
+      });
+    }
+  }, [user.handle, user.name, isSelf, profileHandle]);
+
+  const onToggleFollow = () => {
+    if (isSelf) return;
+    const next = !isFollowing;
+    const list = readFollowing();
+    writeFollowing(
+      next
+        ? list.includes(user.name)
+          ? list
+          : [...list, user.name]
+        : list.filter((n) => n !== user.name),
+    );
+    setIsFollowing(next);
+    setSocialCounts((counts) => ({
+      ...counts,
+      followers: Math.max(0, counts.followers + (next ? 1 : -1)),
+    }));
+  };
 
   const profileRecipes = useMemo(() => {
     const deleted = new Set(deletedRecipeIds);
@@ -144,10 +202,15 @@ export default function PublicProfileScreen({ handle }: { handle: string }) {
     return null;
   }, [prefs.recipeId, profileRecipes, getRecipe, isSelf, profileHandle]);
 
-  const moreRecipes = useMemo(() => {
+  const otherRecipes = useMemo(() => {
     const featuredId = featuredRecipe?.id;
-    return profileRecipes.filter((r) => r.id !== featuredId).slice(0, 6);
+    return profileRecipes.filter((r) => r.id !== featuredId);
   }, [profileRecipes, featuredRecipe?.id]);
+
+  const hasMoreRecipes = otherRecipes.length > 6;
+  const moreRecipes = showAllRecipes
+    ? otherRecipes
+    : otherRecipes.slice(0, 6);
 
   const displayName = isSelf ? me.name : user.name;
   const displayAbout =
@@ -167,9 +230,33 @@ export default function PublicProfileScreen({ handle }: { handle: string }) {
               me={isSelf}
             />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-xl font-bold text-brand">
-                {displayName}
-              </p>
+              <div className="flex items-center gap-3">
+                <p className="min-w-0 flex-1 truncate text-xl font-bold text-brand">
+                  {displayName}
+                </p>
+                <div className="flex shrink-0 items-center gap-3 text-sm">
+                  <span
+                    className="inline-flex items-center gap-1.5 text-brand"
+                    title="Followers"
+                    aria-label={`${socialCounts.followers} followers`}
+                  >
+                    <UsersIcon className="size-4 shrink-0" aria-hidden />
+                    <span className="font-bold tabular-nums">
+                      {socialCounts.followers}
+                    </span>
+                  </span>
+                  <span
+                    className="inline-flex items-center gap-1.5 text-brand"
+                    title="Following"
+                    aria-label={`${socialCounts.following} following`}
+                  >
+                    <UserCheckIcon className="size-4 shrink-0" aria-hidden />
+                    <span className="font-bold tabular-nums">
+                      {socialCounts.following}
+                    </span>
+                  </span>
+                </div>
+              </div>
               <p className="flex items-center gap-0.5 text-sm leading-[14px]">
                 <span className="text-brand-soft">@</span>
                 <span className="truncate text-placeholder">{user.handle}</span>
@@ -178,11 +265,30 @@ export default function PublicProfileScreen({ handle }: { handle: string }) {
           </div>
 
           <div className="grid grid-cols-2 gap-2">
-            <button type="button" className="btn-primary">
-              Follow
+            <button
+              type="button"
+              onClick={onToggleFollow}
+              disabled={isSelf}
+              aria-pressed={isFollowing}
+              aria-label={
+                isFollowing
+                  ? `Unfollow ${displayName}`
+                  : `Follow ${displayName}`
+              }
+              className={isFollowing ? "btn-secondary" : "btn-primary"}
+            >
+              {isFollowing ? (
+                <UserCheckIcon className="size-5 shrink-0" />
+              ) : (
+                <UserAddIcon className="size-5 shrink-0" />
+              )}
+              <span className="leading-tight">
+                {isFollowing ? "Unfollow" : "Follow"}
+              </span>
             </button>
             <Link href="/messages/1" className="btn-secondary">
-              Message
+              <MessageIcon className="size-5 shrink-0" />
+              <span className="leading-tight">Message</span>
             </Link>
           </div>
         </div>
@@ -205,10 +311,19 @@ export default function PublicProfileScreen({ handle }: { handle: string }) {
           <section className="feed-card flex flex-col gap-3">
             <div className="flex items-center gap-2">
               <h2 className="section-title min-w-0 flex-1 text-lg">
-                More of My Recipes
+                My Recipes ({profileRecipes.length})
               </h2>
+              {hasMoreRecipes && !showAllRecipes ? (
+                <button
+                  type="button"
+                  onClick={() => setShowAllRecipes(true)}
+                  className="shrink-0 rounded bg-brand px-3 py-1 text-sm font-bold text-white hover:bg-brand-hover"
+                >
+                  more
+                </button>
+              ) : null}
             </div>
-            <div className="flex flex-wrap justify-between gap-y-3">
+            <div className="grid grid-cols-3 justify-items-start gap-3">
               {moreRecipes.map((recipe) => (
                 <ProfileRecipeCard key={recipe.id} recipe={recipe} />
               ))}

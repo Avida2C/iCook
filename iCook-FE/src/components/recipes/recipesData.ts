@@ -564,6 +564,200 @@ export function nutritionFactRows(
     .map(({ key, label }) => ({ key, label, value: n[key]!.trim() }));
 }
 
+/** Compact demo recipes for Pasta Paula (public profile “more” testing). */
+const PASTA_PAULA_RECIPES: Recipe[] = (
+  [
+    {
+      id: "14",
+      name: "Garlic Butter Linguine",
+      categories: ["pasta", "dinner"] as RecipeCategory[],
+      thumbnailUrl: "/icons/recipes/pasta.png",
+      bookmarkCount: 64,
+      description: "Quick linguine tossed in garlic butter and parsley.",
+      items: [
+        { name: "Linguine", amount: "400", unit: "g" },
+        { name: "Butter", amount: "60", unit: "g" },
+        { name: "Garlic Cloves", amount: "4", unit: "clove" },
+        { name: "Parsley", amount: "1", unit: "handful" },
+        { name: "Salt", amount: "", unit: "pinch" },
+      ],
+      steps: [
+        "Boil linguine in salted water until al dente.",
+        "Melt butter with sliced garlic until fragrant.",
+        "Toss pasta with garlic butter and chopped parsley.",
+      ],
+    },
+    {
+      id: "15",
+      name: "Tomato Basil Penne",
+      categories: ["pasta", "lunch"] as RecipeCategory[],
+      thumbnailUrl: "/icons/recipes/pasta.png",
+      bookmarkCount: 71,
+      description: "Penne in a simple tomato-basil sauce.",
+      items: [
+        { name: "Penne", amount: "400", unit: "g" },
+        { name: "Tomato", amount: "400", unit: "g" },
+        { name: "Basil", amount: "10", unit: "g" },
+        { name: "Olive Oil", amount: "2", unit: "tbsp" },
+        { name: "Garlic Cloves", amount: "2", unit: "clove" },
+      ],
+      steps: [
+        "Cook penne until al dente; reserve a splash of pasta water.",
+        "Simmer crushed tomatoes with garlic and olive oil.",
+        "Toss with pasta, basil, and pasta water to loosen.",
+      ],
+    },
+    {
+      id: "16",
+      name: "Creamy Mushroom Tagliatelle",
+      categories: ["pasta", "dinner"] as RecipeCategory[],
+      thumbnailUrl: "/icons/recipes/pasta.png",
+      bookmarkCount: 88,
+      description: "Tagliatelle in a creamy mushroom sauce.",
+      items: [
+        { name: "Tagliatelle", amount: "400", unit: "g" },
+        { name: "Mushrooms", amount: "300", unit: "g" },
+        { name: "Cream", amount: "150", unit: "ml" },
+        { name: "Parmesan", amount: "40", unit: "g" },
+        { name: "Butter", amount: "2", unit: "tbsp" },
+      ],
+      steps: [
+        "Sauté sliced mushrooms in butter until golden.",
+        "Stir in cream and simmer briefly; season.",
+        "Toss with cooked tagliatelle and grated parmesan.",
+      ],
+    },
+    {
+      id: "17",
+      name: "Lemon Ricotta Farfalle",
+      categories: ["pasta", "lunch"] as RecipeCategory[],
+      thumbnailUrl: "/icons/recipes/pasta.png",
+      bookmarkCount: 53,
+      description: "Bow-tie pasta with lemony ricotta and black pepper.",
+      items: [
+        { name: "Farfalle", amount: "400", unit: "g" },
+        { name: "Ricotta", amount: "200", unit: "g" },
+        { name: "Lemon", amount: "1", unit: "Whole" },
+        { name: "Black Pepper", amount: "", unit: "pinch" },
+        { name: "Olive Oil", amount: "1", unit: "tbsp" },
+      ],
+      steps: [
+        "Cook farfalle until al dente.",
+        "Whisk ricotta with lemon zest, juice, and olive oil.",
+        "Fold through pasta and finish with black pepper.",
+      ],
+    },
+    {
+      id: "18",
+      name: "Spicy Arrabbiata",
+      categories: ["pasta", "dinner"] as RecipeCategory[],
+      thumbnailUrl: "/icons/recipes/pasta.png",
+      bookmarkCount: 77,
+      description: "Classic spicy tomato pasta with chili flakes.",
+      items: [
+        { name: "Spaghetti", amount: "400", unit: "g" },
+        { name: "Tomato", amount: "400", unit: "g" },
+        { name: "Garlic Cloves", amount: "3", unit: "clove" },
+        { name: "Chili Flakes", amount: "1", unit: "tsp" },
+        { name: "Olive Oil", amount: "3", unit: "tbsp" },
+      ],
+      steps: [
+        "Sizzle garlic and chili flakes in olive oil.",
+        "Add tomatoes and simmer into a thick sauce.",
+        "Toss with spaghetti and serve hot.",
+      ],
+    },
+    {
+      id: "19",
+      name: "Pesto Fusilli",
+      categories: ["pasta", "lunch"] as RecipeCategory[],
+      thumbnailUrl: "/icons/recipes/pasta.png",
+      bookmarkCount: 61,
+      description: "Fusilli coated in fresh basil pesto.",
+      items: [
+        { name: "Fusilli", amount: "400", unit: "g" },
+        { name: "Basil", amount: "40", unit: "g" },
+        { name: "Pine Nuts", amount: "30", unit: "g" },
+        { name: "Parmesan", amount: "40", unit: "g" },
+        { name: "Olive Oil", amount: "80", unit: "ml" },
+      ],
+      steps: [
+        "Blend basil, pine nuts, parmesan, and olive oil into pesto.",
+        "Cook fusilli until al dente.",
+        "Toss with pesto and a splash of pasta water.",
+      ],
+    },
+    {
+      id: "20",
+      name: "Sausage Ragu Rigatoni",
+      categories: ["pasta", "dinner"] as RecipeCategory[],
+      thumbnailUrl: "/icons/recipes/pasta.png",
+      bookmarkCount: 92,
+      description: "Hearty sausage ragu clinging to rigatoni.",
+      items: [
+        { name: "Rigatoni", amount: "400", unit: "g" },
+        { name: "Sausage", amount: "400", unit: "g" },
+        { name: "Tomato", amount: "400", unit: "g" },
+        { name: "Onion", amount: "1", unit: "Whole" },
+        { name: "Olive Oil", amount: "2", unit: "tbsp" },
+      ],
+      steps: [
+        "Brown crumbled sausage with diced onion in olive oil.",
+        "Add tomatoes and simmer until thick.",
+        "Toss with rigatoni and serve.",
+      ],
+    },
+    {
+      id: "21",
+      name: "Cacio e Pepe",
+      categories: ["pasta", "dinner"] as RecipeCategory[],
+      thumbnailUrl: "/icons/recipes/pasta.png",
+      bookmarkCount: 105,
+      description: "Roman classic: cheese, pepper, and spaghetti.",
+      items: [
+        { name: "Spaghetti", amount: "400", unit: "g" },
+        { name: "Pecorino", amount: "80", unit: "g" },
+        { name: "Black Pepper", amount: "2", unit: "tsp" },
+        { name: "Salt", amount: "", unit: "pinch" },
+      ],
+      steps: [
+        "Toast black pepper briefly in a warm pan.",
+        "Cook spaghetti; reserve starchy pasta water.",
+        "Emulsify pecorino and pasta water with pepper; toss pasta in.",
+      ],
+    },
+  ] as const
+).map((r) => ({
+  id: r.id,
+  name: r.name,
+  author: "pastapaula",
+  categories: [...r.categories],
+  thumbnailUrl: r.thumbnailUrl,
+  bookmarkCount: r.bookmarkCount,
+  description: r.description,
+  prepTime: "10 minutes",
+  cookTime: "20 minutes",
+  totalTime: "30 minutes",
+  servings: 4,
+  nutrition: {
+    fat: "12g",
+    carbs: "52g",
+    protein: "16g",
+    sodium: "480",
+  },
+  ingredientGroups: [
+    {
+      title: "Ingredients",
+      items: [...r.items],
+    },
+  ],
+  ingredients: r.items.map((i) => i.name),
+  instructions: r.steps.map((text, i) => ({
+    n: `${i + 1}.0`,
+    text,
+  })),
+}));
+
 /** Shared recipes that appear in Discover/Recipes and can be saved. */
 export const CATALOG_RECIPES: Recipe[] = [
   {
@@ -1368,6 +1562,7 @@ export const CATALOG_RECIPES: Recipe[] = [
       },
     ],
   },
+  ...PASTA_PAULA_RECIPES,
 ];
 
 export function getCatalogRecipe(id: string): Recipe | undefined {

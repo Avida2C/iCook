@@ -20,6 +20,8 @@ import {
   FiGrid,
   FiUser,
   FiUserPlus,
+  FiUsers,
+  FiUserCheck,
   FiHeart,
   FiShare2,
   FiSend,
@@ -88,6 +90,8 @@ export const DiscoverIcon = FiCompass;
 export const CreateIcon = FiPlusSquare;
 export const HubIcon = FiGrid;
 export const UserIcon = FiUser;
+export const UsersIcon = FiUsers;
+export const UserCheckIcon = FiUserCheck;
 
 // Social / actions
 export const HeartIcon = FiHeart;

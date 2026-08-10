@@ -41,6 +41,12 @@ export const COMMUNITY_AUTHORS: Record<string, FeedUser> = {
     initials: "SS",
     about: "Crunchy snacks and movie-night bites.",
   },
+  pastapaula: {
+    name: "Pasta Paula",
+    handle: "pastapaula",
+    initials: "PP",
+    about: "Noodles, sauces, and weeknight pasta for a crowd.",
+  },
 };
 
 const SELF_ALIASES = new Set(["you", "username", "me"]);
