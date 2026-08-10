@@ -11,6 +11,7 @@ import UserAvatar from "@/components/app/UserAvatar";
 import UserNameLink from "@/components/app/UserNameLink";
 import { useLikedPosts } from "@/components/app/LikedPostsProvider";
 import { useCreatedContent } from "@/components/app/CreatedContentProvider";
+import { CATALOG_POSTS } from "@/components/app/postsData";
 import type { FeedItem, FeedUser } from "./types";
 import { filterActivityItems, searchActivityItems } from "./activityFilters";
 import { useActivityFilters } from "./ActivityFiltersProvider";
@@ -50,7 +51,7 @@ function FeedCard({
   item: FeedItem;
   me: FeedUser;
 }) {
-  const { resolveRecipe } = useCreatedContent();
+  const { resolveRecipe, getPost } = useCreatedContent();
   const unreadDot = item.unread ? (
     <span
       className="mt-1.5 size-2 shrink-0 rounded-full bg-brand"
@@ -136,6 +137,16 @@ function FeedCard({
 
   if (item.kind === "post") {
     const user = withLiveProfile(item.user, me);
+    const createdPost = getPost(item.postId);
+    const linkedRecipeId = createdPost?.linkedRecipeId;
+    const linkedRecipe = linkedRecipeId
+      ? resolveRecipe(linkedRecipeId)
+      : undefined;
+    const thumbnailUrl =
+      linkedRecipe?.thumbnailUrl ??
+      item.thumbnailUrl ??
+      createdPost?.thumbnailUrl ??
+      CATALOG_POSTS[item.postId]?.thumbnailUrl;
     return (
       <article className="feed-card flex flex-col gap-2">
         <div className="flex gap-3">
@@ -162,12 +173,21 @@ function FeedCard({
         </div>
         <Link
           href={`/post/${item.postId}`}
-          className="ms-14 block rounded border border-line px-3 py-2"
+          className="ms-14 block overflow-hidden rounded border border-line"
         >
-          <p className="text-sm font-bold text-ink">{item.title}</p>
-          <p className="mt-1 line-clamp-3 text-xs leading-4 text-ink-secondary">
-            {item.preview}
-          </p>
+          <RecipeThumbnail
+            className="aspect-square w-full"
+            iconClassName="h-10 w-11"
+            src={thumbnailUrl}
+            category={linkedRecipe?.category}
+            alt={item.title}
+          />
+          <div className="px-3 py-2">
+            <p className="text-sm font-bold text-ink">{item.title}</p>
+            <p className="mt-1 line-clamp-3 text-xs leading-4 text-ink-secondary">
+              {item.preview}
+            </p>
+          </div>
         </Link>
       </article>
     );

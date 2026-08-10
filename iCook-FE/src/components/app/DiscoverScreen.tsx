@@ -43,6 +43,7 @@ type CommunityItem =
       preview: string;
       likes: number;
       comments: number;
+      thumbnailUrl?: string;
     };
 
 const amy: FeedUser = {
@@ -100,6 +101,7 @@ const COMMUNITY_FEED: CommunityItem[] = [
       "Chill your dough for at least 30 minutes — it keeps the cookies thick and chewy every time. Extra points if you brown the butter first.",
     likes: 28,
     comments: 5,
+    thumbnailUrl: "/icons/recipes/sweets.png",
   },
   {
     id: "c3",
@@ -124,6 +126,7 @@ const COMMUNITY_FEED: CommunityItem[] = [
       "Cleared out the spice rack this morning — sharing what stayed, what went, and the three bottles I always refill first.",
     likes: 19,
     comments: 3,
+    thumbnailUrl: "/icons/recipes/savoury.png",
   },
   {
     id: "c5",
@@ -148,6 +151,7 @@ const COMMUNITY_FEED: CommunityItem[] = [
       "Gas is convenient. Charcoal wins on flavour. If you only grill on weekends, charcoal is worth the mess.",
     likes: 34,
     comments: 14,
+    thumbnailUrl: "/icons/recipes/dinner.png",
   },
   {
     id: "c7",
@@ -184,6 +188,7 @@ const COMMUNITY_FEED: CommunityItem[] = [
       "One pan, one handful of greens, whatever cheese you have. The formula I use when dinner needs to happen in 20 minutes.",
     likes: 56,
     comments: 11,
+    thumbnailUrl: "/icons/recipes/pasta.png",
   },
   {
     id: "c10",
@@ -354,12 +359,20 @@ function PostFeedCard({ item }: { item: Extract<CommunityItem, { kind: "post" }>
 
       <Link
         href={`/post/${item.postId}`}
-        className="block rounded border border-line px-3 py-2.5"
+        className="block overflow-hidden rounded border border-line"
       >
-        <p className="text-sm font-bold text-ink">{item.title}</p>
-        <p className="mt-1 line-clamp-3 text-xs leading-4 text-ink-secondary">
-          {item.preview}
-        </p>
+        <RecipeThumbnail
+          className="aspect-square w-full"
+          iconClassName="h-12 w-14"
+          src={item.thumbnailUrl}
+          alt={item.title}
+        />
+        <div className="px-3 py-2.5">
+          <p className="text-sm font-bold text-ink">{item.title}</p>
+          <p className="mt-1 line-clamp-3 text-xs leading-4 text-ink-secondary">
+            {item.preview}
+          </p>
+        </div>
       </Link>
 
       <div className="flex items-center gap-4 text-xs text-muted">

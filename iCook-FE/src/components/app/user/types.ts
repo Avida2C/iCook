@@ -28,7 +28,7 @@ export type FeedItem =
       preview: string;
       unread?: boolean;
     }
-  | {
+    | {
       id: string;
       kind: "post";
       user: FeedUser;
@@ -36,6 +36,7 @@ export type FeedItem =
       postId: string;
       title: string;
       preview: string;
+      thumbnailUrl?: string;
       unread?: boolean;
     }
   | {

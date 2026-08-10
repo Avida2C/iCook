@@ -2,12 +2,12 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { UploadIcon, ImageIcon } from "@/components/app/icons";
 import {
   useCreatedContent,
   type RecipeInput,
 } from "@/components/app/CreatedContentProvider";
 import RecipeThumbnail from "@/components/app/RecipeThumbnail";
+import ThumbnailUploadField from "@/components/app/ThumbnailUploadField";
 import {
   type Recipe,
   type RecipeCategory,
@@ -15,6 +15,7 @@ import {
   type RecipeNutrition,
   type RecipeStep,
 } from "@/components/recipes/recipesData";
+import { loadImageAsDataUrl } from "@/lib/imageUpload";
 
 const categories = [
   "Breakfast",
@@ -116,17 +117,7 @@ function toInput(draft: Draft): RecipeInput | null {
   };
 }
 
-function readFileAsDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result ?? ""));
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  });
-}
-
-const fieldClass =
-  "w-full rounded-[4px] border border-line bg-app px-2 py-1.5 text-base text-ink outline-none placeholder:italic placeholder:text-line focus:border-brand";
+const fieldClass = "field-sm";
 
 export default function RecipeEditorScreen({
   recipeId,
@@ -142,7 +133,6 @@ export default function RecipeEditorScreen({
   const [ready, setReady] = useState(!isEdit);
   const [missing, setMissing] = useState(false);
   const [storageReady, setStorageReady] = useState(!isEdit);
-  const thumbInputRef = useRef<HTMLInputElement>(null);
   const stepImageInputRef = useRef<HTMLInputElement>(null);
   const [stepImageTarget, setStepImageTarget] = useState<number | null>(null);
 
@@ -206,20 +196,13 @@ export default function RecipeEditorScreen({
     router.push(`/recipe/${recipe.id}`);
   }
 
-  async function onThumbnailChange(file: File | undefined) {
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) return;
-    const dataUrl = await readFileAsDataUrl(file);
-    updateDraft({ thumbnailUrl: dataUrl });
-  }
-
   async function onStepImageChange(file: File | undefined) {
     if (stepImageTarget === null || !file) return;
-    if (file.size > 5 * 1024 * 1024) return;
-    const dataUrl = await readFileAsDataUrl(file);
+    const result = await loadImageAsDataUrl(file);
+    if (!result.ok) return;
     setDraft((prev) => {
       const instructions = prev.instructions.map((s, i) =>
-        i === stepImageTarget ? { ...s, imageUrl: dataUrl } : s,
+        i === stepImageTarget ? { ...s, imageUrl: result.dataUrl } : s,
       );
       return { ...prev, instructions };
     });
@@ -228,7 +211,7 @@ export default function RecipeEditorScreen({
 
   if (!ready) {
     return (
-      <div className="flex min-h-full items-center justify-center bg-app p-6 text-muted">
+      <div className="page flex items-center justify-center p-6 text-muted">
         Loading…
       </div>
     );
@@ -236,12 +219,12 @@ export default function RecipeEditorScreen({
 
   if (missing) {
     return (
-      <div className="flex min-h-full flex-col items-center justify-center gap-3 bg-app p-6">
+      <div className="page flex flex-col items-center justify-center gap-3 p-6">
         <p className="text-base text-muted">This recipe could not be found.</p>
         <button
           type="button"
           onClick={() => router.push("/user/recipes")}
-          className="rounded-[5px] bg-brand px-5 py-1.5 text-base font-bold text-white"
+          className="btn-primary"
         >
           Back to My Recipes
         </button>
@@ -250,22 +233,22 @@ export default function RecipeEditorScreen({
   }
 
   return (
-    <div className="flex min-h-full flex-col justify-between bg-app pt-[5px]">
-      <div className="flex flex-col gap-[5px]">
-        <div className="flex items-center justify-between bg-surface px-2.5 py-1.5 text-base font-bold text-brand">
-          <span>{STEP_LABELS[step]}</span>
-          <span>
+    <div className="page">
+      <div className="list-stack flex-1 py-2">
+        <div className="feed-card flex items-center justify-between">
+          <span className="section-title">{STEP_LABELS[step]}</span>
+          <span className="text-sm font-bold text-ink-secondary">
             Step {step + 1} of {TOTAL_STEPS}
           </span>
         </div>
 
         {step === 0 ? (
           <>
-            <div className="flex flex-col gap-2.5 bg-surface p-2.5">
+            <div className="feed-card flex flex-col gap-2.5">
               <div className="flex items-center justify-between">
-                <span className="text-base text-black">
-                  Recipe Title <span className="font-bold text-brand">*</span>
-                </span>
+                <label htmlFor="recipe-title" className="section-title">
+                  Recipe Title <span className="font-bold">*</span>
+                </label>
                 <button type="button" className="text-base italic text-brand">
                   Auto-Fill
                 </button>
@@ -281,10 +264,10 @@ export default function RecipeEditorScreen({
               />
             </div>
 
-            <div className="flex flex-col gap-2.5 bg-surface p-2.5">
-              <span className="text-base text-black">
-                Category <span className="font-bold text-brand">*</span>
-              </span>
+            <div className="feed-card flex flex-col gap-2.5">
+              <label htmlFor="recipe-category" className="section-title">
+                Category <span className="font-bold">*</span>
+              </label>
               <select
                 id="recipe-category"
                 name="category"
@@ -308,8 +291,10 @@ export default function RecipeEditorScreen({
               </select>
             </div>
 
-            <div className="flex flex-col gap-2.5 bg-surface p-2.5">
-              <span className="text-base text-black">Description</span>
+            <div className="feed-card flex flex-col gap-2.5">
+              <label htmlFor="recipe-description" className="section-title">
+                Description
+              </label>
               <textarea
                 id="recipe-description"
                 name="description"
@@ -317,57 +302,25 @@ export default function RecipeEditorScreen({
                 value={draft.description}
                 onChange={(e) => updateDraft({ description: e.target.value })}
                 placeholder="A short intro for your recipe…"
-                className={fieldClass}
+                className={`${fieldClass} resize-none`}
               />
             </div>
 
-            <div className="flex flex-col gap-2.5 bg-surface p-2.5">
-              <input
-                ref={thumbInputRef}
+            <div className="feed-card flex flex-col gap-2.5">
+              <span className="section-title">Thumbnail</span>
+              <ThumbnailUploadField
                 id="recipe-thumbnail"
-                name="thumbnail"
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                className="sr-only"
-                onChange={(e) => void onThumbnailChange(e.target.files?.[0])}
+                value={draft.thumbnailUrl || undefined}
+                onChange={(dataUrl) =>
+                  updateDraft({ thumbnailUrl: dataUrl ?? "" })
+                }
               />
-              <button
-                type="button"
-                onClick={() => thumbInputRef.current?.click()}
-                className="flex flex-col items-center gap-2.5 rounded border-2 border-dashed border-line py-5"
-              >
-                {draft.thumbnailUrl ? (
-                  <RecipeThumbnail
-                    className="h-32 w-32 rounded"
-                    src={draft.thumbnailUrl}
-                    alt="Thumbnail preview"
-                  />
-                ) : (
-                  <UploadIcon className="size-24 text-line" />
-                )}
-                <div className="text-center">
-                  <p className="text-base font-bold text-brand">
-                    Click to Upload Thumbnail
-                  </p>
-                  <p className="text-base italic text-muted">
-                    Supports JPG, PNG, up to 5MB
-                  </p>
-                </div>
-              </button>
-              <div className="flex items-center gap-2.5 px-5">
-                <ImageIcon className="size-6 text-brand" />
-                <p className="flex-1 text-base italic text-muted">
-                  {draft.thumbnailUrl
-                    ? "Thumbnail ready — tap above to replace."
-                    : "No thumbnail has been updated yet!"}
-                </p>
-              </div>
             </div>
           </>
         ) : null}
 
         {step === 1 ? (
-          <div className="flex flex-col gap-2.5 bg-surface p-2.5">
+          <div className="feed-card flex flex-col gap-2.5">
             {(
               [
                 ["prepTime", "Preparation Time", "e.g. 20 minutes"],
@@ -376,7 +329,7 @@ export default function RecipeEditorScreen({
               ] as const
             ).map(([key, label, placeholder]) => (
               <label key={key} className="flex flex-col gap-1.5" htmlFor={`recipe-${key}`}>
-                <span className="text-base text-black">{label}</span>
+                <span className="text-sm font-bold text-ink">{label}</span>
                 <input
                   id={`recipe-${key}`}
                   name={key}
@@ -388,7 +341,7 @@ export default function RecipeEditorScreen({
               </label>
             ))}
             <label className="flex flex-col gap-1.5" htmlFor="recipe-servings">
-              <span className="text-base text-black">Servings</span>
+              <span className="text-sm font-bold text-ink">Servings</span>
               <input
                 id="recipe-servings"
                 name="servings"
@@ -403,7 +356,7 @@ export default function RecipeEditorScreen({
         ) : null}
 
         {step === 2 ? (
-          <div className="flex flex-col gap-2.5 bg-surface p-2.5">
+          <div className="feed-card flex flex-col gap-2.5">
             {(
               [
                 ["fat", "Fat", "e.g. 5.8g"],
@@ -413,7 +366,7 @@ export default function RecipeEditorScreen({
               ] as const
             ).map(([key, label, placeholder]) => (
               <label key={key} className="flex flex-col gap-1.5" htmlFor={`recipe-nutrition-${key}`}>
-                <span className="text-base text-black">{label}</span>
+                <span className="text-sm font-bold text-ink">{label}</span>
                 <input
                   id={`recipe-nutrition-${key}`}
                   name={`nutrition-${key}`}
@@ -432,9 +385,9 @@ export default function RecipeEditorScreen({
         ) : null}
 
         {step === 3 ? (
-          <div className="flex flex-col gap-2.5">
+          <>
             {draft.ingredientGroups.map((group, gi) => (
-              <div key={gi} className="flex flex-col gap-2.5 bg-surface p-2.5">
+              <div key={gi} className="feed-card flex flex-col gap-2.5">
                 <div className="flex items-center justify-between gap-2">
                   <input
                     id={`ingredient-group-title-${gi}`}
@@ -453,7 +406,7 @@ export default function RecipeEditorScreen({
                   {draft.ingredientGroups.length > 1 ? (
                     <button
                       type="button"
-                      className="shrink-0 text-sm text-brand"
+                      className="shrink-0 text-sm font-bold text-brand"
                       onClick={() =>
                         updateDraft({
                           ingredientGroups: draft.ingredientGroups.filter(
@@ -491,7 +444,7 @@ export default function RecipeEditorScreen({
                       <button
                         type="button"
                         aria-label="Remove ingredient"
-                        className="shrink-0 text-sm text-brand"
+                        className="shrink-0 text-sm font-bold text-brand"
                         onClick={() => {
                           const ingredientGroups = draft.ingredientGroups.map(
                             (g, i) => {
@@ -525,7 +478,7 @@ export default function RecipeEditorScreen({
                 </button>
               </div>
             ))}
-            <div className="bg-surface p-2.5">
+            <div className="feed-card">
               <button
                 type="button"
                 className="text-sm font-bold text-brand"
@@ -541,11 +494,11 @@ export default function RecipeEditorScreen({
                 + Add ingredient group
               </button>
             </div>
-          </div>
+          </>
         ) : null}
 
         {step === 4 ? (
-          <div className="flex flex-col gap-2.5">
+          <>
             <input
               ref={stepImageInputRef}
               type="file"
@@ -554,7 +507,7 @@ export default function RecipeEditorScreen({
               onChange={(e) => void onStepImageChange(e.target.files?.[0])}
             />
             {draft.instructions.map((instruction, si) => (
-              <div key={si} className="flex flex-col gap-2 bg-surface p-2.5">
+              <div key={si} className="feed-card flex flex-col gap-2">
                 <div className="flex items-center gap-2">
                   <input
                     id={`step-n-${si}`}
@@ -572,7 +525,7 @@ export default function RecipeEditorScreen({
                   {draft.instructions.length > 1 ? (
                     <button
                       type="button"
-                      className="ms-auto text-sm text-brand"
+                      className="ms-auto text-sm font-bold text-brand"
                       onClick={() =>
                         updateDraft({
                           instructions: draft.instructions.filter(
@@ -597,7 +550,7 @@ export default function RecipeEditorScreen({
                     updateDraft({ instructions });
                   }}
                   placeholder="Describe this step…"
-                  className={fieldClass}
+                  className={`${fieldClass} resize-none`}
                 />
                 <div className="flex items-center gap-2">
                   <button
@@ -635,7 +588,7 @@ export default function RecipeEditorScreen({
                 ) : null}
               </div>
             ))}
-            <div className="bg-surface p-2.5">
+            <div className="feed-card">
               <button
                 type="button"
                 className="text-sm font-bold text-brand"
@@ -652,23 +605,19 @@ export default function RecipeEditorScreen({
                 + Add step
               </button>
             </div>
-          </div>
+          </>
         ) : null}
       </div>
 
-      <div className="flex items-center justify-between bg-surface p-2.5">
-        <button
-          type="button"
-          onClick={onBack}
-          className="w-[114px] rounded-[5px] bg-brand px-5 py-1.5 text-xl font-bold text-white shadow-md"
-        >
+      <div className="surface-block flex items-center justify-between border-t border-line p-2.5">
+        <button type="button" onClick={onBack} className="btn-primary w-[114px]">
           Back
         </button>
         <button
           type="button"
           onClick={onNextOrPublish}
           disabled={step === 0 && !canAdvance()}
-          className="w-[114px] rounded-[5px] bg-brand px-5 py-1.5 text-xl font-bold text-white shadow-md disabled:opacity-50"
+          className="btn-primary w-[114px] disabled:opacity-50"
         >
           {step < TOTAL_STEPS - 1 ? "Next" : isEdit ? "Save" : "Publish"}
         </button>

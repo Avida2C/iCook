@@ -8,6 +8,8 @@ import { usePantry } from "@/components/pantry/PantryProvider";
 import { COMMUNITY_AUTHORS } from "@/components/app/user/authors";
 import { CURRENT_USER } from "@/components/app/user/data";
 import { CATALOG_RECIPES } from "@/components/recipes/SavedRecipesProvider";
+import { CATALOG_POSTS } from "@/components/app/postsData";
+import { useCreatedContent } from "@/components/app/CreatedContentProvider";
 import { rankRecipesByPantry } from "@/lib/pantryMatch";
 import { userProfilePath } from "@/lib/userProfile";
 
@@ -22,6 +24,14 @@ type SearchHit =
       subtitle: string;
       thumbnailUrl?: string;
       category?: (typeof CATALOG_RECIPES)[number]["category"];
+    }
+  | {
+      kind: "post";
+      id: string;
+      name: string;
+      href: string;
+      subtitle: string;
+      thumbnailUrl?: string;
     }
   | {
       kind: "creator";
@@ -58,6 +68,7 @@ export default function SearchOverlay({
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
   const { items: pantryItems } = usePantry();
+  const { posts: createdPosts } = useCreatedContent();
   const pantryNames = useMemo(
     () => pantryItems.map((i) => i.name).filter((n) => n.trim()),
     [pantryItems],
@@ -107,13 +118,35 @@ export default function SearchOverlay({
       category: r.category,
     }));
 
+    const catalogPostHits: SearchHit[] = Object.entries(CATALOG_POSTS)
+      .filter(([, p]) => p.title.toLowerCase().includes(q))
+      .map(([id, p]) => ({
+        kind: "post" as const,
+        id,
+        name: p.title,
+        href: `/post/${id}`,
+        subtitle: "Post",
+        thumbnailUrl: p.thumbnailUrl,
+      }));
+
+    const createdPostHits: SearchHit[] = createdPosts
+      .filter((p) => p.title.toLowerCase().includes(q))
+      .map((p) => ({
+        kind: "post" as const,
+        id: p.id,
+        name: p.title,
+        href: `/post/${p.id}`,
+        subtitle: "Post",
+        thumbnailUrl: p.thumbnailUrl,
+      }));
+
     const people = creators.filter(
       (c) =>
         c.name.toLowerCase().includes(q) || c.id.toLowerCase().includes(q),
     );
 
-    return [...recipes, ...people];
-  }, [query]);
+    return [...recipes, ...createdPostHits, ...catalogPostHits, ...people];
+  }, [query, createdPosts]);
 
   return (
     <div
@@ -197,7 +230,11 @@ export default function SearchOverlay({
                       <RecipeThumbnail
                         className="size-10 shrink-0 rounded"
                         iconClassName="h-5 w-6"
-                        src={r.kind === "recipe" ? r.thumbnailUrl : undefined}
+                        src={
+                          r.kind === "recipe" || r.kind === "post"
+                            ? r.thumbnailUrl
+                            : undefined
+                        }
                         category={r.kind === "recipe" ? r.category : undefined}
                         alt={r.name}
                       />

@@ -30,6 +30,9 @@ export type CreatedPost = {
   title: string;
   body: string;
   category?: string;
+  thumbnailUrl?: string;
+  /** Optional recipe linked from the creator's own recipes. */
+  linkedRecipeId?: string;
   createdAt: number;
 };
 
@@ -61,7 +64,20 @@ type CreatedContentContextValue = {
     title: string;
     body: string;
     category?: string;
+    thumbnailUrl?: string;
+    linkedRecipeId?: string;
   }) => CreatedPost;
+  updatePost: (
+    id: string,
+    input: {
+      title: string;
+      body: string;
+      category?: string;
+      thumbnailUrl?: string;
+      linkedRecipeId?: string;
+    },
+  ) => CreatedPost | null;
+  deletePost: (id: string) => boolean;
   publishRecipe: (input: RecipeInput) => CreatedRecipe;
   updateRecipe: (id: string, input: RecipeInput) => CreatedRecipe;
   getPost: (id: string) => CreatedPost | undefined;
@@ -174,12 +190,33 @@ function coerceStoredRecipe(raw: unknown, fallbackAuthor: string): CreatedRecipe
   };
 }
 
+function coerceStoredPost(raw: unknown): CreatedPost | null {
+  if (!raw || typeof raw !== "object") return null;
+  const p = raw as Record<string, unknown>;
+  if (typeof p.id !== "string" || typeof p.title !== "string") return null;
+  if (typeof p.body !== "string") return null;
+  return {
+    id: p.id,
+    title: p.title,
+    body: p.body,
+    category: typeof p.category === "string" ? p.category : undefined,
+    thumbnailUrl:
+      typeof p.thumbnailUrl === "string" ? p.thumbnailUrl : undefined,
+    linkedRecipeId:
+      typeof p.linkedRecipeId === "string" ? p.linkedRecipeId : undefined,
+    createdAt: typeof p.createdAt === "number" ? p.createdAt : Date.now(),
+  };
+}
+
 function readPosts(): CreatedPost[] {
   try {
     const raw = localStorage.getItem(POSTS_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map(coerceStoredPost)
+      .filter((p): p is CreatedPost => Boolean(p));
   } catch {
     return [];
   }
@@ -208,6 +245,7 @@ function postActivityItem(post: CreatedPost, user: FeedUser): FeedItem {
     postId: post.id,
     title: post.title,
     preview: post.body.slice(0, 160),
+    thumbnailUrl: post.thumbnailUrl,
     unread: true,
   };
 }
@@ -254,16 +292,62 @@ export function CreatedContentProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const publishPost = useCallback(
-    (input: { title: string; body: string; category?: string }) => {
+    (input: {
+      title: string;
+      body: string;
+      category?: string;
+      thumbnailUrl?: string;
+      linkedRecipeId?: string;
+    }) => {
+      const linkedRecipeId = input.linkedRecipeId?.trim() || undefined;
       const post: CreatedPost = {
         id: `p-${Date.now()}`,
         title: input.title.trim(),
         body: input.body.trim(),
         category: input.category,
+        thumbnailUrl: input.thumbnailUrl?.trim() || undefined,
+        linkedRecipeId,
         createdAt: Date.now(),
       };
       persistPosts([post, ...posts]);
       return post;
+    },
+    [persistPosts, posts],
+  );
+
+  const updatePost = useCallback(
+    (
+      id: string,
+      input: {
+        title: string;
+        body: string;
+        category?: string;
+        thumbnailUrl?: string;
+        linkedRecipeId?: string;
+      },
+    ) => {
+      const existing = posts.find((p) => p.id === id);
+      if (!existing) return null;
+      const updated: CreatedPost = {
+        ...existing,
+        title: input.title.trim(),
+        body: input.body.trim(),
+        category: input.category,
+        thumbnailUrl: input.thumbnailUrl?.trim() || undefined,
+        linkedRecipeId: input.linkedRecipeId?.trim() || undefined,
+      };
+      persistPosts(posts.map((p) => (p.id === id ? updated : p)));
+      return updated;
+    },
+    [persistPosts, posts],
+  );
+
+  const deletePost = useCallback(
+    (id: string) => {
+      const exists = posts.some((p) => p.id === id);
+      if (!exists) return false;
+      persistPosts(posts.filter((p) => p.id !== id));
+      return true;
     },
     [persistPosts, posts],
   );
@@ -353,6 +437,8 @@ export function CreatedContentProvider({ children }: { children: ReactNode }) {
       posts,
       recipes,
       publishPost,
+      updatePost,
+      deletePost,
       publishRecipe,
       updateRecipe,
       getPost,
@@ -364,6 +450,8 @@ export function CreatedContentProvider({ children }: { children: ReactNode }) {
       posts,
       recipes,
       publishPost,
+      updatePost,
+      deletePost,
       publishRecipe,
       updateRecipe,
       getPost,

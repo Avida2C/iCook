@@ -10,6 +10,7 @@ export const CATALOG_POSTS: Record<
     category: string;
     user: FeedUser;
     likes: number;
+    thumbnailUrl?: string;
   }
 > = {
   "1": {
@@ -19,6 +20,7 @@ export const CATALOG_POSTS: Record<
     category: "Tips",
     user: { name: "Sweet Sue", handle: "sweetsue", initials: "SS" },
     likes: 28,
+    thumbnailUrl: "/icons/recipes/sweets.png",
   },
   "2": {
     title: "Kitchen reset",
@@ -27,6 +29,7 @@ export const CATALOG_POSTS: Record<
     category: "Tips",
     user: { name: "Chef Amy", handle: "chefamy", initials: "CA" },
     likes: 19,
+    thumbnailUrl: "/icons/recipes/savoury.png",
   },
   "3": {
     title: "Charcoal vs gas — honest take",
@@ -35,6 +38,7 @@ export const CATALOG_POSTS: Record<
     category: "Cooking Techniques",
     user: { name: "Grill Guy", handle: "grillguy", initials: "GG" },
     likes: 34,
+    thumbnailUrl: "/icons/recipes/dinner.png",
   },
   "4": {
     title: "Weeknight pasta formula",
@@ -47,5 +51,6 @@ export const CATALOG_POSTS: Record<
       initials: "CH",
     },
     likes: 56,
+    thumbnailUrl: "/icons/recipes/pasta.png",
   },
 };
