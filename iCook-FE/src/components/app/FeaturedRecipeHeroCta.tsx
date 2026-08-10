@@ -21,7 +21,7 @@ export default function FeaturedRecipeHeroCta({
     >
       <div className="h-62 w-full overflow-hidden bg-app">
         <RecipeThumbnail
-          className="size-full !aspect-auto h-full"
+          className="size-full aspect-auto! h-full"
           iconClassName="h-[60px] w-[68px]"
           src={recipe.thumbnailUrl}
           category={primaryCategory(recipe)}

@@ -31,7 +31,7 @@ export default function UserProfileHeader() {
           />
           <div className="min-w-0 flex-1">
             <p className="truncate text-xl font-bold text-brand">{name}</p>
-            <p className="flex items-center gap-0.5 text-sm leading-[14px]">
+            <p className="flex items-center gap-0.5 text-sm leading-3.5">
               <span className="text-brand-soft">@</span>
               <span className="truncate text-placeholder">{handle}</span>
             </p>

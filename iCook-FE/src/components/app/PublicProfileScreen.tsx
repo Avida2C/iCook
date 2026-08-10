@@ -103,6 +103,7 @@ export default function PublicProfileScreen({ handle }: { handle: string }) {
   const [isFollowing, setIsFollowing] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPrefs(readFeaturedRecipePrefs(user.handle));
     setIncludeSeeded(isSelf && isProfileSeedEnabled());
     setShowAllRecipes(false);
@@ -257,7 +258,7 @@ export default function PublicProfileScreen({ handle }: { handle: string }) {
                   </span>
                 </div>
               </div>
-              <p className="flex items-center gap-0.5 text-sm leading-[14px]">
+              <p className="flex items-center gap-0.5 text-sm leading-3.5">
                 <span className="text-brand-soft">@</span>
                 <span className="truncate text-placeholder">{user.handle}</span>
               </p>

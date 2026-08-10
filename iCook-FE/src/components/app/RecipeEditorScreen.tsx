@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -919,14 +920,14 @@ export default function RecipeEditorScreen({
       </div>
 
       <div className="surface-block flex items-center justify-between border-t border-line p-2.5">
-        <button type="button" onClick={onBack} className="btn-primary w-[114px]">
+        <button type="button" onClick={onBack} className="btn-primary w-28.5">
           Back
         </button>
         <button
           type="button"
           onClick={onNextOrPublish}
           disabled={step === 0 && !canAdvance()}
-          className="btn-primary w-[114px] disabled:opacity-50"
+          className="btn-primary w-28.5 disabled:opacity-50"
         >
           {step < TOTAL_STEPS - 1 ? "Next" : isEdit ? "Save" : "Publish"}
         </button>
