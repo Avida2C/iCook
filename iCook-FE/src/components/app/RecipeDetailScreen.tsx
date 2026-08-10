@@ -101,6 +101,7 @@ export default function RecipeDetailScreen({
 
   const saved = isSaved(recipe.id);
   const author = resolveAuthor(recipe.author, me);
+
   const moreRecipes = [
     ...createdRecipes.filter((r) => r.id !== recipe.id),
     ...CATALOG_RECIPES.filter(
@@ -336,11 +337,6 @@ export default function RecipeDetailScreen({
         <ContentCreatorCard
           author={author}
           me={me}
-          heartPressed={saved}
-          heartLabel={
-            saved ? `Unsave ${recipe.name}` : `Save ${recipe.name}`
-          }
-          onHeart={() => toggleSave(recipe)}
           shareLabel={`Share ${recipe.name}`}
           onShare={onShare}
         >

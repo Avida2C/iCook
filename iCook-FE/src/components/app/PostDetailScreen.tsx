@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -25,7 +25,6 @@ import {
 } from "@/components/app/user/authors";
 import { useCurrentFeedUser } from "@/components/app/user/useCurrentFeedUser";
 import { getCategoryLabel } from "@/components/recipes/SavedRecipesProvider";
-import { readFollowing, writeFollowing } from "@/lib/accountData";
 import { absoluteAppUrl, shareContent } from "@/lib/share";
 import { primaryCategory } from "@/components/recipes/recipesData";
 
@@ -44,7 +43,6 @@ export default function PostDetailScreen({ postId }: { postId: string }) {
   const resolvedId = created?.id ?? (catalog ? postId : "1");
   const isOwner = Boolean(created);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [followingCreator, setFollowingCreator] = useState(false);
   const post = created
     ? {
         title: created.title,
@@ -66,14 +64,6 @@ export default function PostDetailScreen({ postId }: { postId: string }) {
   const liked = isLiked(resolvedId);
   const likes = likeCount(resolvedId, post.likes);
   const commentCount = getComments("post", resolvedId).length;
-
-  useEffect(() => {
-    if (isSelf) {
-      setFollowingCreator(false);
-      return;
-    }
-    setFollowingCreator(readFollowing().includes(author.name));
-  }, [author.name, isSelf]);
 
   const linkedRecipe = post.linkedRecipeId
     ? resolveRecipe(post.linkedRecipeId)
@@ -103,22 +93,6 @@ export default function PostDetailScreen({ postId }: { postId: string }) {
 
   const onToggleLike = () => {
     toggleLike({ id: resolvedId, title: post.title });
-  };
-
-  const onToggleFollowCreator = () => {
-    if (isSelf) return;
-    setFollowingCreator((prev) => {
-      const next = !prev;
-      const list = readFollowing();
-      writeFollowing(
-        next
-          ? list.includes(author.name)
-            ? list
-            : [...list, author.name]
-          : list.filter((n) => n !== author.name),
-      );
-      return next;
-    });
   };
 
   const onDelete = () => {
@@ -273,19 +247,10 @@ export default function PostDetailScreen({ postId }: { postId: string }) {
           </section>
         ) : null}
 
-        {/* Creator + comments — creator heart follows the author, not post like */}
+        {/* Creator + comments */}
         <ContentCreatorCard
           author={author}
           me={me}
-          heartPressed={followingCreator}
-          heartLabel={
-            isSelf
-              ? "This is you"
-              : followingCreator
-                ? `Unfollow ${author.name}`
-                : `Follow ${author.name}`
-          }
-          onHeart={onToggleFollowCreator}
           shareLabel={`Share ${post.title}`}
           onShare={onShare}
         >
