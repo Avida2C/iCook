@@ -1,8 +1,13 @@
-/** Shared structured ingredient line (pantry + recipes). */
+/** Shared structured ingredient line (recipes). */
 export type IngredientLine = {
   name: string;
   amount: string;
   unit: string;
+};
+
+/** Pantry only tracks presence — no amounts or units. */
+export type PantryIngredient = {
+  name: string;
 };
 
 export const COMMON_UNITS = [
@@ -101,14 +106,14 @@ export const INGREDIENT_CATALOG = [
 /** @deprecated Prefer INGREDIENT_CATALOG — kept for existing imports. */
 export const COMMON_INGREDIENTS = INGREDIENT_CATALOG;
 
-export const DEFAULT_PANTRY: IngredientLine[] = [
-  { name: "Lemon", amount: "5", unit: "Whole" },
-  { name: "Garlic Cloves", amount: "2", unit: "Whole" },
-  { name: "Olive Oil", amount: "2", unit: "L" },
-  { name: "Dried Thyme", amount: "100", unit: "g" },
-  { name: "Dried Rosemary", amount: "100", unit: "g" },
-  { name: "Salt", amount: "1/4", unit: "tsp" },
-  { name: "Black Pepper", amount: "1/4", unit: "tsp" },
+export const DEFAULT_PANTRY: PantryIngredient[] = [
+  { name: "Lemon" },
+  { name: "Garlic Cloves" },
+  { name: "Olive Oil" },
+  { name: "Dried Thyme" },
+  { name: "Dried Rosemary" },
+  { name: "Salt" },
+  { name: "Black Pepper" },
 ];
 
 const CATALOG_BY_LOWER = new Map(

@@ -13,10 +13,10 @@ import {
   DEFAULT_PANTRY,
   COMMON_INGREDIENTS,
   INGREDIENT_CATALOG,
-  type IngredientLine,
+  type PantryIngredient,
 } from "@/components/ingredients/ingredientCatalog";
 
-export type PantryItem = IngredientLine;
+export type PantryItem = PantryIngredient;
 
 export { DEFAULT_PANTRY, COMMON_INGREDIENTS, INGREDIENT_CATALOG };
 
@@ -27,7 +27,6 @@ type PantryContextValue = {
   addItem: (name: string) => void;
   removeItem: (index: number) => void;
   removeItemByName: (name: string) => void;
-  updateItem: (index: number, key: keyof PantryItem, value: string) => void;
 };
 
 const PantryContext = createContext<PantryContextValue | null>(null);
@@ -38,14 +37,22 @@ function readPantry(): PantryItem[] {
     if (!raw) return DEFAULT_PANTRY;
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return DEFAULT_PANTRY;
-    return parsed.filter(
-      (item): item is PantryItem =>
-        item &&
-        typeof item === "object" &&
-        typeof item.name === "string" &&
-        typeof item.amount === "string" &&
-        typeof item.unit === "string",
-    );
+    const seen = new Set<string>();
+    const items: PantryItem[] = [];
+    for (const item of parsed) {
+      const name =
+        typeof item === "string"
+          ? item.trim()
+          : item && typeof item === "object" && typeof item.name === "string"
+            ? String(item.name).trim()
+            : "";
+      if (!name) continue;
+      const key = name.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      items.push({ name });
+    }
+    return items.length > 0 ? items : DEFAULT_PANTRY;
   } catch {
     return DEFAULT_PANTRY;
   }
@@ -73,7 +80,7 @@ export function PantryProvider({ children }: { children: ReactNode }) {
     setItems((prev) =>
       prev.some((i) => i.name.toLowerCase() === name.toLowerCase())
         ? prev
-        : [...prev, { name, amount: "1", unit: "" }],
+        : [...prev, { name }],
     );
   }, []);
 
@@ -87,26 +94,14 @@ export function PantryProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
-  const updateItem = useCallback(
-    (index: number, key: keyof PantryItem, value: string) => {
-      // Names are catalog-locked; only amount/unit are editable.
-      if (key === "name") return;
-      setItems((prev) =>
-        prev.map((it, i) => (i === index ? { ...it, [key]: value } : it)),
-      );
-    },
-    [],
-  );
-
   const value = useMemo(
     () => ({
       items,
       addItem,
       removeItem,
       removeItemByName,
-      updateItem,
     }),
-    [items, addItem, removeItem, removeItemByName, updateItem],
+    [items, addItem, removeItem, removeItemByName],
   );
 
   return (

@@ -1,13 +1,12 @@
 "use client";
 
 import { useMemo } from "react";
+import { MinusCircleIcon } from "@/components/app/icons";
 import IngredientCatalogPicker from "@/components/ingredients/IngredientCatalogPicker";
-import IngredientLineRow from "@/components/ingredients/IngredientLineRow";
 import { usePantry } from "@/components/pantry/PantryProvider";
 
 export default function HubScreen() {
-  const { items, addItem, removeItem, removeItemByName, updateItem } =
-    usePantry();
+  const { items, addItem, removeItem, removeItemByName } = usePantry();
 
   const addedNames = useMemo(() => items.map((i) => i.name), [items]);
 
@@ -20,13 +19,6 @@ export default function HubScreen() {
             <span className="text-xs text-muted">{items.length} items</span>
           </div>
 
-          <div className="flex shrink-0 items-center gap-2 px-3 text-xs font-bold text-ink-secondary">
-            <span className="min-w-0 flex-1">Ingredient</span>
-            <span className="w-16 text-center">Amount</span>
-            <span className="w-18 text-center">Unit</span>
-            <span className="w-8" />
-          </div>
-
           <div className="list-stack min-h-0 flex-1 overflow-y-auto overscroll-contain px-0">
             {items.length === 0 ? (
               <p className="feed-card text-center text-sm text-muted">
@@ -34,14 +26,22 @@ export default function HubScreen() {
               </p>
             ) : (
               items.map((item, i) => (
-                <IngredientLineRow
+                <div
                   key={`${item.name}-${i}`}
-                  item={item}
-                  idPrefix={`pantry-${i}`}
-                  onChangeAmount={(value) => updateItem(i, "amount", value)}
-                  onChangeUnit={(value) => updateItem(i, "unit", value)}
-                  onRemove={() => removeItem(i)}
-                />
+                  className="feed-card flex items-center gap-2"
+                >
+                  <span className="min-w-0 flex-1 truncate px-1 text-sm text-ink">
+                    {item.name}
+                  </span>
+                  <button
+                    type="button"
+                    aria-label={`Remove ${item.name}`}
+                    onClick={() => removeItem(i)}
+                    className="shrink-0 text-brand"
+                  >
+                    <MinusCircleIcon className="size-6" />
+                  </button>
+                </div>
               ))
             )}
           </div>
