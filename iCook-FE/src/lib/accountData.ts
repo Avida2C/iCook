@@ -3,6 +3,7 @@
  * Profile seed (demo activity / starter recipes / social lists) is turned off on reset.
  */
 
+import { normalizeAuthorKey } from "@/components/app/user/authors";
 import {
   INITIAL_FOLLOWERS,
   INITIAL_FOLLOWING,
@@ -61,6 +62,38 @@ export function writeFollowers(names: string[]) {
 
 export function writeFollowing(names: string[]) {
   localStorage.setItem(FOLLOWING_KEY, JSON.stringify(names));
+}
+
+type FollowPerson = { name: string; handle: string };
+
+/** True if list already follows this person by display name or handle. */
+export function isFollowingPerson(
+  list: string[],
+  person: FollowPerson,
+): boolean {
+  const handleKey = normalizeAuthorKey(person.handle);
+  const nameKey = normalizeAuthorKey(person.name);
+  return list.some((entry) => {
+    if (entry === person.name || entry === person.handle) return true;
+    const entryKey = normalizeAuthorKey(entry);
+    return entryKey === handleKey || entryKey === nameKey;
+  });
+}
+
+/** Add or remove a person, clearing any name/handle aliases first. */
+export function setFollowingPerson(
+  list: string[],
+  person: FollowPerson,
+  following: boolean,
+): string[] {
+  const handleKey = normalizeAuthorKey(person.handle);
+  const nameKey = normalizeAuthorKey(person.name);
+  const cleaned = list.filter((entry) => {
+    if (entry === person.name || entry === person.handle) return false;
+    const entryKey = normalizeAuthorKey(entry);
+    return entryKey !== handleKey && entryKey !== nameKey;
+  });
+  return following ? [...cleaned, person.name] : cleaned;
 }
 
 /**

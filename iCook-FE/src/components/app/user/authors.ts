@@ -92,6 +92,11 @@ export function resolveAuthor(
     return me;
   }
 
+  // Seed/demo catalog account (e.g. courtneyhenry recipes when browsing as someone else)
+  if (key === normalizeAuthorKey(CURRENT_USER.handle)) {
+    return CURRENT_USER;
+  }
+
   const known = COMMUNITY_AUTHORS[key];
   if (known) return known;
 

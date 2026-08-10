@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
 import Link from "next/link";
@@ -26,8 +27,10 @@ import {
 } from "@/lib/featuredRecipePrefs";
 import {
   isProfileSeedEnabled,
+  isFollowingPerson,
   readFollowers,
   readFollowing,
+  setFollowingPerson,
   writeFollowing,
 } from "@/lib/accountData";
 import { MY_RECIPES } from "@/components/app/UserCollectionScreens";
@@ -114,7 +117,7 @@ export default function PublicProfileScreen({ handle }: { handle: string }) {
         following: readFollowing().length,
       });
     } else {
-      const following = readFollowing().includes(user.name);
+      const following = isFollowingPerson(readFollowing(), user);
       setIsFollowing(following);
       const demo = demoSocialCounts(profileHandle);
       setSocialCounts({
@@ -127,14 +130,7 @@ export default function PublicProfileScreen({ handle }: { handle: string }) {
   const onToggleFollow = () => {
     if (isSelf) return;
     const next = !isFollowing;
-    const list = readFollowing();
-    writeFollowing(
-      next
-        ? list.includes(user.name)
-          ? list
-          : [...list, user.name]
-        : list.filter((n) => n !== user.name),
-    );
+    writeFollowing(setFollowingPerson(readFollowing(), user, next));
     setIsFollowing(next);
     setSocialCounts((counts) => ({
       ...counts,

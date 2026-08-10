@@ -11,7 +11,7 @@ import {
 import UserAvatar from "@/components/app/UserAvatar";
 import UserNameLink from "@/components/app/UserNameLink";
 import type { FeedUser } from "@/components/app/user/types";
-import { readFollowing, writeFollowing } from "@/lib/accountData";
+import { readFollowing, writeFollowing, isFollowingPerson, setFollowingPerson } from "@/lib/accountData";
 import { userProfilePath } from "@/lib/userProfile";
 
 type ContentCreatorCardProps = {
@@ -38,21 +38,14 @@ export default function ContentCreatorCard({
       setFollowing(false);
       return;
     }
-    setFollowing(readFollowing().includes(author.name));
-  }, [author.name, isSelf]);
+    setFollowing(isFollowingPerson(readFollowing(), author));
+  }, [author.name, author.handle, isSelf]);
 
   const onToggleFollow = () => {
     if (isSelf) return;
     setFollowing((prev) => {
       const next = !prev;
-      const list = readFollowing();
-      writeFollowing(
-        next
-          ? list.includes(author.name)
-            ? list
-            : [...list, author.name]
-          : list.filter((n) => n !== author.name),
-      );
+      writeFollowing(setFollowingPerson(readFollowing(), author, next));
       return next;
     });
   };
