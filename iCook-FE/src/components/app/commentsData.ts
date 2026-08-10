@@ -18,6 +18,8 @@ export type ContentComment = {
   createdAt: number;
   /** True for catalog seed comments (not deletable by the signed-in user). */
   seeded?: boolean;
+  /** True when the content owner has hidden this comment from public view. */
+  hidden?: boolean;
 };
 
 const amy = COMMUNITY_AUTHORS.chefamy;

@@ -32,6 +32,8 @@ import {
   FiMic,
   FiClock,
   FiChevronRight,
+  FiChevronUp,
+  FiChevronDown,
   FiPlus,
   FiShield,
   FiKey,
@@ -47,6 +49,7 @@ import {
   FiEye,
   FiEyeOff,
   FiSmile,
+  FiFlag,
 } from "react-icons/fi";
 import {
   FaPlay,
@@ -99,6 +102,8 @@ export const UserAddIcon = FiUserPlus;
 export const BackIcon = FiArrowLeft;
 export const CloseIcon = FiX;
 export const ChevronRightIcon = FiChevronRight;
+export const ChevronUpIcon = FiChevronUp;
+export const ChevronDownIcon = FiChevronDown;
 export const PlusIcon = FiPlus;
 export const FilterIcon = FiFilter;
 
@@ -129,6 +134,7 @@ export const ApproveIcon = FaCheckCircle;
 export const CommentIcon = BiCommentDots;
 export const CommentEditIcon = BiCommentEdit;
 export const EmojiIcon = FiSmile;
+export const FlagIcon = FiFlag;
 
 // Post editor toolbar
 export const BoldIcon = FaBold;

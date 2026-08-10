@@ -876,7 +876,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         firstName,
         lastName,
         name: displayName(firstName, lastName),
-        about: update.about?.trim() ?? current.about,
+        about: update.about?.trim().slice(0, 500) ?? current.about,
         avatarUrl:
           update.avatarUrl === null
             ? undefined

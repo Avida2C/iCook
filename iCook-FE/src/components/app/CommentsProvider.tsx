@@ -27,6 +27,8 @@ import { CATALOG_POSTS } from "@/components/app/postsData";
 
 const STORAGE_KEY = "icook.contentComments";
 const LEGACY_RECIPE_KEY = "icook.recipeComments";
+const REPORTS_KEY = "icook.commentReports";
+const HIDDEN_KEY = "icook.hiddenComments";
 
 type StoredComment = {
   id: string;
@@ -41,10 +43,16 @@ type StoredComment = {
   user: FeedUser;
 };
 
+type GetCommentsOptions = {
+  /** When true, include comments the content owner has hidden (still marked). */
+  includeHidden?: boolean;
+};
+
 type CommentsContextValue = {
   getComments: (
     targetKind: CommentTargetKind,
     targetId: string,
+    options?: GetCommentsOptions,
   ) => ContentComment[];
   addComment: (input: {
     targetKind: CommentTargetKind;
@@ -54,6 +62,13 @@ type CommentsContextValue = {
     imageUrl?: string;
   }) => ContentComment | null;
   deleteComment: (commentId: string) => void;
+  /** Flag a comment as inappropriate (hidden from the reporter). */
+  reportComment: (commentId: string) => void;
+  isCommentReported: (commentId: string) => boolean;
+  /** Content owner hides a comment from public view. */
+  hideComment: (commentId: string) => void;
+  unhideComment: (commentId: string) => void;
+  isCommentHidden: (commentId: string) => boolean;
   /** Comments on the signed-in user's content (for Activity). */
   activityItems: FeedItem[];
 };
@@ -139,7 +154,32 @@ function readStored(): StoredComment[] {
   }
 }
 
-function toContentComment(c: StoredComment): ContentComment {
+function readIdSet(key: string): Set<string> {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return new Set();
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return new Set();
+    return new Set(
+      parsed.filter((id): id is string => typeof id === "string"),
+    );
+  } catch {
+    return new Set();
+  }
+}
+
+function writeIdSet(key: string, ids: Set<string>) {
+  try {
+    localStorage.setItem(key, JSON.stringify([...ids]));
+  } catch {
+    // ignore
+  }
+}
+
+function toContentComment(
+  c: StoredComment,
+  hidden = false,
+): ContentComment {
   return {
     id: c.id,
     targetKind: c.targetKind,
@@ -149,6 +189,7 @@ function toContentComment(c: StoredComment): ContentComment {
     imageUrl: c.imageUrl,
     time: c.time,
     createdAt: c.createdAt,
+    hidden: hidden || undefined,
   };
 }
 
@@ -175,10 +216,14 @@ export function CommentsProvider({ children }: { children: ReactNode }) {
   const me = useCurrentFeedUser();
   const { recipes: createdRecipes, posts: createdPosts } = useCreatedContent();
   const [posted, setPosted] = useState<StoredComment[]>([]);
+  const [reportedIds, setReportedIds] = useState<Set<string>>(new Set());
+  const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const loaded = readStored();
     setPosted(loaded);
+    setReportedIds(readIdSet(REPORTS_KEY));
+    setHiddenIds(readIdSet(HIDDEN_KEY));
     // Migrate legacy key into the shared store once.
     try {
       if (
@@ -202,15 +247,37 @@ export function CommentsProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const persistReported = useCallback((next: Set<string>) => {
+    setReportedIds(next);
+    writeIdSet(REPORTS_KEY, next);
+  }, []);
+
+  const persistHidden = useCallback((next: Set<string>) => {
+    setHiddenIds(next);
+    writeIdSet(HIDDEN_KEY, next);
+  }, []);
+
   const getComments = useCallback(
-    (targetKind: CommentTargetKind, targetId: string) => {
+    (
+      targetKind: CommentTargetKind,
+      targetId: string,
+      options?: GetCommentsOptions,
+    ) => {
+      const includeHidden = options?.includeHidden === true;
       const seeded = seedCommentsFor(targetKind, targetId);
       const mine = posted
         .filter((c) => c.targetKind === targetKind && c.targetId === targetId)
-        .map(toContentComment);
-      return [...mine, ...seeded].sort((a, b) => b.createdAt - a.createdAt);
+        .map((c) => toContentComment(c, hiddenIds.has(c.id)));
+      const seededWithFlags = seeded.map((c) => ({
+        ...c,
+        hidden: hiddenIds.has(c.id) || undefined,
+      }));
+      return [...mine, ...seededWithFlags]
+        .filter((c) => !reportedIds.has(c.id))
+        .filter((c) => includeHidden || !hiddenIds.has(c.id))
+        .sort((a, b) => b.createdAt - a.createdAt);
     },
-    [posted],
+    [posted, reportedIds, hiddenIds],
   );
 
   const addComment = useCallback(
@@ -251,8 +318,58 @@ export function CommentsProvider({ children }: { children: ReactNode }) {
   const deleteComment = useCallback(
     (commentId: string) => {
       persist(posted.filter((c) => c.id !== commentId));
+      if (reportedIds.has(commentId)) {
+        const next = new Set(reportedIds);
+        next.delete(commentId);
+        persistReported(next);
+      }
+      if (hiddenIds.has(commentId)) {
+        const next = new Set(hiddenIds);
+        next.delete(commentId);
+        persistHidden(next);
+      }
     },
-    [persist, posted],
+    [persist, posted, reportedIds, hiddenIds, persistReported, persistHidden],
+  );
+
+  const reportComment = useCallback(
+    (commentId: string) => {
+      if (reportedIds.has(commentId)) return;
+      const next = new Set(reportedIds);
+      next.add(commentId);
+      persistReported(next);
+    },
+    [reportedIds, persistReported],
+  );
+
+  const isCommentReported = useCallback(
+    (commentId: string) => reportedIds.has(commentId),
+    [reportedIds],
+  );
+
+  const hideComment = useCallback(
+    (commentId: string) => {
+      if (hiddenIds.has(commentId)) return;
+      const next = new Set(hiddenIds);
+      next.add(commentId);
+      persistHidden(next);
+    },
+    [hiddenIds, persistHidden],
+  );
+
+  const unhideComment = useCallback(
+    (commentId: string) => {
+      if (!hiddenIds.has(commentId)) return;
+      const next = new Set(hiddenIds);
+      next.delete(commentId);
+      persistHidden(next);
+    },
+    [hiddenIds, persistHidden],
+  );
+
+  const isCommentHidden = useCallback(
+    (commentId: string) => hiddenIds.has(commentId),
+    [hiddenIds],
   );
 
   const createdRecipeAuthorById = useMemo(() => {
@@ -273,6 +390,7 @@ export function CommentsProvider({ children }: { children: ReactNode }) {
 
     for (const c of posted) {
       if (myHandles.has(c.user.handle)) continue;
+      if (hiddenIds.has(c.id) || reportedIds.has(c.id)) continue;
 
       if (c.targetKind === "recipe") {
         const author = recipeAuthorHandle(
@@ -309,16 +427,38 @@ export function CommentsProvider({ children }: { children: ReactNode }) {
     }
 
     return items;
-  }, [posted, me.handle, createdRecipeAuthorById, createdPostAuthorById]);
+  }, [
+    posted,
+    me.handle,
+    createdRecipeAuthorById,
+    createdPostAuthorById,
+    hiddenIds,
+    reportedIds,
+  ]);
 
   const value = useMemo(
     () => ({
       getComments,
       addComment,
       deleteComment,
+      reportComment,
+      isCommentReported,
+      hideComment,
+      unhideComment,
+      isCommentHidden,
       activityItems,
     }),
-    [getComments, addComment, deleteComment, activityItems],
+    [
+      getComments,
+      addComment,
+      deleteComment,
+      reportComment,
+      isCommentReported,
+      hideComment,
+      unhideComment,
+      isCommentHidden,
+      activityItems,
+    ],
   );
 
   return (

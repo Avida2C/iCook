@@ -145,11 +145,17 @@ export default function SettingsUserScreen() {
             id="about"
             name="about"
             rows={5}
+            maxLength={500}
             className="field-sm resize-none"
             placeholder="Tell us about yourself"
             value={about}
-            onChange={(e) => setAbout(e.target.value)}
+            onChange={(e) => setAbout(e.target.value.slice(0, 500))}
+            aria-describedby="about-count"
           />
+          <p
+            id="about-count"
+            className="text-xs text-muted"
+          >{`${about.length}/500`}</p>
           {error ? (
             <p role="alert" className="text-sm font-bold text-brand">
               {error}

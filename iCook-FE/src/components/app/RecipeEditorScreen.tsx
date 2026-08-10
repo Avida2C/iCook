@@ -8,6 +8,9 @@ import {
 } from "@/components/app/CreatedContentProvider";
 import RecipeThumbnail from "@/components/app/RecipeThumbnail";
 import ThumbnailUploadField from "@/components/app/ThumbnailUploadField";
+import { ChevronUpIcon, ChevronDownIcon } from "@/components/app/icons";
+import { isOwnAuthor } from "@/components/app/user/authors";
+import { useCurrentFeedUser } from "@/components/app/user/useCurrentFeedUser";
 import {
   type Recipe,
   type RecipeCategory,
@@ -179,12 +182,15 @@ export default function RecipeEditorScreen({
   recipeId?: string;
 }) {
   const router = useRouter();
-  const { publishRecipe, updateRecipe, resolveRecipe } = useCreatedContent();
+  const me = useCurrentFeedUser();
+  const { publishRecipe, updateRecipe, resolveRecipe, getRecipe } =
+    useCreatedContent();
   const isEdit = Boolean(recipeId);
   const [step, setStep] = useState(0);
   const [draft, setDraft] = useState<Draft>(emptyDraft);
   const [ready, setReady] = useState(!isEdit);
   const [missing, setMissing] = useState(false);
+  const [forbidden, setForbidden] = useState(false);
   const [storageReady, setStorageReady] = useState(!isEdit);
   const stepImageInputRef = useRef<HTMLInputElement>(null);
   const [stepImageTarget, setStepImageTarget] = useState<number | null>(null);
@@ -202,19 +208,29 @@ export default function RecipeEditorScreen({
       setDraft(emptyDraft());
       setReady(true);
       setMissing(false);
+      setForbidden(false);
       return;
     }
     if (!storageReady) return;
     const recipe = resolveRecipe(recipeId);
     if (!recipe) {
       setMissing(true);
+      setForbidden(false);
+      setReady(true);
+      return;
+    }
+    const created = getRecipe(recipeId);
+    if (!isOwnAuthor(created?.author ?? recipe.author, me)) {
+      setForbidden(true);
+      setMissing(false);
       setReady(true);
       return;
     }
     setDraft(draftFromRecipe(recipe));
     setMissing(false);
+    setForbidden(false);
     setReady(true);
-  }, [recipeId, resolveRecipe, storageReady]);
+  }, [recipeId, resolveRecipe, getRecipe, storageReady, me]);
 
   function updateDraft(patch: Partial<Draft>) {
     setDraft((prev) => ({ ...prev, ...patch }));
@@ -238,6 +254,15 @@ export default function RecipeEditorScreen({
         : [...prev.categories, slug];
       return { ...prev, categories };
     });
+  }
+
+  function moveInstruction(from: number, direction: -1 | 1) {
+    const to = from + direction;
+    if (to < 0 || to >= draft.instructions.length) return;
+    const instructions = [...draft.instructions];
+    const [item] = instructions.splice(from, 1);
+    instructions.splice(to, 0, item);
+    updateDraft({ instructions });
   }
 
   function onBack() {
@@ -296,6 +321,25 @@ export default function RecipeEditorScreen({
           className="btn-primary"
         >
           Back to My Recipes
+        </button>
+      </div>
+    );
+  }
+
+  if (forbidden) {
+    return (
+      <div className="page flex flex-col items-center justify-center gap-3 p-6">
+        <p className="text-base text-muted">
+          You can only edit recipes you created.
+        </p>
+        <button
+          type="button"
+          onClick={() =>
+            router.push(recipeId ? `/recipe/${recipeId}` : "/recipes")
+          }
+          className="btn-primary"
+        >
+          Back to recipe
         </button>
       </div>
     );
@@ -767,21 +811,41 @@ export default function RecipeEditorScreen({
                     placeholder="1.0"
                     className={`${fieldClass} w-20 shrink-0`}
                   />
-                  {draft.instructions.length > 1 ? (
+                  <div className="ms-auto flex items-center gap-0.5">
                     <button
                       type="button"
-                      className="ms-auto text-sm font-bold text-brand"
-                      onClick={() =>
-                        updateDraft({
-                          instructions: draft.instructions.filter(
-                            (_, i) => i !== si,
-                          ),
-                        })
-                      }
+                      aria-label={`Move step ${instruction.n} up`}
+                      disabled={si === 0}
+                      onClick={() => moveInstruction(si, -1)}
+                      className="grid size-8 place-items-center rounded text-brand disabled:opacity-30"
                     >
-                      Remove
+                      <ChevronUpIcon className="size-5" />
                     </button>
-                  ) : null}
+                    <button
+                      type="button"
+                      aria-label={`Move step ${instruction.n} down`}
+                      disabled={si === draft.instructions.length - 1}
+                      onClick={() => moveInstruction(si, 1)}
+                      className="grid size-8 place-items-center rounded text-brand disabled:opacity-30"
+                    >
+                      <ChevronDownIcon className="size-5" />
+                    </button>
+                    {draft.instructions.length > 1 ? (
+                      <button
+                        type="button"
+                        className="ms-1 text-sm font-bold text-brand"
+                        onClick={() =>
+                          updateDraft({
+                            instructions: draft.instructions.filter(
+                              (_, i) => i !== si,
+                            ),
+                          })
+                        }
+                      >
+                        Remove
+                      </button>
+                    ) : null}
+                  </div>
                 </div>
                 <textarea
                   id={`step-text-${si}`}

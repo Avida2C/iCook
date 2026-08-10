@@ -17,9 +17,12 @@ import { useComments } from "@/components/app/CommentsProvider";
 import CommentsSection from "@/components/app/CommentsSection";
 import ContentCreatorCard from "@/components/app/ContentCreatorCard";
 import RecipeThumbnail from "@/components/app/RecipeThumbnail";
-import { MY_RECIPES } from "@/components/app/UserCollectionScreens";
 import { CATALOG_POSTS } from "@/components/app/postsData";
-import { resolveAuthor, withLiveProfile } from "@/components/app/user/authors";
+import {
+  isOwnAuthor,
+  resolveAuthor,
+  withLiveProfile,
+} from "@/components/app/user/authors";
 import { useCurrentFeedUser } from "@/components/app/user/useCurrentFeedUser";
 import { getCategoryLabel } from "@/components/recipes/SavedRecipesProvider";
 import { readFollowing, writeFollowing } from "@/lib/accountData";
@@ -78,9 +81,7 @@ export default function PostDetailScreen({ postId }: { postId: string }) {
   const linkedIsOwn =
     linkedRecipe != null &&
     (createdRecipes.some((r) => r.id === linkedRecipe.id) ||
-      MY_RECIPES.some((r) => r.id === linkedRecipe.id) ||
-      linkedRecipe.author === me.handle ||
-      linkedRecipe.author === "you" ||
+      isOwnAuthor(linkedRecipe.author, me) ||
       linkedRecipe.author === post.user.handle);
 
   const thumbnailUrl =
@@ -292,6 +293,7 @@ export default function PostDetailScreen({ postId }: { postId: string }) {
             targetKind="post"
             targetId={resolvedId}
             targetTitle={post.title}
+            isContentOwner={isOwner || isSelf}
           />
         </ContentCreatorCard>
       </div>

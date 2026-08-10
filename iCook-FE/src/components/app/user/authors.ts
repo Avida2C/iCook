@@ -62,6 +62,17 @@ export function normalizeAuthorKey(raw: string): string {
 }
 
 /**
+ * Whether an author string refers to the signed-in user (handle or self aliases).
+ * Does not treat the demo seed account as "me" for other logged-in users.
+ */
+export function isOwnAuthor(author: string, me: FeedUser): boolean {
+  const key = normalizeAuthorKey(author);
+  if (!key) return false;
+  if (SELF_ALIASES.has(key)) return true;
+  return key === normalizeAuthorKey(me.handle);
+}
+
+/**
  * Resolve a recipe/catalog author string to displayable account details.
  * Pass `me` so own recipes pick up the live Auth profile (name, avatar, bio).
  */
@@ -71,12 +82,7 @@ export function resolveAuthor(
 ): FeedUser {
   const key = normalizeAuthorKey(author);
 
-  if (
-    !key ||
-    SELF_ALIASES.has(key) ||
-    key === me.handle ||
-    key === CURRENT_USER.handle
-  ) {
+  if (!key || SELF_ALIASES.has(key) || key === normalizeAuthorKey(me.handle)) {
     return me;
   }
 
@@ -92,10 +98,8 @@ export function resolveAuthor(
 
 /** Prefer live Auth profile when a feed user is the signed-in account. */
 export function withLiveProfile(user: FeedUser, me: FeedUser): FeedUser {
-  if (user.handle === me.handle || user.handle === CURRENT_USER.handle) {
-    if (me.handle === user.handle || me.handle === CURRENT_USER.handle) {
-      return { ...user, ...me };
-    }
+  if (normalizeAuthorKey(user.handle) === normalizeAuthorKey(me.handle)) {
+    return { ...user, ...me };
   }
   return user;
 }

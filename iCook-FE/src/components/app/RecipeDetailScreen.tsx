@@ -22,9 +22,8 @@ import {
   useSavedRecipes,
 } from "@/components/recipes/SavedRecipesProvider";
 import { useCreatedContent } from "@/components/app/CreatedContentProvider";
-import { MY_RECIPES } from "@/components/app/UserCollectionScreens";
 import { absoluteAppUrl, shareContent } from "@/lib/share";
-import { resolveAuthor } from "@/components/app/user/authors";
+import { isOwnAuthor, resolveAuthor } from "@/components/app/user/authors";
 import { useCurrentFeedUser } from "@/components/app/user/useCurrentFeedUser";
 import { primaryCategory, type Recipe, hasNutritionFacts, nutritionFactRows, resolveRecipeTags, RECIPE_TAG_LABELS, formatIngredientLine } from "@/components/recipes/recipesData";
 
@@ -93,11 +92,12 @@ export default function RecipeDetailScreen({
   }
 
   const created = getRecipe(recipe.id);
-  const isOwner =
-    Boolean(created) ||
-    recipe.author === me.handle ||
-    recipe.author === "you" ||
-    MY_RECIPES.some((r) => r.id === recipe.id);
+  // Own only when authored by the signed-in user (created clone or catalog author).
+  // Do not treat demo MY_RECIPES ids as owned for every account.
+  const isOwner = isOwnAuthor(
+    created?.author ?? recipe.author,
+    me,
+  );
 
   const saved = isSaved(recipe.id);
   const author = resolveAuthor(recipe.author, me);
@@ -348,6 +348,7 @@ export default function RecipeDetailScreen({
             targetKind="recipe"
             targetId={recipe.id}
             targetTitle={recipe.name}
+            isContentOwner={isOwner}
           />
         </ContentCreatorCard>
 

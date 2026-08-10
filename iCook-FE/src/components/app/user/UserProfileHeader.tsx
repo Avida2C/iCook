@@ -6,6 +6,7 @@ import UserAvatar from "@/components/app/UserAvatar";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { CURRENT_USER } from "./data";
 import { initialsFromName } from "@/lib/username";
+import { publicProfilePath } from "@/lib/userProfile";
 
 export default function UserProfileHeader() {
   const { user } = useAuth();
@@ -34,6 +35,12 @@ export default function UserProfileHeader() {
               <span className="text-brand-soft">@</span>
               <span className="truncate text-placeholder">{handle}</span>
             </p>
+            <Link
+              href={publicProfilePath(handle)}
+              className="mt-1.5 inline-block text-xs font-bold text-brand"
+            >
+              View public profile
+            </Link>
           </div>
           <Link
             href="/settings/user"

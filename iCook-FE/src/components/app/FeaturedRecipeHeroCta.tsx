@@ -31,7 +31,7 @@ export default function FeaturedRecipeHeroCta({
       <div className="absolute inset-0 flex h-62 flex-col justify-center gap-2 bg-brand/40 p-4 text-white">
         <div className="flex w-full flex-col items-start rounded-lg border-3 border-white/40 px-5 py-4 text-base leading-[22.4px] font-normal">
           <p className="whitespace-nowrap text-xl font-bold">{recipe.name}</p>
-          <p className="text-base text-white/65">{description}</p>
+          <p className="text-base text-white/80 line-clamp-4">{description}</p>
         </div>
         <Link
           href={`/recipe/${recipe.id}`}
