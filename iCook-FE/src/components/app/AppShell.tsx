@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import AppBar from "@/components/app/AppBar";
 import BottomNav from "@/components/app/BottomNav";
 import MorePanel from "@/components/app/MorePanel";
@@ -16,9 +16,11 @@ import { useAuth } from "@/components/auth/AuthProvider";
  */
 export default function AppShell({ children }: { children: ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const { user, loading } = useAuth();
   const [searchOpen, setSearchOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const mainRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -26,9 +28,13 @@ export default function AppShell({ children }: { children: ReactNode }) {
     }
   }, [loading, user, router]);
 
+  useEffect(() => {
+    mainRef.current?.scrollTo({ top: 0 });
+  }, [pathname]);
+
   return (
     <PhoneFrame>
-      <div className="relative flex h-full min-h-0 w-full flex-col overflow-hidden bg-app">
+      <div className="relative flex h-full min-h-0 w-full flex-col overflow-clip bg-app">
         {loading || !user ? (
           <div className="grid flex-1 place-items-center text-muted">
             Loading&hellip;
@@ -36,7 +42,9 @@ export default function AppShell({ children }: { children: ReactNode }) {
         ) : (
           <>
             <AppBar onSearchClick={() => setSearchOpen(true)} />
-            <main className="min-h-0 flex-1 overflow-y-auto">{children}</main>
+            <main ref={mainRef} className="min-h-0 flex-1 overflow-y-auto">
+              {children}
+            </main>
             <BottomNav
               moreOpen={moreOpen}
               onMoreClick={() => setMoreOpen((open) => !open)}

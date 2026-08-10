@@ -111,7 +111,7 @@ function FeedCard({
           href={`/recipe/${item.recipeId}`}
           className="ms-14 block overflow-hidden rounded border border-line"
         >
-          <RecipeThumbnail className="h-20 w-full" iconClassName="h-10 w-11" />
+          <RecipeThumbnail className="aspect-square w-full" iconClassName="h-10 w-11" />
           <div className="px-3 py-2">
             <p className="truncate text-sm font-bold text-ink">
               {item.recipeName}

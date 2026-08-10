@@ -1,8 +1,7 @@
 "use client";
 
-import Image from "next/image";
-import Link from "next/link";
-import { HeartIcon, HeartFillIcon } from "@/components/app/icons";
+import FeaturedRecipeBannerCta from "@/components/app/FeaturedRecipeBannerCta";
+import FeaturedRecipeHeroCta from "@/components/app/FeaturedRecipeHeroCta";
 import RecipeAuthor from "@/components/app/RecipeAuthor";
 import RecipeThumbnail from "@/components/app/RecipeThumbnail";
 import {
@@ -13,6 +12,23 @@ import {
   useSavedRecipes,
   type CatalogRecipe,
 } from "@/components/recipes/SavedRecipesProvider";
+import { HeartIcon, HeartFillIcon } from "@/components/app/icons";
+import Image from "next/image";
+import Link from "next/link";
+
+const FEATURED_DESCRIPTIONS: Record<string, string> = {
+  "1":
+    "Classic Italian comfort made simple. Homemade ravioli filled with a velvety ricotta blend, paired perfectly with a bright, slow-simmered tomato and basil sauce.",
+  "11":
+    "Pan-seared salmon fillets in a rich, velvety garlic butter sauce with fresh lemon and baby spinach. A comforting restaurant-quality dinner ready in under 20 minutes.",
+};
+
+function featuredDescription(recipe: CatalogRecipe) {
+  return (
+    FEATURED_DESCRIPTIONS[recipe.id] ??
+    `A community favorite ${recipe.category} recipe from @${recipe.author}. Tap to open the full recipe.`
+  );
+}
 
 function DiscoverRecipeCard({ recipe }: { recipe: CatalogRecipe }) {
   const { isSaved, toggleSave } = useSavedRecipes();
@@ -23,7 +39,7 @@ function DiscoverRecipeCard({ recipe }: { recipe: CatalogRecipe }) {
       <div className="relative w-full max-w-33.75">
         <Link
           href={`/recipe/${recipe.id}`}
-          className="relative block h-32 w-full overflow-hidden rounded border-2 border-line-soft"
+          className="relative block aspect-square w-full overflow-hidden rounded border-2 border-line-soft"
         >
           <RecipeThumbnail className="size-full" iconClassName="h-[60px] w-[68px]" />
         </Link>
@@ -67,7 +83,9 @@ function RecipeSection({
   return (
     <section className="flex w-full flex-col gap-2 bg-surface px-2 pt-2 pb-4">
       <div className="flex items-start gap-4">
-        <h2 className="min-w-0 flex-1 text-xl leading-6 text-brand">{title}</h2>
+        <h2 className="min-w-0 flex-1 text-xl leading-6 font-bold text-brand">
+          {title}
+        </h2>
         <Link
           href={moreHref}
           className="shrink-0 rounded bg-brand px-2 py-0.5 text-center text-base leading-[22.4px] text-white"
@@ -84,39 +102,21 @@ function RecipeSection({
   );
 }
 
-function FeaturedRecipeCta({ recipe }: { recipe: CatalogRecipe }) {
-  return (
-    <section className="relative w-full overflow-hidden rounded">
-      <RecipeThumbnail className="h-62 w-full rounded" iconClassName="h-16 w-[72px]" />
-      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-brand/75 px-8 pt-10 pb-4 text-app">
-        <div className="flex w-full flex-col items-start rounded-lg border-2 border-app px-5 py-4">
-          <p className="text-base leading-[22.4px]">{recipe.name}</p>
-          <p className="text-base leading-[22.4px]">
-            Classic Italian comfort made simple. Homemade ravioli filled with a
-            velvety ricotta blend, paired perfectly with a bright, slow-simmered
-            tomato and basil sauce.
-          </p>
-        </div>
-        <Link
-          href={`/recipe/${recipe.id}`}
-          className="w-full text-right text-xl leading-6"
-        >
-          View Recipe
-        </Link>
-      </div>
-    </section>
-  );
-}
-
 export default function RecipesScreen() {
   const { savedIds } = useSavedRecipes();
   const mostLoved = sortByMostBookmarked(CATALOG_RECIPES, savedIds);
+  const heroRecipe =
+    CATALOG_RECIPES.find((r) => r.id === "1") ?? mostLoved[0] ?? CATALOG_RECIPES[0];
+  const compactRecipe =
+    CATALOG_RECIPES.find((r) => r.id === "11") ??
+    mostLoved.find((r) => r.id !== heroRecipe.id) ??
+    CATALOG_RECIPES[1] ??
+    heroRecipe;
   const topLoved = mostLoved.slice(0, 3);
-  const nextLoved = mostLoved.slice(3, 6);
-  const featured = mostLoved[0] ?? CATALOG_RECIPES[0];
+  const moreLoved = mostLoved.slice(3, 6);
 
   return (
-    <div className="flex flex-col gap-1 pb-4">
+    <div className="flex flex-col gap-1.5 pb-2">
       <div className="bg-surface px-2 pt-2 pb-4">
         <div className="grid grid-cols-5 gap-2">
           {RECIPE_CATEGORIES.map((cat) => (
@@ -142,16 +142,28 @@ export default function RecipesScreen() {
         </div>
       </div>
 
-      <RecipeSection
-        title="More to Love!"
-        recipes={topLoved}
-        moreHref="/recipes/more?sort=loved"
+      <FeaturedRecipeHeroCta
+        recipe={heroRecipe}
+        description={featuredDescription(heroRecipe)}
       />
-      <FeaturedRecipeCta recipe={featured} />
-      {nextLoved.length > 0 ? (
+
+      {topLoved.length > 0 ? (
         <RecipeSection
-          title="More to Love!"
-          recipes={nextLoved}
+          title="Most Loved Recipes!"
+          recipes={topLoved}
+          moreHref="/recipes/more?sort=loved"
+        />
+      ) : null}
+
+      <FeaturedRecipeBannerCta
+        recipe={compactRecipe}
+        description={featuredDescription(compactRecipe)}
+      />
+
+      {moreLoved.length > 0 ? (
+        <RecipeSection
+          title="More to Love"
+          recipes={moreLoved}
           moreHref="/recipes/more?sort=loved"
         />
       ) : null}

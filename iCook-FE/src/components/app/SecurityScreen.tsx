@@ -32,23 +32,32 @@ function Card({
   icon,
   title,
   description,
+  recommended,
   children,
 }: {
   icon: React.ReactNode;
   title: string;
   description: string;
+  recommended?: boolean;
   children?: React.ReactNode;
 }) {
   return (
-    <section className="flex flex-col gap-3 bg-surface p-4">
-      <div className="flex items-start gap-3">
-        <span className="mt-0.5 text-brand">{icon}</span>
-        <div className="flex-1">
-          <h2 className="text-lg font-bold text-ink">{title}</h2>
+    <section className="flex items-start gap-3 bg-surface p-4">
+      <span className="mt-0.5 text-brand">{icon}</span>
+      <div className="flex min-w-0 flex-1 flex-col gap-3">
+        <div>
+          <div className="flex items-baseline justify-between gap-2">
+            <h2 className="text-lg font-bold text-ink">{title}</h2>
+            {recommended ? (
+              <span className="shrink-0 text-sm font-bold text-brand">
+                Recommended
+              </span>
+            ) : null}
+          </div>
           <p className="text-base text-muted">{description}</p>
         </div>
+        {children}
       </div>
-      {children}
     </section>
   );
 }
@@ -89,13 +98,13 @@ export default function SecurityScreen() {
     );
   }
 
-  function togglePassword() {
-    const enabling = !settings.passwordEnabled;
-    if (!enabling && !otherMethodsActive(settings)) {
+  function togglePasswordless() {
+    const goingPasswordless = settings.passwordEnabled;
+    if (goingPasswordless && !otherMethodsActive(settings)) {
       flash("Add a passkey, authenticator, or backup codes before going passwordless.");
       return;
     }
-    persist({ ...settings, passwordEnabled: enabling });
+    persist({ ...settings, passwordEnabled: !goingPasswordless });
   }
 
   function startAuthenticatorSetup() {
@@ -210,8 +219,7 @@ export default function SecurityScreen() {
   return (
     <div className="flex min-h-full flex-col bg-app">
       <p className="px-4 py-3 text-base text-muted">
-        Choose how you sign in to iCook. Only methods you enable here appear on
-        the login screen.
+        Choose how you sign in to iCook. Only enabled methods will appear on your login screen.
       </p>
 
       {notice ? (
@@ -223,56 +231,53 @@ export default function SecurityScreen() {
         </p>
       ) : null}
 
-      <div className="flex flex-col gap-[5px]">
+      <div className="flex flex-col gap-1.25">
         {/* Password / passwordless */}
         <Card
           icon={<KeyIcon className="size-6" />}
           title="Password"
-          description="Allow signing in with your password. Turn this off for passwordless when you have another method set up."
+          description="Hide password sign-in once a passkey, authenticator, or backup codes are set up."
+          recommended
         >
           <div className="flex items-center justify-between">
-            <span className="text-base font-bold text-ink">
-              Password sign-in
+            <span
+              className={`text-base font-bold ${
+                !settings.passwordEnabled ? "text-online" : "text-muted"
+              }`}
+            >
+              Passwordless
             </span>
             <Switch
-              checked={settings.passwordEnabled}
-              onChange={togglePassword}
-              label="Toggle password sign-in"
+              checked={!settings.passwordEnabled}
+              onChange={togglePasswordless}
+              label="Toggle passwordless sign-in"
             />
           </div>
-          {!settings.passwordEnabled ? (
-            <p className="flex items-center gap-2 text-base text-online">
-              <CheckIcon className="size-5" /> Passwordless — use passkey,
-              authenticator, or backup codes
-            </p>
-          ) : null}
-          <Link
-            href="/change-password"
-            className="mt-1 text-base font-bold text-brand"
-          >
-            Change Password
-          </Link>
         </Card>
 
         {/* Authenticator */}
         <Card
           icon={<ShieldIcon className="size-6" />}
           title="Authenticator app"
-          description="Generate a 6-digit code in Google Authenticator, Authy, or 1Password to sign in."
+          description="Generate 6-digit codes using Google Authenticator, Authy, or 1Password."
+          recommended
         >
           {authenticatorOn && !pendingSecret ? (
             <>
               <div className="flex items-center justify-between">
-                <span className="text-base font-bold text-ink">Connected</span>
+                <span
+                  className={`text-base font-bold ${
+                    authenticatorOn ? "text-online" : "text-muted"
+                  }`}
+                >
+                  Connected
+                </span>
                 <Switch
                   checked
                   onChange={disableAuthenticator}
                   label="Disable authenticator app"
                 />
               </div>
-              <p className="flex items-center gap-2 text-base text-online">
-                <CheckIcon className="size-5" /> Ready to use at login
-              </p>
             </>
           ) : pendingSecret && qrUri ? (
             <div className="flex flex-col gap-3">
@@ -410,6 +415,7 @@ export default function SecurityScreen() {
           icon={<SmartphoneIcon className="size-6" />}
           title="Passkeys"
           description="Sign in with Face ID, fingerprint, Windows Hello, or a security key — no password needed."
+          recommended
         >
           {!passkeysSupported() ? (
             <p className="text-sm text-muted">

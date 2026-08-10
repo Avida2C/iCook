@@ -1,7 +1,8 @@
+/* eslint-disable react-hooks/set-state-in-effect */
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
+import FeaturedRecipeBannerCta from "@/components/app/FeaturedRecipeBannerCta";
 import RecipeAuthor from "@/components/app/RecipeAuthor";
 import RecipeThumbnail from "@/components/app/RecipeThumbnail";
 import { useCreatedContent } from "@/components/app/CreatedContentProvider";
@@ -11,11 +12,18 @@ import {
   type CatalogRecipe,
 } from "@/components/recipes/SavedRecipesProvider";
 import { isProfileSeedEnabled } from "@/lib/accountData";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 
 export const MY_RECIPES = CATALOG_RECIPES.slice(0, 9).map((r) => ({
   ...r,
   author: "you",
 }));
+
+function recipeFeaturedDescription(recipe: CatalogRecipe & { preview?: string }) {
+  if (recipe.preview?.trim()) return recipe.preview.trim();
+  return `A ${recipe.category} favorite from your kitchen. Tap to open the full recipe.`;
+}
 
 function RecipeCard({
   recipe,
@@ -30,7 +38,7 @@ function RecipeCard({
     <div className="flex w-full flex-col items-center rounded">
       <Link
         href={`/recipe/${recipe.id}`}
-        className="relative h-32 w-full overflow-hidden rounded border-2 border-line-soft"
+        className="relative aspect-square w-full overflow-hidden rounded border-2 border-line-soft"
       >
         <RecipeThumbnail className="size-full" iconClassName="h-[60px] w-[68px]" />
       </Link>
@@ -50,7 +58,7 @@ function RecipeCard({
           <button
             type="button"
             aria-label={`Edit ${recipe.name}`}
-            className="flex w-[65px] items-center gap-0.5"
+            className="flex w-16.25 items-center gap-0.5"
           >
             <img
               src="/icons/collection/edit.svg"
@@ -58,14 +66,14 @@ function RecipeCard({
               aria-hidden
               className="size-4 shrink-0"
             />
-            <span className="px-0.5 text-xs leading-[14px] text-placeholder">
+            <span className="px-0.5 text-xs leading-3.5 text-placeholder">
               Edit
             </span>
           </button>
           <button
             type="button"
             aria-label={`Delete ${recipe.name}`}
-            className="flex w-[65px] items-center gap-0.5"
+            className="flex w-16.25 items-center gap-0.5"
           >
             <img
               src="/icons/collection/delete.svg"
@@ -73,7 +81,7 @@ function RecipeCard({
               aria-hidden
               className="size-4 shrink-0"
             />
-            <span className="px-0.5 text-xs leading-[14px] text-placeholder">
+            <span className="px-0.5 text-xs leading-3.5 text-placeholder">
               Delete
             </span>
           </button>
@@ -92,7 +100,7 @@ function RecipeCard({
               aria-hidden
               className="size-4 shrink-0"
             />
-            <span className="px-0.5 text-xs leading-[14px] text-placeholder">
+            <span className="px-0.5 text-xs leading-3.5 text-placeholder">
               Unsave
             </span>
           </button>
@@ -113,26 +121,37 @@ export function MyRecipesPanel() {
   const recipes = includeSeeded
     ? [...createdRecipes, ...MY_RECIPES]
     : createdRecipes;
+  const featured = recipes[0];
+
+  if (recipes.length === 0) {
+    return (
+      <div className="flex w-full flex-col items-center gap-3 bg-surface px-2 py-8">
+        <p className="text-center text-base text-muted">
+          No recipes yet — create your first one.
+        </p>
+        <Link
+          href="/create/recipe"
+          className="rounded bg-brand px-4 py-2 text-sm font-bold text-white"
+        >
+          Create a Recipe
+        </Link>
+      </div>
+    );
+  }
 
   return (
-    <div className="grid w-full grid-cols-3 gap-x-2 gap-y-2 bg-surface px-2 pt-2 pb-2">
-      {recipes.length === 0 ? (
-        <div className="col-span-3 flex flex-col items-center gap-3 py-8">
-          <p className="text-center text-base text-muted">
-            No recipes yet — create your first one.
-          </p>
-          <Link
-            href="/create/recipe"
-            className="rounded bg-brand px-4 py-2 text-sm font-bold text-white"
-          >
-            Create a Recipe
-          </Link>
-        </div>
-      ) : (
-        recipes.map((recipe) => (
+    <div className="flex w-full flex-col gap-1">
+      {featured ? (
+        <FeaturedRecipeBannerCta
+          recipe={featured}
+          description={recipeFeaturedDescription(featured)}
+        />
+      ) : null}
+      <div className="grid w-full grid-cols-3 gap-x-2 gap-y-2 bg-surface px-2 pt-2 pb-2">
+        {recipes.map((recipe) => (
           <RecipeCard key={recipe.id} recipe={recipe} showActions />
-        ))
-      )}
+        ))}
+      </div>
     </div>
   );
 }

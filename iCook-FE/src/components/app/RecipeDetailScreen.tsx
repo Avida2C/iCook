@@ -146,7 +146,7 @@ function MoreCard({
     <div className="flex w-[30%] flex-col items-center">
       <Link
         href={`/recipe/${id}`}
-        className="relative h-24 w-full overflow-hidden rounded border border-line"
+        className="relative aspect-square w-full overflow-hidden rounded border border-line"
       >
         <RecipeThumbnail className="size-full" iconClassName="h-10 w-11" />
       </Link>
@@ -301,7 +301,7 @@ export default function RecipeDetailScreen({
                   <p className="flex-1 leading-5 text-ink">{step.text}</p>
                 </div>
                 {step.image ? (
-                  <RecipeThumbnail className="h-48 w-full" iconClassName="h-12 w-14" />
+                  <RecipeThumbnail className="aspect-square w-full" iconClassName="h-12 w-14" />
                 ) : null}
               </div>
             ))}

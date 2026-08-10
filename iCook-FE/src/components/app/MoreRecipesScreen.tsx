@@ -24,7 +24,7 @@ function MoreRecipeCard({ recipe }: { recipe: CatalogRecipe }) {
       <div className="relative w-full">
         <Link
           href={`/recipe/${recipe.id}`}
-          className="relative block h-32 w-full overflow-hidden rounded border-2 border-line-soft"
+          className="relative block aspect-square w-full overflow-hidden rounded border-2 border-line-soft"
         >
           <RecipeThumbnail className="size-full" iconClassName="h-[60px] w-[68px]" />
         </Link>

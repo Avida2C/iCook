@@ -1,4 +1,4 @@
-/** Shared recipe/post image placeholder that follows the accent color. */
+/** Shared recipe/post image placeholder that follows the accent color. Always square. */
 export default function RecipeThumbnail({
   className = "",
   iconClassName = "h-12 w-14",
@@ -8,7 +8,7 @@ export default function RecipeThumbnail({
 }) {
   return (
     <div
-      className={`relative flex items-center justify-center overflow-hidden bg-brand/10 ${className}`}
+      className={`relative flex aspect-square items-center justify-center overflow-hidden bg-brand/10 ${className}`}
       aria-hidden
     >
       <span

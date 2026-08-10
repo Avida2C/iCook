@@ -130,11 +130,11 @@ export default function SearchOverlay({
       />
 
       <div
-        className={`absolute inset-x-0 top-0 flex h-[42%] flex-col rounded-b-2xl bg-app shadow-xl transition-transform duration-300 ease-out ${
+        className={`absolute inset-x-0 top-0 flex h-[42%] flex-col bg-app shadow-xl transition-transform duration-300 ease-out ${
           open ? "translate-y-0" : "-translate-y-full"
         }`}
       >
-        <div className="flex shrink-0 flex-col gap-2 rounded-t-2xl bg-surface px-3 py-2.5 shadow-sm">
+        <div className="flex shrink-0 flex-col gap-2 bg-surface px-3 py-2.5 shadow-sm">
           <div className="flex flex-1 items-center gap-2 rounded-sm border border-line bg-app px-3 py-2">
             <SearchIcon className="size-5 text-brand" />
             <input
