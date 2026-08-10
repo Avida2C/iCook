@@ -16,6 +16,7 @@ import {
   type CatalogRecipe,
 } from "@/components/recipes/SavedRecipesProvider";
 import { useCreatedContent } from "@/components/app/CreatedContentProvider";
+import { useComments } from "@/components/app/CommentsProvider";
 import { isProfileSeedEnabled } from "@/lib/accountData";
 
 const STORAGE_KEY = "icook.likedPosts";
@@ -80,6 +81,7 @@ function buildActivity(
   likedPosts: LikedPost[],
   savedRecipes: CatalogRecipe[],
   createdActivity: FeedItem[],
+  commentActivity: FeedItem[],
   includeSeededFeed: boolean,
 ): FeedItem[] {
   const seeded = includeSeededFeed
@@ -87,6 +89,7 @@ function buildActivity(
     : [];
   return [
     ...createdActivity,
+    ...commentActivity,
     ...likedPosts.map(youLikedPost),
     ...savedRecipes.map(youLikedRecipe),
     ...seeded,
@@ -96,6 +99,7 @@ function buildActivity(
 export function LikedPostsProvider({ children }: { children: ReactNode }) {
   const { savedRecipes } = useSavedRecipes();
   const { activityItems: createdActivity } = useCreatedContent();
+  const { activityItems: commentActivity } = useComments();
   const [likedPosts, setLikedPosts] = useState<LikedPost[]>([]);
   const [seeded, setSeeded] = useState(true);
 
@@ -139,8 +143,15 @@ export function LikedPostsProvider({ children }: { children: ReactNode }) {
   const likedIds = useMemo(() => likedPosts.map((p) => p.id), [likedPosts]);
 
   const activityItems = useMemo(
-    () => buildActivity(likedPosts, savedRecipes, createdActivity, seeded),
-    [likedPosts, savedRecipes, createdActivity, seeded],
+    () =>
+      buildActivity(
+        likedPosts,
+        savedRecipes,
+        createdActivity,
+        commentActivity,
+        seeded,
+      ),
+    [likedPosts, savedRecipes, createdActivity, commentActivity, seeded],
   );
 
   const value = useMemo(

@@ -20,6 +20,8 @@ type SearchHit =
       name: string;
       href: string;
       subtitle: string;
+      thumbnailUrl?: string;
+      category?: (typeof CATALOG_RECIPES)[number]["category"];
     }
   | {
       kind: "creator";
@@ -96,11 +98,13 @@ export default function SearchOverlay({
     const recipes: SearchHit[] = CATALOG_RECIPES.filter((r) =>
       r.name.toLowerCase().includes(q),
     ).map((r) => ({
-      kind: "recipe",
+      kind: "recipe" as const,
       id: r.id,
       name: r.name,
       href: `/recipe/${r.id}`,
       subtitle: "Recipe",
+      thumbnailUrl: r.thumbnailUrl,
+      category: r.category,
     }));
 
     const people = creators.filter(
@@ -193,6 +197,9 @@ export default function SearchOverlay({
                       <RecipeThumbnail
                         className="size-10 shrink-0 rounded"
                         iconClassName="h-5 w-6"
+                        src={r.kind === "recipe" ? r.thumbnailUrl : undefined}
+                        category={r.kind === "recipe" ? r.category : undefined}
+                        alt={r.name}
                       />
                       <span className="flex min-w-0 flex-col">
                         <span className="truncate text-base font-bold text-ink">

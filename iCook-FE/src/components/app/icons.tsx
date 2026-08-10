@@ -46,6 +46,7 @@ import {
   FiFilter,
   FiEye,
   FiEyeOff,
+  FiSmile,
 } from "react-icons/fi";
 import {
   FaPlay,
@@ -127,6 +128,7 @@ export const PlayIcon = FaPlay;
 export const ApproveIcon = FaCheckCircle;
 export const CommentIcon = BiCommentDots;
 export const CommentEditIcon = BiCommentEdit;
+export const EmojiIcon = FiSmile;
 
 // Post editor toolbar
 export const BoldIcon = FaBold;

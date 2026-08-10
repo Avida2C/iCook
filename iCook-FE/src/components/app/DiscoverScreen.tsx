@@ -277,7 +277,13 @@ function RecipeFeedCard({ item }: { item: Extract<CommunityItem, { kind: "recipe
         href={`/recipe/${item.recipeId}`}
         className="block overflow-hidden rounded border border-line"
       >
-          <RecipeThumbnail className="aspect-square w-full" iconClassName="h-12 w-14" />
+          <RecipeThumbnail
+            className="aspect-square w-full"
+            iconClassName="h-12 w-14"
+            src={recipe.thumbnailUrl}
+            category={recipe.category}
+            alt={recipe.name}
+          />
           <div className="px-3 py-2.5">
             <p className="truncate text-sm font-bold text-ink">{item.recipeName}</p>
             <p className="mt-0.5 line-clamp-2 text-xs leading-4 text-muted">

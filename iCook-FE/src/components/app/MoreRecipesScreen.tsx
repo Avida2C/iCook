@@ -26,7 +26,13 @@ function MoreRecipeCard({ recipe }: { recipe: CatalogRecipe }) {
           href={`/recipe/${recipe.id}`}
           className="relative block aspect-square w-full overflow-hidden rounded border-2 border-line-soft"
         >
-          <RecipeThumbnail className="size-full" iconClassName="h-[60px] w-[68px]" />
+          <RecipeThumbnail
+            className="size-full"
+            iconClassName="h-[60px] w-[68px]"
+            src={recipe.thumbnailUrl}
+            category={recipe.category}
+            alt={recipe.name}
+          />
         </Link>
         <button
           type="button"

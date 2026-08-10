@@ -9,30 +9,15 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import {
+  CATALOG_RECIPES,
+  type CatalogRecipe,
+  type Recipe,
+  type RecipeCategorySlug,
+} from "@/components/recipes/recipesData";
 
-export type RecipeCategorySlug =
-  | "breakfast"
-  | "lunch"
-  | "dinner"
-  | "snacks"
-  | "sweets"
-  | "fruity"
-  | "toasty"
-  | "savoury"
-  | "pasta"
-  | "all"
-  | "loved";
-
-export type CatalogRecipe = {
-  id: string;
-  name: string;
-  author: string;
-  category: Exclude<RecipeCategorySlug, "all" | "loved">;
-  /** Community bookmark baseline (other users). Current user save adds +1 at runtime. */
-  bookmarkCount: number;
-  /** Ingredient names used for pantry matching in search. */
-  ingredients: string[];
-};
+export type { CatalogRecipe, Recipe, RecipeCategorySlug };
+export { CATALOG_RECIPES } from "@/components/recipes/recipesData";
 
 export const RECIPE_CATEGORIES = [
   { label: "Breakfast", slug: "breakfast", icon: "/icons/recipes/breakfast.png" },
@@ -47,114 +32,6 @@ export const RECIPE_CATEGORIES = [
   { label: "More to Love", slug: "loved", icon: "/icons/recipes/all.png" },
 ] as const;
 
-/** Shared recipes that appear in Discover/Recipes and can be saved. */
-export const CATALOG_RECIPES: CatalogRecipe[] = [
-  {
-    id: "1",
-    name: "Ricotta Ravioli",
-    author: "courtneyhenry",
-    category: "pasta",
-    bookmarkCount: 128,
-    ingredients: ["Flour", "Eggs", "Ricotta", "Basil", "Olive Oil", "Salt", "Black Pepper", "Spinach", "Nutmeg"],
-  },
-  {
-    id: "2",
-    name: "Egg on Toast",
-    author: "chefamy",
-    category: "toasty",
-    bookmarkCount: 96,
-    ingredients: ["Eggs", "Olive Oil", "Salt", "Black Pepper", "Butter"],
-  },
-  {
-    id: "3",
-    name: "Blueberry Pancakes",
-    author: "bakerben",
-    category: "breakfast",
-    bookmarkCount: 112,
-    ingredients: ["Flour", "Eggs", "Milk", "Butter", "Sugar", "Blueberries", "Lemon"],
-  },
-  {
-    id: "4",
-    name: "Pasta Salad",
-    author: "courtneyhenry",
-    category: "lunch",
-    bookmarkCount: 74,
-    ingredients: ["Pasta", "Olive Oil", "Lemon", "Garlic Cloves", "Parsley", "Salt", "Black Pepper", "Tomatoes"],
-  },
-  {
-    id: "5",
-    name: "Pork Roast",
-    author: "grillguy",
-    category: "dinner",
-    bookmarkCount: 88,
-    ingredients: ["Pork", "Garlic Cloves", "Dried Rosemary", "Dried Thyme", "Olive Oil", "Salt", "Black Pepper"],
-  },
-  {
-    id: "6",
-    name: "Chocolate Cookies",
-    author: "sweetsue",
-    category: "sweets",
-    bookmarkCount: 141,
-    ingredients: ["Flour", "Butter", "Sugar", "Eggs", "Chocolate", "Vanilla Extract", "Salt"],
-  },
-  {
-    id: "7",
-    name: "Traditional Ravioli",
-    author: "courtneyhenry",
-    category: "pasta",
-    bookmarkCount: 63,
-    ingredients: ["Flour", "Eggs", "Ricotta", "Olive Oil", "Salt", "Basil"],
-  },
-  {
-    id: "8",
-    name: "Egg & Tomatoes on Toast",
-    author: "chefamy",
-    category: "toasty",
-    bookmarkCount: 51,
-    ingredients: ["Eggs", "Tomatoes", "Olive Oil", "Garlic Cloves", "Salt", "Black Pepper", "Basil"],
-  },
-  {
-    id: "9",
-    name: "Popcorn",
-    author: "snacksam",
-    category: "snacks",
-    bookmarkCount: 39,
-    ingredients: ["Olive Oil", "Salt", "Butter"],
-  },
-  {
-    id: "10",
-    name: "Roast Pork",
-    author: "grillguy",
-    category: "dinner",
-    bookmarkCount: 57,
-    ingredients: ["Pork", "Garlic Cloves", "Dried Rosemary", "Olive Oil", "Salt", "Black Pepper", "Lemon"],
-  },
-  {
-    id: "11",
-    name: "Salmon with Roast Potatoes",
-    author: "fishfan",
-    category: "dinner",
-    bookmarkCount: 82,
-    ingredients: ["Salmon", "Potatoes", "Olive Oil", "Lemon", "Dill", "Salt", "Black Pepper", "Garlic Cloves"],
-  },
-  {
-    id: "12",
-    name: "Steak and Potato Jacket",
-    author: "grillguy",
-    category: "savoury",
-    bookmarkCount: 69,
-    ingredients: ["Steak", "Potatoes", "Olive Oil", "Salt", "Black Pepper", "Garlic Cloves", "Butter"],
-  },
-  {
-    id: "13",
-    name: "Raspberry Cheesecake",
-    author: "sweetsue",
-    category: "fruity",
-    bookmarkCount: 104,
-    ingredients: ["Raspberries", "Sugar", "Butter", "Vanilla Extract", "Lemon", "Yogurt"],
-  },
-];
-
 export function getCategoryLabel(slug: string | undefined): string {
   if (!slug || slug === "all") return "More Recipes";
   if (slug === "loved") return "More to Love";
@@ -168,16 +45,16 @@ export function categoryHref(slug: string): string {
 }
 
 export function filterRecipesByCategory(
-  recipes: CatalogRecipe[],
+  recipes: Recipe[],
   category: string | undefined,
-): CatalogRecipe[] {
+): Recipe[] {
   if (!category || category === "all") return recipes;
   return recipes.filter((recipe) => recipe.category === category);
 }
 
 /** Live bookmark total: community baseline + current user if saved. */
 export function getLiveBookmarkCount(
-  recipe: CatalogRecipe,
+  recipe: Pick<Recipe, "id" | "bookmarkCount">,
   savedIds: string[],
 ): number {
   return recipe.bookmarkCount + (savedIds.includes(recipe.id) ? 1 : 0);
@@ -185,9 +62,9 @@ export function getLiveBookmarkCount(
 
 /** Rank recipes most → least bookmarked. */
 export function sortByMostBookmarked(
-  recipes: CatalogRecipe[],
+  recipes: Recipe[],
   savedIds: string[] = [],
-): CatalogRecipe[] {
+): Recipe[] {
   return [...recipes].sort((a, b) => {
     const diff =
       getLiveBookmarkCount(b, savedIds) - getLiveBookmarkCount(a, savedIds);
@@ -200,9 +77,9 @@ const STORAGE_KEY = "icook.savedRecipes";
 
 type SavedRecipesContextValue = {
   savedIds: string[];
-  savedRecipes: CatalogRecipe[];
+  savedRecipes: Recipe[];
   isSaved: (id: string) => boolean;
-  toggleSave: (recipe: CatalogRecipe) => void;
+  toggleSave: (recipe: Pick<Recipe, "id">) => void;
   unsave: (id: string) => void;
 };
 
@@ -245,7 +122,7 @@ export function SavedRecipesProvider({ children }: { children: ReactNode }) {
   );
 
   const toggleSave = useCallback(
-    (recipe: CatalogRecipe) => {
+    (recipe: Pick<Recipe, "id">) => {
       persist(
         savedIds.includes(recipe.id)
           ? savedIds.filter((id) => id !== recipe.id)
@@ -266,7 +143,7 @@ export function SavedRecipesProvider({ children }: { children: ReactNode }) {
     () =>
       savedIds
         .map((id) => CATALOG_RECIPES.find((r) => r.id === id))
-        .filter((r): r is CatalogRecipe => Boolean(r)),
+        .filter((r): r is Recipe => Boolean(r)),
     [savedIds],
   );
 

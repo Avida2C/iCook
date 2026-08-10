@@ -22,6 +22,7 @@ export const MY_RECIPES = CATALOG_RECIPES.slice(0, 9).map((r) => ({
 
 function recipeFeaturedDescription(recipe: CatalogRecipe & { preview?: string }) {
   if (recipe.preview?.trim()) return recipe.preview.trim();
+  if (recipe.description?.trim()) return recipe.description.trim();
   return `A ${recipe.category} favorite from your kitchen. Tap to open the full recipe.`;
 }
 
@@ -40,7 +41,13 @@ function RecipeCard({
         href={`/recipe/${recipe.id}`}
         className="relative aspect-square w-full overflow-hidden rounded border-2 border-line-soft"
       >
-        <RecipeThumbnail className="size-full" iconClassName="h-[60px] w-[68px]" />
+        <RecipeThumbnail
+          className="size-full"
+          iconClassName="h-[60px] w-[68px]"
+          src={recipe.thumbnailUrl}
+          category={recipe.category}
+          alt={recipe.name}
+        />
       </Link>
 
       <div className="w-full border-b border-line-soft p-1">
@@ -55,8 +62,8 @@ function RecipeCard({
 
       {showActions ? (
         <div className="flex w-full items-center gap-1 pt-2 pb-1">
-          <button
-            type="button"
+          <Link
+            href={`/recipe/${recipe.id}/edit`}
             aria-label={`Edit ${recipe.name}`}
             className="flex w-16.25 items-center gap-0.5"
           >
@@ -69,7 +76,7 @@ function RecipeCard({
             <span className="px-0.5 text-xs leading-3.5 text-placeholder">
               Edit
             </span>
-          </button>
+          </Link>
           <button
             type="button"
             aria-label={`Delete ${recipe.name}`}
@@ -118,8 +125,12 @@ export function MyRecipesPanel() {
     setIncludeSeeded(isProfileSeedEnabled());
   }, []);
 
+  const createdIds = new Set(createdRecipes.map((r) => r.id));
   const recipes = includeSeeded
-    ? [...createdRecipes, ...MY_RECIPES]
+    ? [
+        ...createdRecipes,
+        ...MY_RECIPES.filter((r) => !createdIds.has(r.id)),
+      ]
     : createdRecipes;
   const featured = recipes[0];
 
@@ -157,7 +168,11 @@ export function MyRecipesPanel() {
 }
 
 export function SavedRecipesPanel() {
-  const { savedRecipes, unsave } = useSavedRecipes();
+  const { savedIds, unsave } = useSavedRecipes();
+  const { resolveRecipe } = useCreatedContent();
+  const savedRecipes = savedIds
+    .map((id) => resolveRecipe(id))
+    .filter((r): r is NonNullable<typeof r> => Boolean(r));
 
   return (
     <div className="grid w-full grid-cols-3 gap-x-2 gap-y-2 bg-surface px-2 pt-2 pb-2">

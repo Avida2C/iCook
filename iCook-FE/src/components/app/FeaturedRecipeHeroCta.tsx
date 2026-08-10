@@ -3,7 +3,7 @@ import RecipeThumbnail from "@/components/app/RecipeThumbnail";
 import type { CatalogRecipe } from "@/components/recipes/SavedRecipesProvider";
 
 export type FeaturedRecipeHeroCtaProps = {
-  recipe: Pick<CatalogRecipe, "id" | "name">;
+  recipe: Pick<CatalogRecipe, "id" | "name" | "category" | "thumbnailUrl">;
   description: string;
   className?: string;
 };
@@ -20,8 +20,11 @@ export default function FeaturedRecipeHeroCta({
     >
       <div className="h-62 w-full overflow-hidden bg-app">
         <RecipeThumbnail
-          className="size-full"
+          className="size-full !aspect-auto h-full"
           iconClassName="h-[60px] w-[68px]"
+          src={recipe.thumbnailUrl}
+          category={recipe.category}
+          alt={recipe.name}
         />
       </div>
       <div className="absolute inset-0 flex h-62 flex-col justify-center gap-2 bg-brand/40 p-4 text-white">

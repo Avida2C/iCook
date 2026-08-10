@@ -6,126 +6,40 @@ import {
   HeartFillIcon,
   CommentIcon,
   ShareIcon,
-  SendIcon,
+  PostIcon,
 } from "@/components/app/icons";
 import { useLikedPosts } from "@/components/app/LikedPostsProvider";
 import { useCreatedContent } from "@/components/app/CreatedContentProvider";
-import UserAvatar from "@/components/app/UserAvatar";
-import UserNameLink from "@/components/app/UserNameLink";
-import { withLiveProfile } from "@/components/app/user/authors";
+import { useComments } from "@/components/app/CommentsProvider";
+import CommentsSection from "@/components/app/CommentsSection";
+import ContentCreatorCard from "@/components/app/ContentCreatorCard";
+import { CATALOG_POSTS } from "@/components/app/postsData";
+import { resolveAuthor, withLiveProfile } from "@/components/app/user/authors";
 import { useCurrentFeedUser } from "@/components/app/user/useCurrentFeedUser";
-import type { FeedUser } from "@/components/app/user/types";
 import { absoluteAppUrl, shareContent } from "@/lib/share";
-import { userProfilePath } from "@/lib/userProfile";
-
-const POSTS: Record<
-  string,
-  {
-    title: string;
-    body: string;
-    time: string;
-    user: FeedUser;
-    likes: number;
-    comments: { name: string; initials: string; text: string; time: string }[];
-  }
-> = {
-  "1": {
-    title: "My go-to cookie tip",
-    body: "Chill your dough for at least 30 minutes — it keeps the cookies thick and chewy every time. Extra points if you brown the butter first. I also scoop onto a cold sheet so they don't spread as much in the oven.",
-    time: "2h ago",
-    user: { name: "Sweet Sue", handle: "sweetsue", initials: "SS" },
-    likes: 28,
-    comments: [
-      {
-        name: "Baker Ben",
-        initials: "BB",
-        text: "Brown butter changed my baking forever.",
-        time: "1h ago",
-      },
-      {
-        name: "Courtney Henry",
-        initials: "CH",
-        text: "Trying this tonight!",
-        time: "45m ago",
-      },
-    ],
-  },
-  "2": {
-    title: "Kitchen reset",
-    body: "Cleared out the spice rack this morning — sharing what stayed, what went, and the three bottles I always refill first: smoked paprika, cumin, and Aleppo pepper. If it smells like cardboard, it's done.",
-    time: "Yesterday",
-    user: { name: "Chef Amy", handle: "chefamy", initials: "CA" },
-    likes: 19,
-    comments: [
-      {
-        name: "Grill Guy",
-        initials: "GG",
-        text: "Aleppo pepper is underrated.",
-        time: "Yesterday",
-      },
-    ],
-  },
-  "3": {
-    title: "Charcoal vs gas — honest take",
-    body: "Gas is convenient. Charcoal wins on flavour. If you only grill on weekends, charcoal is worth the mess. Keep a chimney starter and you'll never fight with lighter fluid again.",
-    time: "2d ago",
-    user: { name: "Grill Guy", handle: "grillguy", initials: "GG" },
-    likes: 34,
-    comments: [
-      {
-        name: "Fish Fan",
-        initials: "FF",
-        text: "Agreed — especially for fish skin.",
-        time: "2d ago",
-      },
-    ],
-  },
-  "4": {
-    title: "Weeknight pasta formula",
-    body: "One pan, one handful of greens, whatever cheese you have. Boil pasta, sear garlic in olive oil, toss greens until wilted, finish with pasta water and cheese. The formula I use when dinner needs to happen in 20 minutes.",
-    time: "4d ago",
-    user: {
-      name: "Courtney Henry",
-      handle: "courtneyhenry",
-      initials: "CH",
-    },
-    likes: 56,
-    comments: [
-      {
-        name: "Sweet Sue",
-        initials: "SS",
-        text: "This is my Tuesday ritual.",
-        time: "3d ago",
-      },
-    ],
-  },
-};
 
 export default function PostDetailScreen({ postId }: { postId: string }) {
   const me = useCurrentFeedUser();
   const { getPost } = useCreatedContent();
+  const { getComments } = useComments();
   const created = getPost(postId);
-  const catalog = POSTS[postId];
+  const catalog = CATALOG_POSTS[postId];
   const resolvedId = created?.id ?? (catalog ? postId : "1");
   const post = created
     ? {
         title: created.title,
         body: created.body,
         time: "Just now",
+        category: created.category || "Tips",
         user: me,
         likes: 0,
-        comments: [] as {
-          name: string;
-          initials: string;
-          text: string;
-          time: string;
-        }[],
       }
-    : (catalog ?? POSTS["1"]);
-  const author = withLiveProfile(post.user, me);
+    : (catalog ?? CATALOG_POSTS["1"]);
+  const author = withLiveProfile(resolveAuthor(post.user.handle, me), me);
   const { isLiked, likeCount, toggleLike } = useLikedPosts();
   const liked = isLiked(resolvedId);
   const likes = likeCount(resolvedId, post.likes);
+  const commentCount = getComments("post", resolvedId).length;
 
   const onShare = () => {
     void shareContent({
@@ -135,105 +49,91 @@ export default function PostDetailScreen({ postId }: { postId: string }) {
     });
   };
 
+  const onToggleLike = () => {
+    toggleLike({ id: resolvedId, title: post.title });
+  };
+
   return (
     <div className="page">
-      <article className="feed-card flex flex-col gap-3">
-        <div className="flex gap-3">
-          <Link
-            href={userProfilePath(author.handle, me.handle)}
-            aria-label={author.name}
-          >
-            <UserAvatar
-              initials={author.initials}
-              handle={author.handle}
-              src={author.avatarUrl}
-              me={author.handle === me.handle}
-            />
-          </Link>
-          <div className="min-w-0 flex-1">
-            <UserNameLink
-              name={author.name}
-              handle={author.handle}
-              className="truncate text-sm font-bold text-brand"
-            />
-            <p className="mt-0.5 flex items-center gap-0.5 text-xs leading-[14px]">
-              <span className="text-brand-soft">@</span>
-              <Link
-                href={userProfilePath(author.handle, me.handle)}
-                className="truncate text-placeholder"
+      <div className="list-stack py-2">
+        {/* Hero */}
+        <div className="relative flex h-56 w-full items-center justify-center overflow-hidden bg-app">
+          <PostIcon className="size-16 text-brand" />
+        </div>
+
+        {/* Title / content */}
+        <section className="feed-card flex flex-col gap-3">
+          <div>
+            <div className="flex items-center gap-2 border-b-2 border-brand py-2">
+              <h1 className="min-w-0 flex-1 text-xl font-bold text-ink">
+                {post.title}
+              </h1>
+              <button
+                type="button"
+                aria-label={
+                  liked ? `Unlike ${post.title}` : `Like ${post.title}`
+                }
+                aria-pressed={liked}
+                onClick={onToggleLike}
+                className="shrink-0 text-brand"
               >
-                {author.handle}
-              </Link>
-              <span className="text-muted"> · {post.time}</span>
-            </p>
-          </div>
-        </div>
-
-        <div>
-          <h1 className="text-xl font-bold text-ink">{post.title}</h1>
-          <p className="mt-2 text-base leading-6 text-ink-secondary">
-            {post.body}
-          </p>
-        </div>
-
-        <div className="flex items-center gap-5 border-t border-line pt-3 text-brand">
-          <button
-            type="button"
-            aria-label={liked ? `Unlike ${post.title}` : `Like ${post.title}`}
-            aria-pressed={liked}
-            onClick={() => toggleLike({ id: resolvedId, title: post.title })}
-            className="inline-flex items-center gap-1.5 text-sm text-muted"
-          >
-            {liked ? (
-              <HeartFillIcon className="size-5 text-brand" />
-            ) : (
-              <HeartIcon className="size-5 text-brand" />
-            )}
-            {likes}
-          </button>
-          <span className="inline-flex items-center gap-1.5 text-sm text-muted">
-            <CommentIcon className="size-5 text-brand" />
-            {post.comments.length}
-          </span>
-          <button
-            type="button"
-            aria-label={`Share ${post.title}`}
-            onClick={onShare}
-            className="ms-auto"
-          >
-            <ShareIcon className="size-5" />
-          </button>
-        </div>
-      </article>
-
-      <section className="list-stack px-0 py-2">
-        <h2 className="section-header section-title">Comments</h2>
-        {post.comments.map((c) => (
-          <div key={`${c.name}-${c.time}`} className="feed-card flex gap-3">
-            <span className="avatar-sm">{c.initials}</span>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-bold text-brand">{c.name}</p>
-              <p className="mt-0.5 text-sm text-ink">{c.text}</p>
-              <p className="mt-1 text-xs text-muted">{c.time}</p>
+                {liked ? (
+                  <HeartFillIcon className="size-7" />
+                ) : (
+                  <HeartIcon className="size-7" />
+                )}
+              </button>
+              <button
+                type="button"
+                aria-label={`Share ${post.title}`}
+                onClick={onShare}
+                className="shrink-0 text-brand"
+              >
+                <ShareIcon className="size-6" />
+              </button>
             </div>
+            <p className="mt-2 flex gap-2 text-sm text-ink">
+              <span className="font-bold text-ink-secondary">Category</span>
+              <span className="italic text-muted">{post.category}</span>
+            </p>
+            <p className="mt-1 text-xs text-muted">{post.time}</p>
           </div>
-        ))}
-        <form
-          className="feed-card flex items-center gap-1.5"
-          onSubmit={(e) => e.preventDefault()}
+
+          <p className="text-base leading-6 text-ink-secondary">{post.body}</p>
+
+          <div className="flex items-center gap-5 border-t border-line pt-3 text-sm text-muted">
+            <span className="inline-flex items-center gap-1.5">
+              {liked ? (
+                <HeartFillIcon className="size-5 text-brand" />
+              ) : (
+                <HeartIcon className="size-5 text-brand" />
+              )}
+              {likes}
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <CommentIcon className="size-5 text-brand" />
+              {commentCount}
+            </span>
+          </div>
+        </section>
+
+        {/* Creator + comments */}
+        <ContentCreatorCard
+          author={author}
+          me={me}
+          heartPressed={liked}
+          heartLabel={liked ? `Unlike ${post.title}` : `Like ${post.title}`}
+          onHeart={onToggleLike}
+          shareLabel={`Share ${post.title}`}
+          onShare={onShare}
         >
-          <input
-            id="post-comment"
-            name="comment"
-            className="flex-1 rounded bg-app px-2.5 py-2 text-base font-bold text-ink outline-none placeholder:text-muted"
-            placeholder="Write a comment!"
-            aria-label="Write a comment"
+          <CommentsSection
+            targetKind="post"
+            targetId={resolvedId}
+            targetTitle={post.title}
           />
-          <button type="submit" aria-label="Send comment" className="text-brand">
-            <SendIcon className="size-6" />
-          </button>
-        </form>
-      </section>
+        </ContentCreatorCard>
+      </div>
     </div>
   );
 }

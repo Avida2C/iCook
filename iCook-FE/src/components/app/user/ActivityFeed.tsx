@@ -10,6 +10,7 @@ import RecipeThumbnail from "@/components/app/RecipeThumbnail";
 import UserAvatar from "@/components/app/UserAvatar";
 import UserNameLink from "@/components/app/UserNameLink";
 import { useLikedPosts } from "@/components/app/LikedPostsProvider";
+import { useCreatedContent } from "@/components/app/CreatedContentProvider";
 import type { FeedItem, FeedUser } from "./types";
 import { filterActivityItems, searchActivityItems } from "./activityFilters";
 import { useActivityFilters } from "./ActivityFiltersProvider";
@@ -49,6 +50,7 @@ function FeedCard({
   item: FeedItem;
   me: FeedUser;
 }) {
+  const { resolveRecipe } = useCreatedContent();
   const unreadDot = item.unread ? (
     <span
       className="mt-1.5 size-2 shrink-0 rounded-full bg-brand"
@@ -83,6 +85,7 @@ function FeedCard({
 
   if (item.kind === "recipe") {
     const user = withLiveProfile(item.user, me);
+    const recipe = resolveRecipe(item.recipeId);
     return (
       <article className="feed-card flex flex-col gap-2">
         <div className="flex gap-3">
@@ -111,7 +114,13 @@ function FeedCard({
           href={`/recipe/${item.recipeId}`}
           className="ms-14 block overflow-hidden rounded border border-line"
         >
-          <RecipeThumbnail className="aspect-square w-full" iconClassName="h-10 w-11" />
+          <RecipeThumbnail
+            className="aspect-square w-full"
+            iconClassName="h-10 w-11"
+            src={recipe?.thumbnailUrl}
+            category={recipe?.category}
+            alt={item.recipeName}
+          />
           <div className="px-3 py-2">
             <p className="truncate text-sm font-bold text-ink">
               {item.recipeName}

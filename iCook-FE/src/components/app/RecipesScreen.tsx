@@ -16,18 +16,9 @@ import { HeartIcon, HeartFillIcon } from "@/components/app/icons";
 import Image from "next/image";
 import Link from "next/link";
 
-const FEATURED_DESCRIPTIONS: Record<string, string> = {
-  "1":
-    "Classic Italian comfort made simple. Homemade ravioli filled with a velvety ricotta blend, paired perfectly with a bright, slow-simmered tomato and basil sauce.",
-  "11":
-    "Pan-seared salmon fillets in a rich, velvety garlic butter sauce with fresh lemon and baby spinach. A comforting restaurant-quality dinner ready in under 20 minutes.",
-};
-
 function featuredDescription(recipe: CatalogRecipe) {
-  return (
-    FEATURED_DESCRIPTIONS[recipe.id] ??
-    `A community favorite ${recipe.category} recipe from @${recipe.author}. Tap to open the full recipe.`
-  );
+  if (recipe.description?.trim()) return recipe.description.trim();
+  return `A community favorite ${recipe.category} recipe from @${recipe.author}. Tap to open the full recipe.`;
 }
 
 function DiscoverRecipeCard({ recipe }: { recipe: CatalogRecipe }) {
@@ -41,7 +32,13 @@ function DiscoverRecipeCard({ recipe }: { recipe: CatalogRecipe }) {
           href={`/recipe/${recipe.id}`}
           className="relative block aspect-square w-full overflow-hidden rounded border-2 border-line-soft"
         >
-          <RecipeThumbnail className="size-full" iconClassName="h-[60px] w-[68px]" />
+          <RecipeThumbnail
+            className="size-full"
+            iconClassName="h-[60px] w-[68px]"
+            src={recipe.thumbnailUrl}
+            category={recipe.category}
+            alt={recipe.name}
+          />
         </Link>
         <button
           type="button"

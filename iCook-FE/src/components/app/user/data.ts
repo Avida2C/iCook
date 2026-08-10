@@ -65,7 +65,7 @@ export const ACTIVITY_FEED: FeedItem[] = [
     time: "Yesterday",
     target: "Ricotta Ravioli",
     recipeId: "1",
-    preview: "Tried this last night — the filling was perfect!",
+    preview: "Tried this last night — the filling was perfect! 🔥",
   },
   {
     id: "5",
