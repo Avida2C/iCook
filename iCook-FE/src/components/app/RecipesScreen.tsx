@@ -12,13 +12,14 @@ import {
   useSavedRecipes,
   type CatalogRecipe,
 } from "@/components/recipes/SavedRecipesProvider";
+import { primaryCategory } from "@/components/recipes/recipesData";
 import { HeartIcon, HeartFillIcon } from "@/components/app/icons";
 import Image from "next/image";
 import Link from "next/link";
 
 function featuredDescription(recipe: CatalogRecipe) {
   if (recipe.description?.trim()) return recipe.description.trim();
-  return `A community favorite ${recipe.category} recipe from @${recipe.author}. Tap to open the full recipe.`;
+  return `A community favorite ${primaryCategory(recipe)} recipe from @${recipe.author}. Tap to open the full recipe.`;
 }
 
 function DiscoverRecipeCard({ recipe }: { recipe: CatalogRecipe }) {
@@ -36,7 +37,7 @@ function DiscoverRecipeCard({ recipe }: { recipe: CatalogRecipe }) {
             className="size-full"
             iconClassName="h-[60px] w-[68px]"
             src={recipe.thumbnailUrl}
-            category={recipe.category}
+            category={primaryCategory(recipe)}
             alt={recipe.name}
           />
         </Link>

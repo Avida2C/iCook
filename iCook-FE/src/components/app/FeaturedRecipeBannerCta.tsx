@@ -1,9 +1,10 @@
 import Link from "next/link";
 import RecipeThumbnail from "@/components/app/RecipeThumbnail";
 import type { CatalogRecipe } from "@/components/recipes/SavedRecipesProvider";
+import { primaryCategory } from "@/components/recipes/recipesData";
 
 export type FeaturedRecipeBannerCtaProps = {
-  recipe: Pick<CatalogRecipe, "id" | "name" | "category" | "thumbnailUrl">;
+  recipe: Pick<CatalogRecipe, "id" | "name" | "categories" | "thumbnailUrl">;
   description: string;
   className?: string;
 };
@@ -34,7 +35,7 @@ export default function FeaturedRecipeBannerCta({
             className="size-full"
             iconClassName="h-[60px] w-[68px]"
             src={recipe.thumbnailUrl}
-            category={recipe.category}
+            category={primaryCategory(recipe)}
             alt={recipe.name}
           />
         </div>

@@ -12,6 +12,7 @@ import {
   type CatalogRecipe,
 } from "@/components/recipes/SavedRecipesProvider";
 import { isProfileSeedEnabled } from "@/lib/accountData";
+import { primaryCategory } from "@/components/recipes/recipesData";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
@@ -23,17 +24,19 @@ export const MY_RECIPES = CATALOG_RECIPES.slice(0, 9).map((r) => ({
 function recipeFeaturedDescription(recipe: CatalogRecipe & { preview?: string }) {
   if (recipe.preview?.trim()) return recipe.preview.trim();
   if (recipe.description?.trim()) return recipe.description.trim();
-  return `A ${recipe.category} favorite from your kitchen. Tap to open the full recipe.`;
+  return `A ${primaryCategory(recipe)} favorite from your kitchen. Tap to open the full recipe.`;
 }
 
 function RecipeCard({
   recipe,
   showActions = false,
   onUnsave,
+  onDelete,
 }: {
   recipe: CatalogRecipe;
   showActions?: boolean;
   onUnsave?: () => void;
+  onDelete?: () => void;
 }) {
   return (
     <div className="flex w-full flex-col items-center rounded">
@@ -45,7 +48,7 @@ function RecipeCard({
           className="size-full"
           iconClassName="h-[60px] w-[68px]"
           src={recipe.thumbnailUrl}
-          category={recipe.category}
+          category={primaryCategory(recipe)}
           alt={recipe.name}
         />
       </Link>
@@ -80,6 +83,7 @@ function RecipeCard({
           <button
             type="button"
             aria-label={`Delete ${recipe.name}`}
+            onClick={onDelete}
             className="flex w-16.25 items-center gap-0.5"
           >
             <img
@@ -118,20 +122,27 @@ function RecipeCard({
 }
 
 export function MyRecipesPanel() {
-  const { recipes: createdRecipes } = useCreatedContent();
+  const {
+    recipes: createdRecipes,
+    deleteRecipe,
+    deletedRecipeIds,
+  } = useCreatedContent();
   const [includeSeeded, setIncludeSeeded] = useState(true);
 
   useEffect(() => {
     setIncludeSeeded(isProfileSeedEnabled());
   }, []);
 
+  const deleted = new Set(deletedRecipeIds);
   const createdIds = new Set(createdRecipes.map((r) => r.id));
   const recipes = includeSeeded
     ? [
-        ...createdRecipes,
-        ...MY_RECIPES.filter((r) => !createdIds.has(r.id)),
+        ...createdRecipes.filter((r) => !deleted.has(r.id)),
+        ...MY_RECIPES.filter(
+          (r) => !createdIds.has(r.id) && !deleted.has(r.id),
+        ),
       ]
-    : createdRecipes;
+    : createdRecipes.filter((r) => !deleted.has(r.id));
   const featured = recipes[0];
 
   if (recipes.length === 0) {
@@ -160,7 +171,12 @@ export function MyRecipesPanel() {
       ) : null}
       <div className="grid w-full grid-cols-3 gap-x-2 gap-y-2 bg-surface px-2 pt-2 pb-2">
         {recipes.map((recipe) => (
-          <RecipeCard key={recipe.id} recipe={recipe} showActions />
+          <RecipeCard
+            key={recipe.id}
+            recipe={recipe}
+            showActions
+            onDelete={() => deleteRecipe(recipe.id)}
+          />
         ))}
       </div>
     </div>

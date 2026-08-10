@@ -14,6 +14,7 @@ import {
   type CatalogRecipe,
   type Recipe,
   type RecipeCategorySlug,
+  recipeHasCategory,
 } from "@/components/recipes/recipesData";
 
 export type { CatalogRecipe, Recipe, RecipeCategorySlug };
@@ -49,7 +50,7 @@ export function filterRecipesByCategory(
   category: string | undefined,
 ): Recipe[] {
   if (!category || category === "all") return recipes;
-  return recipes.filter((recipe) => recipe.category === category);
+  return recipes.filter((recipe) => recipeHasCategory(recipe, category));
 }
 
 /** Live bookmark total: community baseline + current user if saved. */

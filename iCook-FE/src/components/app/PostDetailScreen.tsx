@@ -24,6 +24,7 @@ import { useCurrentFeedUser } from "@/components/app/user/useCurrentFeedUser";
 import { getCategoryLabel } from "@/components/recipes/SavedRecipesProvider";
 import { readFollowing, writeFollowing } from "@/lib/accountData";
 import { absoluteAppUrl, shareContent } from "@/lib/share";
+import { primaryCategory } from "@/components/recipes/recipesData";
 
 export default function PostDetailScreen({ postId }: { postId: string }) {
   const router = useRouter();
@@ -85,7 +86,11 @@ export default function PostDetailScreen({ postId }: { postId: string }) {
   const thumbnailUrl =
     (linkedIsOwn ? linkedRecipe?.thumbnailUrl : undefined) ||
     post.thumbnailUrl;
-  const thumbnailCategory = linkedIsOwn ? linkedRecipe?.category : undefined;
+  const thumbnailCategory = linkedIsOwn
+    ? linkedRecipe
+      ? primaryCategory(linkedRecipe)
+      : undefined
+    : undefined;
 
   const onShare = () => {
     void shareContent({
@@ -250,7 +255,7 @@ export default function PostDetailScreen({ postId }: { postId: string }) {
                 className="size-20 shrink-0"
                 iconClassName="h-10 w-11"
                 src={linkedRecipe.thumbnailUrl}
-                category={linkedRecipe.category}
+                category={primaryCategory(linkedRecipe)}
                 alt={linkedRecipe.name}
               />
               <div className="min-w-0 flex-1 py-2 pe-3">
@@ -258,7 +263,9 @@ export default function PostDetailScreen({ postId }: { postId: string }) {
                   {linkedRecipe.name}
                 </p>
                 <p className="mt-0.5 text-xs capitalize text-muted">
-                  {getCategoryLabel(linkedRecipe.category)}
+                  {linkedRecipe.categories
+                    .map((c) => getCategoryLabel(c))
+                    .join(", ")}
                 </p>
               </div>
             </Link>

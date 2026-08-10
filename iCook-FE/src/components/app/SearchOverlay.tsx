@@ -10,6 +10,10 @@ import { CURRENT_USER } from "@/components/app/user/data";
 import { CATALOG_RECIPES } from "@/components/recipes/SavedRecipesProvider";
 import { CATALOG_POSTS } from "@/components/app/postsData";
 import { useCreatedContent } from "@/components/app/CreatedContentProvider";
+import {
+  primaryCategory,
+  type RecipeCategory,
+} from "@/components/recipes/recipesData";
 import { rankRecipesByPantry } from "@/lib/pantryMatch";
 import { userProfilePath } from "@/lib/userProfile";
 
@@ -23,7 +27,7 @@ type SearchHit =
       href: string;
       subtitle: string;
       thumbnailUrl?: string;
-      category?: (typeof CATALOG_RECIPES)[number]["category"];
+      category?: RecipeCategory;
     }
   | {
       kind: "post";
@@ -115,7 +119,7 @@ export default function SearchOverlay({
       href: `/recipe/${r.id}`,
       subtitle: "Recipe",
       thumbnailUrl: r.thumbnailUrl,
-      category: r.category,
+      category: primaryCategory(r),
     }));
 
     const catalogPostHits: SearchHit[] = Object.entries(CATALOG_POSTS)

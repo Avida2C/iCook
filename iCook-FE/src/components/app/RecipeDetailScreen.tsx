@@ -1,12 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import {
   HeartIcon,
   HeartFillIcon,
   ShareIcon,
   ClockIcon,
   ServingIcon,
+  EditIcon,
+  TrashIcon,
 } from "@/components/app/icons";
 import RecipeAuthor from "@/components/app/RecipeAuthor";
 import CommentsSection from "@/components/app/CommentsSection";
@@ -18,17 +22,18 @@ import {
   useSavedRecipes,
 } from "@/components/recipes/SavedRecipesProvider";
 import { useCreatedContent } from "@/components/app/CreatedContentProvider";
+import { MY_RECIPES } from "@/components/app/UserCollectionScreens";
 import { absoluteAppUrl, shareContent } from "@/lib/share";
 import { resolveAuthor } from "@/components/app/user/authors";
 import { useCurrentFeedUser } from "@/components/app/user/useCurrentFeedUser";
-import type { Recipe } from "@/components/recipes/recipesData";
+import { primaryCategory, type Recipe, hasNutritionFacts, nutritionFactRows, resolveRecipeTags, RECIPE_TAG_LABELS, formatIngredientLine } from "@/components/recipes/recipesData";
 
 function NutritionRing({ label, value }: { label: string; value: string }) {
   return (
-    <div className="grid size-18.5 place-items-center rounded-full border-4 border-brand text-center text-sm text-ink">
+    <div className="grid size-18.5 place-items-center rounded-full border-4 border-brand px-1 text-center text-sm text-ink">
       <div>
         <p className="font-bold leading-none">{value}</p>
-        <p className="mt-0.5 leading-none text-muted">{label}</p>
+        <p className="mt-0.5 text-[10px] leading-tight text-muted">{label}</p>
       </div>
     </div>
   );
@@ -45,7 +50,7 @@ function MoreCard({ recipe }: { recipe: Recipe }) {
           className="size-full"
           iconClassName="h-10 w-11"
           src={recipe.thumbnailUrl}
-          category={recipe.category}
+          category={primaryCategory(recipe)}
           alt={recipe.name}
         />
       </Link>
@@ -60,10 +65,17 @@ export default function RecipeDetailScreen({
 }: {
   recipeId?: string;
 }) {
+  const router = useRouter();
   const me = useCurrentFeedUser();
-  const { resolveRecipe, recipes: createdRecipes } = useCreatedContent();
+  const {
+    resolveRecipe,
+    getRecipe,
+    deleteRecipe,
+    recipes: createdRecipes,
+  } = useCreatedContent();
   const recipe = resolveRecipe(recipeId);
   const { isSaved, toggleSave } = useSavedRecipes();
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   if (!recipe) {
     return (
@@ -80,6 +92,13 @@ export default function RecipeDetailScreen({
     );
   }
 
+  const created = getRecipe(recipe.id);
+  const isOwner =
+    Boolean(created) ||
+    recipe.author === me.handle ||
+    recipe.author === "you" ||
+    MY_RECIPES.some((r) => r.id === recipe.id);
+
   const saved = isSaved(recipe.id);
   const author = resolveAuthor(recipe.author, me);
   const moreRecipes = [
@@ -89,12 +108,9 @@ export default function RecipeDetailScreen({
     ),
   ].slice(0, 6);
 
-  const nutrition = [
-    { label: "Fat", value: recipe.nutrition.fat },
-    { label: "Carbs", value: recipe.nutrition.carbs },
-    { label: "Protein", value: recipe.nutrition.protein },
-    { label: "Sodium", value: recipe.nutrition.sodium },
-  ];
+  const nutrition = nutritionFactRows(recipe.nutrition);
+  const showNutrition = hasNutritionFacts(recipe.nutrition);
+  const tags = resolveRecipeTags(recipe);
 
   const timeRows = [
     { label: "Preparation Time", value: recipe.prepTime },
@@ -110,6 +126,16 @@ export default function RecipeDetailScreen({
     });
   };
 
+  const onDelete = () => {
+    if (!isOwner) return;
+    if (!confirmDelete) {
+      setConfirmDelete(true);
+      return;
+    }
+    deleteRecipe(recipe.id);
+    router.push("/me");
+  };
+
   return (
     <div className="page">
       <div className="list-stack py-2">
@@ -119,7 +145,7 @@ export default function RecipeDetailScreen({
             className="size-full aspect-auto! h-full"
             iconClassName="h-14 w-16"
             src={recipe.thumbnailUrl}
-            category={recipe.category}
+            category={primaryCategory(recipe)}
             alt={recipe.name}
           />
         </div>
@@ -154,11 +180,25 @@ export default function RecipeDetailScreen({
               </button>
             </div>
             <p className="mt-2 flex gap-2 text-sm text-ink">
-              <span className="font-bold text-ink-secondary">Category</span>
+              <span className="font-bold text-ink-secondary">
+                {recipe.categories.length > 1 ? "Categories" : "Category"}
+              </span>
               <span className="italic text-muted">
-                {getCategoryLabel(recipe.category)}
+                {recipe.categories.map((c) => getCategoryLabel(c)).join(", ")}
               </span>
             </p>
+            {tags.length > 0 ? (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded-md border border-brand/30 bg-brand/10 px-2 py-0.5 text-xs font-bold text-brand"
+                  >
+                    {RECIPE_TAG_LABELS[tag]}
+                  </span>
+                ))}
+              </div>
+            ) : null}
             {recipe.description ? (
               <p className="mt-2 text-sm leading-5 text-ink-secondary">
                 {recipe.description}
@@ -186,14 +226,19 @@ export default function RecipeDetailScreen({
             </div>
           </div>
 
-          <div className="flex flex-col gap-2.5">
-            <h2 className="section-title text-lg">Nutrition</h2>
-            <div className="flex items-center justify-between gap-1">
-              {nutrition.map((n) => (
-                <NutritionRing key={n.label} {...n} />
-              ))}
+          {showNutrition ? (
+            <div className="flex flex-col gap-2.5">
+              <div>
+                <h2 className="section-title text-lg">Nutrition</h2>
+                <p className="mt-0.5 text-xs italic text-muted">Per serving</p>
+              </div>
+              <div className="flex flex-wrap items-center justify-start gap-2">
+                {nutrition.map((n) => (
+                  <NutritionRing key={n.key} label={n.label} value={n.value} />
+                ))}
+              </div>
             </div>
-          </div>
+          ) : null}
         </section>
 
         {/* Ingredients */}
@@ -204,11 +249,14 @@ export default function RecipeDetailScreen({
               <div key={group.title}>
                 <p className="text-sm font-bold text-ink">{group.title}</p>
                 <ul className="ms-5 mt-1 list-disc text-sm text-ink-secondary">
-                  {group.items.map((item) => (
-                    <li key={item} className="leading-5">
-                      {item}
-                    </li>
-                  ))}
+                  {group.items.map((item) => {
+                    const label = formatIngredientLine(item);
+                    return (
+                      <li key={`${item.name}-${label}`} className="leading-5">
+                        {label}
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             ))}
@@ -236,6 +284,52 @@ export default function RecipeDetailScreen({
               </div>
             ))}
           </div>
+
+          {isOwner ? (
+            <div className="flex items-center pt-1 text-sm text-muted">
+              <div className="ms-auto flex items-center gap-1">
+                {confirmDelete ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={onDelete}
+                      className="inline-flex items-center gap-1 rounded bg-brand px-2.5 py-1.5 text-xs font-bold text-white"
+                    >
+                      <TrashIcon className="size-3.5" />
+                      Confirm
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmDelete(false)}
+                      className="px-2 py-1.5 text-xs font-bold text-muted"
+                    >
+                      Cancel
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      href={`/recipe/${recipe.id}/edit`}
+                      aria-label={`Edit ${recipe.name}`}
+                      className="inline-flex items-center gap-1 rounded px-2 py-1.5 text-xs font-bold text-placeholder transition-colors hover:bg-brand/10 hover:text-brand"
+                    >
+                      <EditIcon className="size-3.5" />
+                      Edit
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={onDelete}
+                      aria-label={`Delete ${recipe.name}`}
+                      className="inline-flex items-center gap-1 rounded px-2 py-1.5 text-xs font-bold text-placeholder transition-colors hover:bg-brand/10 hover:text-brand"
+                    >
+                      <TrashIcon className="size-3.5" />
+                      Delete
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          ) : null}
         </section>
 
         {/* Author + comments */}

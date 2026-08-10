@@ -1,34 +1,19 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { SearchIcon, MinusCircleIcon } from "@/components/app/icons";
-import {
-  COMMON_INGREDIENTS,
-  usePantry,
-} from "@/components/pantry/PantryProvider";
+import { useMemo } from "react";
+import IngredientCatalogPicker from "@/components/ingredients/IngredientCatalogPicker";
+import IngredientLineRow from "@/components/ingredients/IngredientLineRow";
+import { usePantry } from "@/components/pantry/PantryProvider";
 
 export default function HubScreen() {
   const { items, addItem, removeItem, removeItemByName, updateItem } =
     usePantry();
-  const [query, setQuery] = useState("");
 
-  const filtered = useMemo(
-    () =>
-      COMMON_INGREDIENTS.filter((i) =>
-        i.toLowerCase().includes(query.trim().toLowerCase()),
-      ),
-    [query],
-  );
-
-  const addedNames = useMemo(
-    () => new Set(items.map((i) => i.name.toLowerCase())),
-    [items],
-  );
+  const addedNames = useMemo(() => items.map((i) => i.name), [items]);
 
   return (
     <div className="page-fill">
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden py-2">
-        {/* My ingredients */}
         <section className="flex min-h-0 flex-1 flex-col gap-2">
           <div className="flex items-center justify-between px-3">
             <h2 className="section-title">My Ingredients</h2>
@@ -49,104 +34,25 @@ export default function HubScreen() {
               </p>
             ) : (
               items.map((item, i) => (
-                <div
+                <IngredientLineRow
                   key={`${item.name}-${i}`}
-                  className="feed-card flex items-center gap-2"
-                >
-                  <input
-                    id={`pantry-name-${i}`}
-                    name={`pantry-name-${i}`}
-                    aria-label="Ingredient"
-                    className="field min-w-0 flex-1 px-2.5! py-2! text-sm"
-                    value={item.name}
-                    onChange={(e) => updateItem(i, "name", e.target.value)}
-                    placeholder="Ingredient"
-                  />
-                  <input
-                    id={`pantry-amount-${i}`}
-                    name={`pantry-amount-${i}`}
-                    aria-label="Amount"
-                    className="field w-16 shrink-0 px-2! py-2! text-center text-sm font-bold"
-                    value={item.amount}
-                    onChange={(e) => updateItem(i, "amount", e.target.value)}
-                    placeholder="0"
-                  />
-                  <input
-                    id={`pantry-unit-${i}`}
-                    name={`pantry-unit-${i}`}
-                    aria-label="Unit"
-                    className="field w-18 shrink-0 px-2! py-2! text-center text-sm font-bold"
-                    value={item.unit}
-                    onChange={(e) => updateItem(i, "unit", e.target.value)}
-                    placeholder="unit"
-                  />
-                  <button
-                    type="button"
-                    aria-label={`Remove ${item.name}`}
-                    onClick={() => removeItem(i)}
-                    className="shrink-0 text-brand"
-                  >
-                    <MinusCircleIcon className="size-6" />
-                  </button>
-                </div>
+                  item={item}
+                  idPrefix={`pantry-${i}`}
+                  onChangeAmount={(value) => updateItem(i, "amount", value)}
+                  onChangeUnit={(value) => updateItem(i, "unit", value)}
+                  onRemove={() => removeItem(i)}
+                />
               ))
             )}
           </div>
         </section>
 
-        {/* Add ingredients */}
-        <section className="flex max-h-[42%] min-h-0 shrink-0 flex-col gap-2 border-t border-line bg-surface pt-3">
-          <h2 className="section-title px-3">Add Ingredients</h2>
-
-          <div className="px-3">
-            <div className="search-field">
-              <SearchIcon className="size-5 shrink-0 text-brand" />
-              <input
-                id="pantry-search"
-                name="pantry-search"
-                className="flex-1 bg-transparent text-sm text-ink outline-none placeholder:italic placeholder:text-muted"
-                placeholder="Search ingredients"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                aria-label="Search ingredients"
-              />
-            </div>
-          </div>
-
-          <ul className="min-h-0 flex-1 overflow-y-auto">
-            {filtered.map((name) => {
-              const added = addedNames.has(name.toLowerCase());
-              return (
-                <li key={name}>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      added ? removeItemByName(name) : addItem(name)
-                    }
-                    aria-pressed={added}
-                    className="flex w-full items-center gap-2 border-b border-line px-3 py-2.5 text-left transition-colors hover:bg-app"
-                  >
-                    <span className="min-w-0 flex-1 truncate text-sm text-ink">
-                      {name}
-                    </span>
-                    <span
-                      className={`shrink-0 text-xs font-bold ${
-                        added ? "text-brand" : "text-muted"
-                      }`}
-                    >
-                      {added ? "Added" : "Add"}
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-            {filtered.length === 0 ? (
-              <li className="px-3 py-3 text-sm text-muted">
-                No matches for &ldquo;{query}&rdquo;.
-              </li>
-            ) : null}
-          </ul>
-        </section>
+        <IngredientCatalogPicker
+          className="max-h-[42%] shrink-0"
+          addedNames={addedNames}
+          onAdd={addItem}
+          onRemove={removeItemByName}
+        />
       </div>
     </div>
   );

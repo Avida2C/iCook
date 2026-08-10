@@ -9,67 +9,18 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import {
+  DEFAULT_PANTRY,
+  COMMON_INGREDIENTS,
+  INGREDIENT_CATALOG,
+  type IngredientLine,
+} from "@/components/ingredients/ingredientCatalog";
 
-export type PantryItem = { name: string; amount: string; unit: string };
+export type PantryItem = IngredientLine;
+
+export { DEFAULT_PANTRY, COMMON_INGREDIENTS, INGREDIENT_CATALOG };
 
 const STORAGE_KEY = "icook.pantry";
-
-export const DEFAULT_PANTRY: PantryItem[] = [
-  { name: "Lemon", amount: "5", unit: "Whole" },
-  { name: "Garlic Cloves", amount: "2", unit: "Whole" },
-  { name: "Olive Oil", amount: "2", unit: "L" },
-  { name: "Dried Thyme", amount: "100", unit: "g" },
-  { name: "Dried Rosemary", amount: "100", unit: "g" },
-  { name: "Salt", amount: "1/4", unit: "tsp" },
-  { name: "Black Pepper", amount: "1/4", unit: "tsp" },
-];
-
-export const COMMON_INGREDIENTS = [
-  "Almonds",
-  "Black Pepper",
-  "Basil",
-  "Blueberries",
-  "Boneless Chicken",
-  "Butter",
-  "Carrots",
-  "Chocolate",
-  "Cinnamon",
-  "Dill",
-  "Dried Thyme",
-  "Dried Rosemary",
-  "Eggs",
-  "Flour",
-  "Garlic Cloves",
-  "Honey",
-  "Iceberg Lettuce",
-  "Jalapeños",
-  "Kale",
-  "Lemon",
-  "Milk",
-  "Nutmeg",
-  "Olive Oil",
-  "Parsley",
-  "Pasta",
-  "Pork",
-  "Potatoes",
-  "Quinoa",
-  "Raspberries",
-  "Ricotta",
-  "Rosemary",
-  "Salmon",
-  "Salt",
-  "Spinach",
-  "Steak",
-  "Sugar",
-  "Thyme",
-  "Tomatoes",
-  "Ugli Fruit",
-  "Vanilla Extract",
-  "Walnuts",
-  "Xanthan Gum",
-  "Yogurt",
-  "Zucchini",
-] as const;
 
 type PantryContextValue = {
   items: PantryItem[];
@@ -138,6 +89,8 @@ export function PantryProvider({ children }: { children: ReactNode }) {
 
   const updateItem = useCallback(
     (index: number, key: keyof PantryItem, value: string) => {
+      // Names are catalog-locked; only amount/unit are editable.
+      if (key === "name") return;
       setItems((prev) =>
         prev.map((it, i) => (i === index ? { ...it, [key]: value } : it)),
       );

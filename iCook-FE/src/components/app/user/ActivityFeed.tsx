@@ -12,6 +12,7 @@ import UserNameLink from "@/components/app/UserNameLink";
 import { useLikedPosts } from "@/components/app/LikedPostsProvider";
 import { useCreatedContent } from "@/components/app/CreatedContentProvider";
 import { CATALOG_POSTS } from "@/components/app/postsData";
+import { primaryCategory } from "@/components/recipes/recipesData";
 import type { FeedItem, FeedUser } from "./types";
 import { filterActivityItems, searchActivityItems } from "./activityFilters";
 import { useActivityFilters } from "./ActivityFiltersProvider";
@@ -119,7 +120,7 @@ function FeedCard({
             className="aspect-square w-full"
             iconClassName="h-10 w-11"
             src={recipe?.thumbnailUrl}
-            category={recipe?.category}
+            category={recipe ? primaryCategory(recipe) : undefined}
             alt={item.recipeName}
           />
           <div className="px-3 py-2">
@@ -179,7 +180,7 @@ function FeedCard({
             className="aspect-square w-full"
             iconClassName="h-10 w-11"
             src={thumbnailUrl}
-            category={linkedRecipe?.category}
+            category={linkedRecipe ? primaryCategory(linkedRecipe) : undefined}
             alt={item.title}
           />
           <div className="px-3 py-2">

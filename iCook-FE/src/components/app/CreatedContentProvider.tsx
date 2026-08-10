@@ -15,15 +15,28 @@ import {
   flatIngredientsFromGroups,
   getCatalogRecipe,
   CATEGORY_THUMBNAILS,
+  normalizeCategories,
+  normalizeIngredientGroups,
+  normalizeNutrition,
+  normalizeTimeMinutes,
+  primaryCategory,
+  isRecipeCategory,
+  resolveRecipeTags,
   type Recipe,
   type RecipeCategory,
   type RecipeIngredientGroup,
   type RecipeNutrition,
   type RecipeStep,
+  type RecipeTag,
 } from "@/components/recipes/recipesData";
+import {
+  coerceIngredientLines,
+  type IngredientLine,
+} from "@/components/ingredients/ingredientCatalog";
 
 const POSTS_KEY = "icook.createdPosts";
 const RECIPES_KEY = "icook.createdRecipes";
+const DELETED_RECIPES_KEY = "icook.deletedRecipes";
 
 export type CreatedPost = {
   id: string;
@@ -43,7 +56,7 @@ export type CreatedRecipe = Recipe & {
 
 export type RecipeInput = {
   name: string;
-  category: RecipeCategory;
+  categories: RecipeCategory[];
   description?: string;
   thumbnailUrl?: string;
   prepTime?: string;
@@ -51,6 +64,7 @@ export type RecipeInput = {
   totalTime?: string;
   servings?: number;
   nutrition?: RecipeNutrition;
+  tags?: RecipeTag[];
   ingredientGroups?: RecipeIngredientGroup[];
   ingredients?: string[];
   instructions?: RecipeStep[];
@@ -80,6 +94,9 @@ type CreatedContentContextValue = {
   deletePost: (id: string) => boolean;
   publishRecipe: (input: RecipeInput) => CreatedRecipe;
   updateRecipe: (id: string, input: RecipeInput) => CreatedRecipe;
+  deleteRecipe: (id: string) => boolean;
+  /** Seeded/catalog recipe ids the user removed from their collection. */
+  deletedRecipeIds: string[];
   getPost: (id: string) => CreatedPost | undefined;
   getRecipe: (id: string) => CreatedRecipe | undefined;
   resolveRecipe: (id: string) => Recipe | undefined;
@@ -89,26 +106,27 @@ type CreatedContentContextValue = {
 const CreatedContentContext =
   createContext<CreatedContentContextValue | null>(null);
 
-function defaultNutrition(): RecipeNutrition {
-  return { fat: "0g", carbs: "0g", protein: "0g", sodium: "0" };
-}
-
 function normalizeRecipeFields(input: RecipeInput, author: string): Omit<
   Recipe,
   "id" | "bookmarkCount"
 > {
-  const ingredientGroups =
-    input.ingredientGroups?.filter((g) => g.title.trim() || g.items.some((i) => i.trim())) ??
-    [];
-  const normalizedGroups = ingredientGroups.map((g) => ({
-    title: g.title.trim() || "Ingredients",
-    items: g.items.map((i) => i.trim()).filter(Boolean),
-  })).filter((g) => g.items.length > 0);
+  const rawGroups =
+    input.ingredientGroups?.filter(
+      (g) =>
+        g.title.trim() ||
+        g.items.some((i: IngredientLine) => i.name.trim()),
+    ) ?? [];
+  const normalizedGroups = normalizeIngredientGroups(
+    rawGroups.map((g) => ({
+      title: g.title.trim() || "Ingredients",
+      items: coerceIngredientLines(g.items),
+    })),
+  ).filter((g) => g.items.length > 0);
 
   const groups =
     normalizedGroups.length > 0
       ? normalizedGroups
-      : [{ title: "Ingredients", items: [] as string[] }];
+      : [{ title: "Ingredients", items: [] }];
 
   const ingredients =
     input.ingredients?.filter(Boolean) ??
@@ -122,19 +140,26 @@ function normalizeRecipeFields(input: RecipeInput, author: string): Omit<
     }))
     .filter((step) => step.text);
 
+  const nutrition = normalizeNutrition(input.nutrition);
+  const tags = resolveRecipeTags({
+    ingredients,
+    ingredientGroups: groups,
+  });
+
   return {
     name: input.name.trim(),
     author,
-    category: input.category,
+    categories: normalizeCategories(input.categories),
+    tags,
     description: (input.description ?? "").trim(),
     thumbnailUrl:
       input.thumbnailUrl?.trim() ||
-      CATEGORY_THUMBNAILS[input.category],
-    prepTime: (input.prepTime ?? "").trim() || "—",
-    cookTime: (input.cookTime ?? "").trim() || "—",
-    totalTime: (input.totalTime ?? "").trim() || "—",
+      CATEGORY_THUMBNAILS[primaryCategory({ categories: normalizeCategories(input.categories) })],
+    prepTime: normalizeTimeMinutes(input.prepTime),
+    cookTime: normalizeTimeMinutes(input.cookTime),
+    totalTime: normalizeTimeMinutes(input.totalTime),
     servings: Math.max(1, Number(input.servings) || 1),
-    nutrition: input.nutrition ?? defaultNutrition(),
+    nutrition,
     ingredientGroups: groups,
     ingredients,
     instructions:
@@ -149,32 +174,55 @@ function coerceStoredRecipe(raw: unknown, fallbackAuthor: string): CreatedRecipe
   const r = raw as Record<string, unknown>;
   if (typeof r.id !== "string" || typeof r.name !== "string") return null;
 
-  const category = (typeof r.category === "string" ? r.category : "dinner") as RecipeCategory;
-  const ingredientGroups = Array.isArray(r.ingredientGroups)
-    ? (r.ingredientGroups as RecipeIngredientGroup[])
-    : [{ title: "Ingredients", items: [] }];
-  const ingredients = Array.isArray(r.ingredients)
-    ? (r.ingredients as string[])
-    : flatIngredientsFromGroups(ingredientGroups);
+  const fromArray = Array.isArray(r.categories)
+    ? (r.categories as unknown[]).filter(
+        (c): c is RecipeCategory => typeof c === "string" && isRecipeCategory(c),
+      )
+    : [];
+  const fromLegacy =
+    typeof r.category === "string" && isRecipeCategory(r.category)
+      ? [r.category]
+      : [];
+  const categories = normalizeCategories(
+    fromArray.length > 0 ? fromArray : fromLegacy,
+  );
+  const ingredientGroups = normalizeIngredientGroups(
+    Array.isArray(r.ingredientGroups)
+      ? (r.ingredientGroups as { title: string; items: unknown[] }[])
+      : [{ title: "Ingredients", items: [] }],
+  );
+  const ingredients = flatIngredientsFromGroups(ingredientGroups);
   const instructions = Array.isArray(r.instructions)
     ? (r.instructions as RecipeStep[])
     : [];
-  const nutrition =
+  const nutrition = normalizeNutrition(
     r.nutrition && typeof r.nutrition === "object"
       ? (r.nutrition as RecipeNutrition)
-      : defaultNutrition();
+      : undefined,
+  );
+  const tags = resolveRecipeTags({
+    ingredients,
+    ingredientGroups,
+  });
 
   return {
     id: r.id,
     name: r.name,
     author: typeof r.author === "string" ? r.author : fallbackAuthor,
-    category,
+    categories,
+    tags,
     bookmarkCount: typeof r.bookmarkCount === "number" ? r.bookmarkCount : 0,
     description: typeof r.description === "string" ? r.description : "",
     thumbnailUrl: typeof r.thumbnailUrl === "string" ? r.thumbnailUrl : undefined,
-    prepTime: typeof r.prepTime === "string" ? r.prepTime : "—",
-    cookTime: typeof r.cookTime === "string" ? r.cookTime : "—",
-    totalTime: typeof r.totalTime === "string" ? r.totalTime : "—",
+    prepTime: normalizeTimeMinutes(
+      typeof r.prepTime === "string" ? r.prepTime : undefined,
+    ),
+    cookTime: normalizeTimeMinutes(
+      typeof r.cookTime === "string" ? r.cookTime : undefined,
+    ),
+    totalTime: normalizeTimeMinutes(
+      typeof r.totalTime === "string" ? r.totalTime : undefined,
+    ),
     servings: typeof r.servings === "number" ? r.servings : 1,
     nutrition,
     ingredientGroups,
@@ -185,7 +233,7 @@ function coerceStoredRecipe(raw: unknown, fallbackAuthor: string): CreatedRecipe
         ? r.preview
         : typeof r.description === "string" && r.description
           ? r.description
-          : `A new ${category} recipe.`,
+          : `A new ${primaryCategory({ categories })} recipe.`,
     createdAt: typeof r.createdAt === "number" ? r.createdAt : Date.now(),
   };
 }
@@ -206,6 +254,26 @@ function coerceStoredPost(raw: unknown): CreatedPost | null {
       typeof p.linkedRecipeId === "string" ? p.linkedRecipeId : undefined,
     createdAt: typeof p.createdAt === "number" ? p.createdAt : Date.now(),
   };
+}
+
+function readDeletedRecipeIds(): string[] {
+  try {
+    const raw = localStorage.getItem(DELETED_RECIPES_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((id): id is string => typeof id === "string");
+  } catch {
+    return [];
+  }
+}
+
+function writeDeletedRecipeIds(ids: string[]) {
+  try {
+    localStorage.setItem(DELETED_RECIPES_KEY, JSON.stringify(ids));
+  } catch {
+    // ignore
+  }
 }
 
 function readPosts(): CreatedPost[] {
@@ -267,10 +335,12 @@ export function CreatedContentProvider({ children }: { children: ReactNode }) {
   const me = useCurrentFeedUser();
   const [posts, setPosts] = useState<CreatedPost[]>([]);
   const [recipes, setRecipes] = useState<CreatedRecipe[]>([]);
+  const [deletedRecipeIds, setDeletedRecipeIds] = useState<string[]>([]);
 
   useEffect(() => {
     setPosts(readPosts());
     setRecipes(readRecipes(me.handle));
+    setDeletedRecipeIds(readDeletedRecipeIds());
   }, [me.handle]);
 
   const persistPosts = useCallback((next: CreatedPost[]) => {
@@ -358,7 +428,7 @@ export function CreatedContentProvider({ children }: { children: ReactNode }) {
       const preview =
         input.preview?.trim() ||
         fields.description ||
-        `A new ${fields.category} recipe from ${me.name}.`;
+        `A new ${primaryCategory(fields)} recipe from ${me.name}.`;
       const recipe: CreatedRecipe = {
         ...fields,
         id: `r-${Date.now()}`,
@@ -378,7 +448,7 @@ export function CreatedContentProvider({ children }: { children: ReactNode }) {
       const preview =
         input.preview?.trim() ||
         fields.description ||
-        `A new ${fields.category} recipe from ${me.name}.`;
+        `A new ${primaryCategory(fields)} recipe from ${me.name}.`;
 
       const existing = recipes.find((r) => r.id === id);
       if (existing) {
@@ -404,9 +474,33 @@ export function CreatedContentProvider({ children }: { children: ReactNode }) {
         createdAt: Date.now(),
       };
       persistRecipes([cloned, ...recipes]);
+      // Restored from deleted set if user re-publishes via edit.
+      setDeletedRecipeIds((prev) => {
+        if (!prev.includes(id)) return prev;
+        const next = prev.filter((x) => x !== id);
+        writeDeletedRecipeIds(next);
+        return next;
+      });
       return cloned;
     },
     [persistRecipes, recipes, me.handle, me.name],
+  );
+
+  const deleteRecipe = useCallback(
+    (id: string) => {
+      const inCreated = recipes.some((r) => r.id === id);
+      if (inCreated) {
+        persistRecipes(recipes.filter((r) => r.id !== id));
+      }
+      setDeletedRecipeIds((prev) => {
+        if (prev.includes(id)) return prev;
+        const next = [...prev, id];
+        writeDeletedRecipeIds(next);
+        return next;
+      });
+      return true;
+    },
+    [persistRecipes, recipes],
   );
 
   const getPost = useCallback(
@@ -441,6 +535,8 @@ export function CreatedContentProvider({ children }: { children: ReactNode }) {
       deletePost,
       publishRecipe,
       updateRecipe,
+      deleteRecipe,
+      deletedRecipeIds,
       getPost,
       getRecipe,
       resolveRecipe,
@@ -454,6 +550,8 @@ export function CreatedContentProvider({ children }: { children: ReactNode }) {
       deletePost,
       publishRecipe,
       updateRecipe,
+      deleteRecipe,
+      deletedRecipeIds,
       getPost,
       getRecipe,
       resolveRecipe,

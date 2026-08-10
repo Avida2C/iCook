@@ -15,6 +15,7 @@ import {
   CATALOG_RECIPES,
   useSavedRecipes,
 } from "@/components/recipes/SavedRecipesProvider";
+import { primaryCategory } from "@/components/recipes/recipesData";
 import { withLiveProfile } from "@/components/app/user/authors";
 import { useCurrentFeedUser } from "@/components/app/user/useCurrentFeedUser";
 import type { FeedUser } from "@/components/app/user/types";
@@ -286,7 +287,7 @@ function RecipeFeedCard({ item }: { item: Extract<CommunityItem, { kind: "recipe
             className="aspect-square w-full"
             iconClassName="h-12 w-14"
             src={recipe.thumbnailUrl}
-            category={recipe.category}
+            category={primaryCategory(recipe)}
             alt={recipe.name}
           />
           <div className="px-3 py-2.5">

@@ -14,7 +14,16 @@ import {
   type RecipeIngredientGroup,
   type RecipeNutrition,
   type RecipeStep,
+  flatIngredientsFromGroups,
+  normalizeNutrition,
+  parseMinutes,
+  formatMinutes,
+  resolveRecipeTags,
+  RECIPE_TAG_LABELS,
 } from "@/components/recipes/recipesData";
+import type { IngredientLine } from "@/components/ingredients/ingredientCatalog";
+import IngredientCatalogPicker from "@/components/ingredients/IngredientCatalogPicker";
+import IngredientLineRow from "@/components/ingredients/IngredientLineRow";
 import { loadImageAsDataUrl } from "@/lib/imageUpload";
 
 const categories = [
@@ -29,6 +38,15 @@ const categories = [
   "Pasta",
 ] as const;
 
+const NUTRITION_FIELDS = [
+  ["calories", "Calories", "e.g. 320"],
+  ["fat", "Total Fat", "e.g. 5.8g"],
+  ["cholesterol", "Cholesterol", "e.g. 25mg"],
+  ["sodium", "Sodium", "e.g. 615mg"],
+  ["carbs", "Carbs", "e.g. 38g"],
+  ["protein", "Protein", "e.g. 10g"],
+] as const;
+
 const STEP_LABELS = [
   "Recipe Overview",
   "Timing & Servings",
@@ -41,36 +59,65 @@ const TOTAL_STEPS = STEP_LABELS.length;
 
 type Draft = {
   name: string;
-  category: RecipeCategory | "";
+  categories: RecipeCategory[];
   description: string;
   thumbnailUrl: string;
   prepTime: string;
   cookTime: string;
   totalTime: string;
   servings: string;
-  nutrition: RecipeNutrition;
+  nutrition: Required<RecipeNutrition>;
   ingredientGroups: RecipeIngredientGroup[];
   instructions: RecipeStep[];
 };
 
+function emptyNutritionDraft(): Required<RecipeNutrition> {
+  return {
+    calories: "",
+    protein: "",
+    fat: "",
+    cholesterol: "",
+    sodium: "",
+    carbs: "",
+  };
+}
+
+function nutritionDraftFrom(nutrition: RecipeNutrition): Required<RecipeNutrition> {
+  const empty = emptyNutritionDraft();
+  return {
+    calories: nutrition.calories ?? empty.calories,
+    protein: nutrition.protein ?? empty.protein,
+    fat: nutrition.fat ?? empty.fat,
+    cholesterol: nutrition.cholesterol ?? empty.cholesterol,
+    sodium: nutrition.sodium ?? empty.sodium,
+    carbs: nutrition.carbs ?? empty.carbs,
+  };
+}
+
+function minutesFieldValue(stored: string): string {
+  if (!stored || stored === "—") return "";
+  const n = parseMinutes(stored);
+  return n == null ? "" : String(n);
+}
+
 function draftFromRecipe(recipe: Recipe): Draft {
   return {
     name: recipe.name,
-    category: recipe.category,
+    categories: [...recipe.categories],
     description: recipe.description,
     thumbnailUrl: recipe.thumbnailUrl ?? "",
-    prepTime: recipe.prepTime === "—" ? "" : recipe.prepTime,
-    cookTime: recipe.cookTime === "—" ? "" : recipe.cookTime,
-    totalTime: recipe.totalTime === "—" ? "" : recipe.totalTime,
+    prepTime: minutesFieldValue(recipe.prepTime),
+    cookTime: minutesFieldValue(recipe.cookTime),
+    totalTime: minutesFieldValue(recipe.totalTime),
     servings: String(recipe.servings || 4),
-    nutrition: { ...recipe.nutrition },
+    nutrition: nutritionDraftFrom(recipe.nutrition),
     ingredientGroups:
       recipe.ingredientGroups.length > 0
         ? recipe.ingredientGroups.map((g) => ({
             title: g.title,
-            items: g.items.length > 0 ? [...g.items] : [""],
+            items: g.items.map((item) => ({ ...item })),
           }))
-        : [{ title: "Ingredients", items: [""] }],
+        : [{ title: "Ingredients", items: [] as IngredientLine[] }],
     instructions:
       recipe.instructions.length > 0
         ? recipe.instructions.map((s) => ({ ...s }))
@@ -81,36 +128,42 @@ function draftFromRecipe(recipe: Recipe): Draft {
 function emptyDraft(): Draft {
   return {
     name: "",
-    category: "",
+    categories: [],
     description: "",
     thumbnailUrl: "",
     prepTime: "",
     cookTime: "",
     totalTime: "",
     servings: "4",
-    nutrition: { fat: "", carbs: "", protein: "", sodium: "" },
-    ingredientGroups: [{ title: "Ingredients", items: [""] }],
+    nutrition: emptyNutritionDraft(),
+    ingredientGroups: [{ title: "Ingredients", items: [] }],
     instructions: [{ n: "1.0", text: "" }],
   };
 }
 
 function toInput(draft: Draft): RecipeInput | null {
-  if (!draft.name.trim() || !draft.category) return null;
+  if (!draft.name.trim() || draft.categories.length === 0) return null;
+  const prep = parseMinutes(draft.prepTime);
+  const cook = parseMinutes(draft.cookTime);
+  const total =
+    parseMinutes(draft.totalTime) ??
+    (prep != null || cook != null ? (prep ?? 0) + (cook ?? 0) : null);
+  const ingredients = flatIngredientsFromGroups(draft.ingredientGroups);
+  const tags = resolveRecipeTags({
+    ingredients,
+    ingredientGroups: draft.ingredientGroups,
+  });
   return {
     name: draft.name,
-    category: draft.category,
+    categories: draft.categories,
     description: draft.description,
     thumbnailUrl: draft.thumbnailUrl || undefined,
-    prepTime: draft.prepTime,
-    cookTime: draft.cookTime,
-    totalTime: draft.totalTime,
+    prepTime: prep == null ? undefined : formatMinutes(prep),
+    cookTime: cook == null ? undefined : formatMinutes(cook),
+    totalTime: total == null ? undefined : formatMinutes(total),
     servings: Number(draft.servings) || 1,
-    nutrition: {
-      fat: draft.nutrition.fat.trim() || "0g",
-      carbs: draft.nutrition.carbs.trim() || "0g",
-      protein: draft.nutrition.protein.trim() || "0g",
-      sodium: draft.nutrition.sodium.trim() || "0",
-    },
+    nutrition: normalizeNutrition(draft.nutrition),
+    tags,
     ingredientGroups: draft.ingredientGroups,
     instructions: draft.instructions,
     preview: draft.description.trim() || undefined,
@@ -135,6 +188,7 @@ export default function RecipeEditorScreen({
   const [storageReady, setStorageReady] = useState(!isEdit);
   const stepImageInputRef = useRef<HTMLInputElement>(null);
   const [stepImageTarget, setStepImageTarget] = useState<number | null>(null);
+  const [activeGroupIndex, setActiveGroupIndex] = useState(0);
 
   useEffect(() => {
     if (!isEdit) return;
@@ -166,9 +220,24 @@ export default function RecipeEditorScreen({
     setDraft((prev) => ({ ...prev, ...patch }));
   }
 
+  const inferredTags = resolveRecipeTags({
+    ingredients: flatIngredientsFromGroups(draft.ingredientGroups),
+    ingredientGroups: draft.ingredientGroups,
+  });
+
   function canAdvance(): boolean {
-    if (step === 0) return Boolean(draft.name.trim() && draft.category);
+    if (step === 0) return Boolean(draft.name.trim() && draft.categories.length > 0);
     return true;
+  }
+
+  function toggleCategory(slug: RecipeCategory) {
+    setDraft((prev) => {
+      const has = prev.categories.includes(slug);
+      const categories = has
+        ? prev.categories.filter((c) => c !== slug)
+        : [...prev.categories, slug];
+      return { ...prev, categories };
+    });
   }
 
   function onBack() {
@@ -249,9 +318,6 @@ export default function RecipeEditorScreen({
                 <label htmlFor="recipe-title" className="section-title">
                   Recipe Title <span className="font-bold">*</span>
                 </label>
-                <button type="button" className="text-base italic text-brand">
-                  Auto-Fill
-                </button>
               </div>
               <input
                 id="recipe-title"
@@ -265,30 +331,33 @@ export default function RecipeEditorScreen({
             </div>
 
             <div className="feed-card flex flex-col gap-2.5">
-              <label htmlFor="recipe-category" className="section-title">
-                Category <span className="font-bold">*</span>
-              </label>
-              <select
-                id="recipe-category"
-                name="category"
-                required
-                value={draft.category}
-                onChange={(e) =>
-                  updateDraft({
-                    category: e.target.value as RecipeCategory | "",
-                  })
-                }
-                className={fieldClass}
-              >
-                <option value="" disabled>
-                  Select a Category
-                </option>
-                {categories.map((c) => (
-                  <option key={c} value={c.toLowerCase()}>
-                    {c}
-                  </option>
-                ))}
-              </select>
+              <span className="section-title">
+                Categories <span className="font-bold">*</span>
+              </span>
+              <div className="flex flex-wrap gap-2" role="group" aria-label="Categories">
+                {categories.map((c) => {
+                  const slug = c.toLowerCase() as RecipeCategory;
+                  const selected = draft.categories.includes(slug);
+                  return (
+                    <button
+                      key={slug}
+                      type="button"
+                      aria-pressed={selected}
+                      onClick={() => toggleCategory(slug)}
+                      className={`rounded border-2 px-3 py-1.5 text-sm font-bold transition-colors ${
+                        selected
+                          ? "border-brand bg-brand/10 text-brand"
+                          : "border-line bg-app text-ink-secondary hover:border-brand hover:text-brand"
+                      }`}
+                    >
+                      {c}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-xs italic text-muted">
+                Select one or more. The first selected sets the default thumbnail.
+              </p>
             </div>
 
             <div className="feed-card flex flex-col gap-2.5">
@@ -323,23 +392,61 @@ export default function RecipeEditorScreen({
           <div className="feed-card flex flex-col gap-2.5">
             {(
               [
-                ["prepTime", "Preparation Time", "e.g. 20 minutes"],
-                ["cookTime", "Cook Time", "e.g. 35 minutes"],
-                ["totalTime", "Total Time", "e.g. 55 minutes"],
+                ["prepTime", "Preparation Time"],
+                ["cookTime", "Cook Time"],
               ] as const
-            ).map(([key, label, placeholder]) => (
-              <label key={key} className="flex flex-col gap-1.5" htmlFor={`recipe-${key}`}>
+            ).map(([key, label]) => (
+              <label
+                key={key}
+                className="flex flex-col gap-1.5"
+                htmlFor={`recipe-${key}`}
+              >
                 <span className="text-sm font-bold text-ink">{label}</span>
-                <input
-                  id={`recipe-${key}`}
-                  name={key}
-                  value={draft[key]}
-                  onChange={(e) => updateDraft({ [key]: e.target.value })}
-                  placeholder={placeholder}
-                  className={fieldClass}
-                />
+                <div className="flex items-center gap-2">
+                  <input
+                    id={`recipe-${key}`}
+                    name={key}
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    step={1}
+                    value={draft[key]}
+                    onChange={(e) => {
+                      const next = e.target.value.replace(/[^\d]/g, "");
+                      const prep =
+                        key === "prepTime"
+                          ? parseMinutes(next)
+                          : parseMinutes(draft.prepTime);
+                      const cook =
+                        key === "cookTime"
+                          ? parseMinutes(next)
+                          : parseMinutes(draft.cookTime);
+                      const total =
+                        (prep ?? 0) + (cook ?? 0);
+                      updateDraft({
+                        [key]: next,
+                        totalTime:
+                          prep == null && cook == null ? "" : String(total),
+                      });
+                    }}
+                    placeholder="0"
+                    className={fieldClass}
+                  />
+                  <span className="shrink-0 text-sm text-muted">minutes</span>
+                </div>
               </label>
             ))}
+            <div className="flex flex-col gap-1.5">
+              <span className="text-sm font-bold text-ink">Total Time</span>
+              <p className="rounded border border-line bg-app/60 px-2 py-1.5 text-base text-ink">
+                {draft.totalTime
+                  ? formatMinutes(Number(draft.totalTime) || 0)
+                  : "—"}
+              </p>
+              <p className="text-xs italic text-muted">
+                Automatically calculated from prep + cook time.
+              </p>
+            </div>
             <label className="flex flex-col gap-1.5" htmlFor="recipe-servings">
               <span className="text-sm font-bold text-ink">Servings</span>
               <input
@@ -357,15 +464,19 @@ export default function RecipeEditorScreen({
 
         {step === 2 ? (
           <div className="feed-card flex flex-col gap-2.5">
-            {(
-              [
-                ["fat", "Fat", "e.g. 5.8g"],
-                ["carbs", "Carbs", "e.g. 38g"],
-                ["protein", "Protein", "e.g. 10g"],
-                ["sodium", "Sodium", "e.g. 615"],
-              ] as const
-            ).map(([key, label, placeholder]) => (
-              <label key={key} className="flex flex-col gap-1.5" htmlFor={`recipe-nutrition-${key}`}>
+            <div>
+              <p className="text-sm font-bold text-ink">Per serving</p>
+              <p className="mt-1 text-xs italic text-muted">
+                Leave a field blank to hide it on the recipe page. If all are
+                blank, the Nutrition section is hidden.
+              </p>
+            </div>
+            {NUTRITION_FIELDS.map(([key, label, placeholder]) => (
+              <label
+                key={key}
+                className="flex flex-col gap-1.5"
+                htmlFor={`recipe-nutrition-${key}`}
+              >
                 <span className="text-sm font-bold text-ink">{label}</span>
                 <input
                   id={`recipe-nutrition-${key}`}
@@ -381,6 +492,29 @@ export default function RecipeEditorScreen({
                 />
               </label>
             ))}
+            <div className="mt-1 flex flex-col gap-2 border-t border-line pt-3">
+              <p className="text-sm font-bold text-ink">Dietary tags</p>
+              <p className="text-xs italic text-muted">
+                Tags update automatically from ingredients.
+              </p>
+              {inferredTags.length === 0 ? (
+                <p className="text-xs text-muted">
+                  Add ingredients to see vegetarian, vegan, gluten free,
+                  lactose free, and egg free tags.
+                </p>
+              ) : (
+                <div className="flex flex-wrap gap-1.5">
+                  {inferredTags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="rounded-md border border-brand/30 bg-brand/10 px-2 py-0.5 text-xs font-bold text-brand"
+                    >
+                      {RECIPE_TAG_LABELS[tag]}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         ) : null}
 
@@ -407,92 +541,203 @@ export default function RecipeEditorScreen({
                     <button
                       type="button"
                       className="shrink-0 text-sm font-bold text-brand"
-                      onClick={() =>
-                        updateDraft({
-                          ingredientGroups: draft.ingredientGroups.filter(
-                            (_, i) => i !== gi,
-                          ),
-                        })
-                      }
+                      onClick={() => {
+                        const next = draft.ingredientGroups.filter(
+                          (_, i) => i !== gi,
+                        );
+                        updateDraft({ ingredientGroups: next });
+                        setActiveGroupIndex((prev) => {
+                          if (prev === gi) return Math.max(0, gi - 1);
+                          if (prev > gi) return prev - 1;
+                          return Math.min(prev, Math.max(0, next.length - 1));
+                        });
+                      }}
                     >
                       Remove
                     </button>
                   ) : null}
                 </div>
-                {group.items.map((item, ii) => (
-                  <div key={ii} className="flex items-center gap-2">
-                    <input
-                      id={`ingredient-${gi}-${ii}`}
-                      name={`ingredient-${gi}-${ii}`}
-                      value={item}
-                      onChange={(e) => {
+
+                <div className="flex shrink-0 items-center gap-2 text-xs font-bold text-ink-secondary">
+                  <span className="min-w-0 flex-1">Ingredient</span>
+                  <span className="w-16 text-center">Amount</span>
+                  <span className="w-18 text-center">Unit</span>
+                  <span className="w-8" />
+                </div>
+
+                {group.items.length === 0 ? (
+                  <p className="text-xs italic text-muted">
+                    No ingredients in this group yet.
+                  </p>
+                ) : (
+                  group.items.map((item, ii) => (
+                    <IngredientLineRow
+                      key={`${item.name}-${ii}`}
+                      item={item}
+                      idPrefix={`recipe-${gi}-${ii}`}
+                      onChangeAmount={(value) => {
                         const ingredientGroups = draft.ingredientGroups.map(
                           (g, i) => {
                             if (i !== gi) return g;
-                            const items = g.items.map((it, j) =>
-                              j === ii ? e.target.value : it,
-                            );
-                            return { ...g, items };
+                            return {
+                              ...g,
+                              items: g.items.map((it, j) =>
+                                j === ii ? { ...it, amount: value } : it,
+                              ),
+                            };
                           },
                         );
                         updateDraft({ ingredientGroups });
                       }}
-                      placeholder="e.g. 300g Flour"
-                      className={fieldClass}
+                      onChangeUnit={(value) => {
+                        const ingredientGroups = draft.ingredientGroups.map(
+                          (g, i) => {
+                            if (i !== gi) return g;
+                            return {
+                              ...g,
+                              items: g.items.map((it, j) =>
+                                j === ii ? { ...it, unit: value } : it,
+                              ),
+                            };
+                          },
+                        );
+                        updateDraft({ ingredientGroups });
+                      }}
+                      onRemove={() => {
+                        const ingredientGroups = draft.ingredientGroups.map(
+                          (g, i) => {
+                            if (i !== gi) return g;
+                            return {
+                              ...g,
+                              items: g.items.filter((_, j) => j !== ii),
+                            };
+                          },
+                        );
+                        updateDraft({ ingredientGroups });
+                      }}
                     />
-                    {group.items.length > 1 ? (
-                      <button
-                        type="button"
-                        aria-label="Remove ingredient"
-                        className="shrink-0 text-sm font-bold text-brand"
-                        onClick={() => {
-                          const ingredientGroups = draft.ingredientGroups.map(
-                            (g, i) => {
-                              if (i !== gi) return g;
-                              return {
-                                ...g,
-                                items: g.items.filter((_, j) => j !== ii),
-                              };
-                            },
-                          );
-                          updateDraft({ ingredientGroups });
-                        }}
-                      >
-                        ×
-                      </button>
-                    ) : null}
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  className="self-start text-sm font-bold text-brand"
-                  onClick={() => {
-                    const ingredientGroups = draft.ingredientGroups.map(
-                      (g, i) =>
-                        i === gi ? { ...g, items: [...g.items, ""] } : g,
-                    );
-                    updateDraft({ ingredientGroups });
-                  }}
-                >
-                  + Add ingredient
-                </button>
+                  ))
+                )}
               </div>
             ))}
+
             <div className="feed-card">
               <button
                 type="button"
                 className="text-sm font-bold text-brand"
-                onClick={() =>
-                  updateDraft({
-                    ingredientGroups: [
-                      ...draft.ingredientGroups,
-                      { title: "More ingredients", items: [""] },
-                    ],
-                  })
-                }
+                onClick={() => {
+                  const ingredientGroups = [
+                    ...draft.ingredientGroups,
+                    { title: "More ingredients", items: [] as IngredientLine[] },
+                  ];
+                  updateDraft({ ingredientGroups });
+                  setActiveGroupIndex(ingredientGroups.length - 1);
+                }}
               >
                 + Add ingredient group
               </button>
+            </div>
+
+            <div className="feed-card flex flex-col gap-2">
+              <label
+                className="flex flex-col gap-1.5"
+                htmlFor="ingredient-target-group"
+              >
+                <span className="text-sm font-bold text-ink">
+                  Add ingredients to
+                </span>
+                <select
+                  id="ingredient-target-group"
+                  name="ingredient-target-group"
+                  className={fieldClass}
+                  value={Math.min(
+                    activeGroupIndex,
+                    Math.max(0, draft.ingredientGroups.length - 1),
+                  )}
+                  onChange={(e) =>
+                    setActiveGroupIndex(Number(e.target.value) || 0)
+                  }
+                >
+                  {draft.ingredientGroups.map((group, gi) => (
+                    <option key={gi} value={gi}>
+                      {group.title.trim() || `Group ${gi + 1}`}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <IngredientCatalogPicker
+              className="max-h-64 shrink-0 rounded-lg"
+              title="Add Ingredients"
+              addedNames={
+                draft.ingredientGroups[
+                  Math.min(
+                    activeGroupIndex,
+                    Math.max(0, draft.ingredientGroups.length - 1),
+                  )
+                ]?.items.map((i) => i.name) ?? []
+              }
+              onAdd={(name) => {
+                const gi = Math.min(
+                  activeGroupIndex,
+                  Math.max(0, draft.ingredientGroups.length - 1),
+                );
+                const ingredientGroups = draft.ingredientGroups.map((g, i) => {
+                  if (i !== gi) return g;
+                  if (
+                    g.items.some(
+                      (it) => it.name.toLowerCase() === name.toLowerCase(),
+                    )
+                  ) {
+                    return g;
+                  }
+                  return {
+                    ...g,
+                    items: [...g.items, { name, amount: "1", unit: "" }],
+                  };
+                });
+                updateDraft({ ingredientGroups });
+              }}
+              onRemove={(name) => {
+                const gi = Math.min(
+                  activeGroupIndex,
+                  Math.max(0, draft.ingredientGroups.length - 1),
+                );
+                const ingredientGroups = draft.ingredientGroups.map((g, i) => {
+                  if (i !== gi) return g;
+                  return {
+                    ...g,
+                    items: g.items.filter(
+                      (it) => it.name.toLowerCase() !== name.toLowerCase(),
+                    ),
+                  };
+                });
+                updateDraft({ ingredientGroups });
+              }}
+            />
+
+            <div className="feed-card flex flex-col gap-2">
+              <p className="text-sm font-bold text-ink">Dietary tags</p>
+              <p className="text-xs italic text-muted">
+                Tags update automatically from ingredients.
+              </p>
+              {inferredTags.length === 0 ? (
+                <p className="text-xs text-muted">
+                  No tags yet — add ingredient lines above.
+                </p>
+              ) : (
+                <div className="flex flex-wrap gap-1.5">
+                  {inferredTags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="rounded-md border border-brand/30 bg-brand/10 px-2 py-0.5 text-xs font-bold text-brand"
+                    >
+                      {RECIPE_TAG_LABELS[tag]}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           </>
         ) : null}

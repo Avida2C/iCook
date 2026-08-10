@@ -17,7 +17,10 @@ import ThumbnailUploadField from "@/components/app/ThumbnailUploadField";
 import RecipeThumbnail from "@/components/app/RecipeThumbnail";
 import { MY_RECIPES } from "@/components/app/UserCollectionScreens";
 import { isProfileSeedEnabled } from "@/lib/accountData";
-import type { Recipe } from "@/components/recipes/recipesData";
+import {
+  primaryCategory,
+  type Recipe,
+} from "@/components/recipes/recipesData";
 
 const categories = ["Tips", "Recipes", "Cooking Techniques"];
 
@@ -190,9 +193,6 @@ export default function PostEditorScreen({
             <label htmlFor="post-title" className="section-title">
               Post Title <span className="font-bold">*</span>
             </label>
-            <button type="button" className="text-base italic text-brand">
-              Auto-Fill
-            </button>
           </div>
           <input
             id="post-title"
@@ -261,7 +261,7 @@ export default function PostEditorScreen({
                 className="size-14 shrink-0 rounded"
                 iconClassName="h-7 w-8"
                 src={linkedRecipe.thumbnailUrl}
-                category={linkedRecipe.category}
+                category={primaryCategory(linkedRecipe)}
                 alt={linkedRecipe.name}
               />
               <div className="min-w-0">

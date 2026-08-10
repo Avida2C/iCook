@@ -1,3 +1,10 @@
+import type { IngredientLine } from "@/components/ingredients/ingredientCatalog";
+import {
+  coerceIngredientLines,
+  formatIngredientLine,
+  ingredientNamesFromLines,
+} from "@/components/ingredients/ingredientCatalog";
+
 export type RecipeCategorySlug =
   | "breakfast"
   | "lunch"
@@ -14,15 +21,46 @@ export type RecipeCategorySlug =
 export type RecipeCategory = Exclude<RecipeCategorySlug, "all" | "loved">;
 
 export type RecipeNutrition = {
-  fat: string;
-  carbs: string;
-  protein: string;
-  sodium: string;
+  /** Per-serving values; omit empty fields so they stay hidden on the recipe page. */
+  calories?: string;
+  protein?: string;
+  /** Total fat */
+  fat?: string;
+  cholesterol?: string;
+  sodium?: string;
+  carbs?: string;
 };
+
+export type RecipeTag =
+  | "vegetarian"
+  | "vegan"
+  | "glutenFree"
+  | "lactoseFree"
+  | "eggFree";
+
+export const RECIPE_TAG_LABELS: Record<RecipeTag, string> = {
+  vegetarian: "Vegetarian",
+  vegan: "Vegan",
+  glutenFree: "Gluten free",
+  lactoseFree: "Lactose free",
+  eggFree: "Egg free",
+};
+
+export const ALL_RECIPE_TAGS: RecipeTag[] = [
+  "vegetarian",
+  "vegan",
+  "glutenFree",
+  "lactoseFree",
+  "eggFree",
+];
+
+export function isRecipeTag(value: string): value is RecipeTag {
+  return (ALL_RECIPE_TAGS as string[]).includes(value);
+}
 
 export type RecipeIngredientGroup = {
   title: string;
-  items: string[];
+  items: IngredientLine[];
 };
 
 export type RecipeStep = {
@@ -35,7 +73,10 @@ export type Recipe = {
   id: string;
   name: string;
   author: string;
-  category: RecipeCategory;
+  /** One or more browse categories; first entry is primary for thumbnails. */
+  categories: RecipeCategory[];
+  /** Dietary / attribute tags (e.g. vegetarian). */
+  tags?: RecipeTag[];
   /** Community bookmark baseline (other users). Current user save adds +1 at runtime. */
   bookmarkCount: number;
   description: string;
@@ -67,13 +108,109 @@ export const CATEGORY_THUMBNAILS: Record<RecipeCategory, string> = {
   pasta: "/icons/recipes/pasta.png",
 };
 
-/** Resolved image for cards/detail — custom upload, else category art. */
+const VALID_CATEGORIES = new Set<string>(Object.keys(CATEGORY_THUMBNAILS));
+
+export function isRecipeCategory(value: string): value is RecipeCategory {
+  return VALID_CATEGORIES.has(value);
+}
+
+/** First category — used for thumbnail fallback and single-label contexts. */
+export function primaryCategory(
+  recipe: Pick<Recipe, "categories"> | { categories?: RecipeCategory[]; category?: RecipeCategory },
+): RecipeCategory {
+  const list =
+    "categories" in recipe && Array.isArray(recipe.categories)
+      ? recipe.categories
+      : [];
+  if (list.length > 0) return list[0];
+  if ("category" in recipe && recipe.category && isRecipeCategory(recipe.category)) {
+    return recipe.category;
+  }
+  return "dinner";
+}
+
+export function recipeHasCategory(
+  recipe: Pick<Recipe, "categories"> | { categories?: RecipeCategory[]; category?: RecipeCategory },
+  slug: string,
+): boolean {
+  if ("categories" in recipe && Array.isArray(recipe.categories)) {
+    return recipe.categories.includes(slug as RecipeCategory);
+  }
+  if ("category" in recipe && typeof recipe.category === "string") {
+    return recipe.category === slug;
+  }
+  return false;
+}
+
+/** Normalize to a non-empty unique categories list. */
+export function normalizeCategories(
+  input: RecipeCategory[] | RecipeCategory | undefined,
+  fallback: RecipeCategory = "dinner",
+): RecipeCategory[] {
+  const raw = Array.isArray(input) ? input : input ? [input] : [];
+  const unique: RecipeCategory[] = [];
+  for (const c of raw) {
+    if (isRecipeCategory(c) && !unique.includes(c)) unique.push(c);
+  }
+  return unique.length > 0 ? unique : [fallback];
+}
+
+/** Resolved image for cards/detail — custom upload, else primary category art. */
 export function recipeThumbnailSrc(
-  recipe: Pick<Recipe, "category"> & { thumbnailUrl?: string },
+  recipe: (Pick<Recipe, "categories"> | { category?: RecipeCategory }) & {
+    thumbnailUrl?: string;
+  },
 ): string {
   const custom = recipe.thumbnailUrl?.trim();
   if (custom && custom !== "placeholder") return custom;
-  return CATEGORY_THUMBNAILS[recipe.category];
+  return CATEGORY_THUMBNAILS[primaryCategory(recipe)];
+}
+
+/** Parse a time string into whole minutes (supports legacy "1 hour 30 minutes"). */
+export function parseMinutes(value: string | undefined | null): number | null {
+  if (value == null) return null;
+  const raw = value.trim().toLowerCase();
+  if (!raw || raw === "—" || raw === "-") return null;
+
+  if (/^\d+$/.test(raw)) return Math.max(0, Number(raw));
+
+  const minutesOnly = raw.match(/^(\d+)\s*min(ute)?s?\b/);
+  if (minutesOnly) return Math.max(0, Number(minutesOnly[1]));
+
+  let total = 0;
+  let matched = false;
+  const hourMatch = raw.match(/(\d+)\s*hours?/);
+  if (hourMatch) {
+    total += Number(hourMatch[1]) * 60;
+    matched = true;
+  }
+  const minMatch = raw.match(/(\d+)\s*min/);
+  if (minMatch) {
+    total += Number(minMatch[1]);
+    matched = true;
+  }
+  if (matched) return Math.max(0, total);
+
+  const digits = raw.match(/\d+/);
+  return digits ? Math.max(0, Number(digits[0])) : null;
+}
+
+/** Display / stored form: "12 minutes" (or "1 minute"). */
+export function formatMinutes(minutes: number): string {
+  const n = Math.max(0, Math.round(minutes));
+  return `${n} minute${n === 1 ? "" : "s"}`;
+}
+
+/** Normalize any time input to "N minutes", or "—" when empty/invalid. */
+export function normalizeTimeMinutes(
+  value: string | number | undefined | null,
+): string {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return formatMinutes(value);
+  }
+  const parsed = parseMinutes(String(value ?? ""));
+  if (parsed == null) return "—";
+  return formatMinutes(parsed);
 }
 
 export function flatIngredientsFromGroups(
@@ -81,24 +218,351 @@ export function flatIngredientsFromGroups(
 ): string[] {
   const names = new Set<string>();
   for (const group of groups) {
-    for (const item of group.items) {
-      const cleaned = item
-        .replace(/^\d+(\.\d+)?\s*(g|kg|ml|l|cup|cups|tsp|tbsp|tablespoons?|teaspoons?)?\s*/i, "")
-        .replace(/\(.*?\)/g, "")
-        .replace(/,.*$/, "")
-        .trim();
-      if (cleaned) names.add(cleaned);
+    for (const name of ingredientNamesFromLines(group.items)) {
+      names.add(name);
     }
   }
   return [...names];
 }
 
-const emptyNutrition = (): RecipeNutrition => ({
-  fat: "0g",
-  carbs: "0g",
-  protein: "0g",
-  sodium: "0",
-});
+/** Normalize group items that may still be legacy free-text strings. */
+export function normalizeIngredientGroups(
+  groups: RecipeIngredientGroup[] | { title: string; items: unknown[] }[] | undefined,
+): RecipeIngredientGroup[] {
+  if (!groups?.length) {
+    return [{ title: "Ingredients", items: [] }];
+  }
+  return groups.map((g) => ({
+    title: (g.title || "Ingredients").trim() || "Ingredients",
+    items: coerceIngredientLines(g.items as unknown[]),
+  }));
+}
+
+export { formatIngredientLine };
+
+const emptyNutrition = (): RecipeNutrition => ({});
+
+const MEAT_KEYWORDS = [
+  "beef",
+  "pork",
+  "chicken",
+  "turkey",
+  "lamb",
+  "veal",
+  "duck",
+  "bacon",
+  "ham",
+  "sausage",
+  "pepperoni",
+  "salami",
+  "prosciutto",
+  "chorizo",
+  "meat",
+  "mince",
+  "steak",
+  "brisket",
+  "ribs",
+  "wing",
+  "thigh",
+  "fish",
+  "salmon",
+  "tuna",
+  "cod",
+  "shrimp",
+  "prawn",
+  "crab",
+  "lobster",
+  "anchovy",
+  "seafood",
+  "clam",
+  "mussel",
+  "oyster",
+  "sardine",
+];
+
+const DAIRY_KEYWORDS = [
+  "milk",
+  "cream",
+  "butter",
+  "cheese",
+  "cheddar",
+  "parmesan",
+  "mozarella",
+  "mozzarella",
+  "ricotta",
+  "mascarpone",
+  "yogurt",
+  "yoghurt",
+  "whey",
+  "casein",
+  "lactose",
+  "ghee",
+  "buttermilk",
+  "sour cream",
+  "creme fraiche",
+  "crème fraîche",
+  "half-and-half",
+  "evaporated milk",
+  "condensed milk",
+  "ice cream",
+];
+
+const EGG_KEYWORDS = [
+  "egg",
+  "eggs",
+  "egg white",
+  "egg whites",
+  "egg yolk",
+  "egg yolks",
+  "yolk",
+  "yolks",
+  "mayonnaise",
+  "mayo",
+];
+
+/** Extra animal-derived items that block vegan (beyond meat/dairy/egg). */
+const NON_VEGAN_EXTRA_KEYWORDS = [
+  "honey",
+  "gelatin",
+  "gelatine",
+  "beeswax",
+  "royal jelly",
+  "fish sauce",
+  "worcestershire",
+  "lard",
+  "tallow",
+  "suet",
+  "bone broth",
+  "chicken stock",
+  "beef stock",
+  "fish stock",
+];
+
+/**
+ * Gluten cues — conservative: common wheat products and named grains.
+ * Plain "flour" counts (most recipe flour is wheat unless specified otherwise).
+ */
+const GLUTEN_KEYWORDS = [
+  "wheat",
+  "barley",
+  "rye",
+  "malt",
+  "seitan",
+  "couscous",
+  "bulgur",
+  "semolina",
+  "spelt",
+  "farro",
+  "durum",
+  "flour",
+  "bread",
+  "breadcrumb",
+  "breadcrumbs",
+  "pasta",
+  "spaghetti",
+  "penne",
+  "fettuccine",
+  "lasagna",
+  "lasagne",
+  "noodle",
+  "noodles",
+  "ravioli",
+  "tortellini",
+  "macaroni",
+  "orzo",
+  "soy sauce",
+  "soya sauce",
+  "teriyaki",
+  "panko",
+  "crouton",
+  "croutons",
+  "pretzel",
+  "baguette",
+  "croissant",
+  "pita",
+  "tortilla",
+  "wrap",
+];
+
+/** Flours / starches that are typically gluten-free (negate plain "flour" hits). */
+const GLUTEN_FREE_FLOUR_CUES = [
+  "rice flour",
+  "almond flour",
+  "coconut flour",
+  "corn flour",
+  "cornstarch",
+  "corn starch",
+  "potato starch",
+  "tapioca",
+  "chickpea flour",
+  "gram flour",
+  "buckwheat flour",
+  "oat flour",
+  "gluten-free flour",
+  "gluten free flour",
+  "gf flour",
+];
+
+const GLUTEN_FREE_NOODLE_CUES = [
+  "rice noodle",
+  "rice noodles",
+  "glass noodle",
+  "glass noodles",
+  "soba",
+  "gluten-free pasta",
+  "gluten free pasta",
+  "gf pasta",
+];
+
+function linesMatchAnyKeyword(
+  lines: string[],
+  keywords: string[],
+): boolean {
+  if (!lines.length) return false;
+  return lines.some((item) => {
+    const text = item.toLowerCase();
+    return keywords.some((kw) =>
+      new RegExp(`\\b${kw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(
+        text,
+      ),
+    );
+  });
+}
+
+/** True when ingredient text suggests meat/fish/seafood. */
+export function ingredientsContainMeat(
+  ingredients: string[] | undefined,
+): boolean {
+  return linesMatchAnyKeyword(ingredients ?? [], MEAT_KEYWORDS);
+}
+
+export function ingredientsContainDairy(
+  ingredients: string[] | undefined,
+): boolean {
+  return linesMatchAnyKeyword(ingredients ?? [], DAIRY_KEYWORDS);
+}
+
+export function ingredientsContainEgg(
+  ingredients: string[] | undefined,
+): boolean {
+  return linesMatchAnyKeyword(ingredients ?? [], EGG_KEYWORDS);
+}
+
+export function ingredientsContainNonVeganExtras(
+  ingredients: string[] | undefined,
+): boolean {
+  return linesMatchAnyKeyword(ingredients ?? [], NON_VEGAN_EXTRA_KEYWORDS);
+}
+
+/** True when lines likely include gluten-containing ingredients. */
+export function ingredientsContainGluten(
+  ingredients: string[] | undefined,
+): boolean {
+  const lines = ingredients ?? [];
+  if (!lines.length) return false;
+
+  return lines.some((item) => {
+    const text = item.toLowerCase();
+    if (GLUTEN_FREE_FLOUR_CUES.some((cue) => text.includes(cue))) return false;
+    if (GLUTEN_FREE_NOODLE_CUES.some((cue) => text.includes(cue))) return false;
+    if (/\bgluten[- ]?free\b/.test(text) || /\bgf\b/.test(text)) return false;
+    return GLUTEN_KEYWORDS.some((kw) =>
+      new RegExp(`\\b${kw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(
+        text,
+      ),
+    );
+  });
+}
+
+/** Flat + grouped ingredient lines used for dietary tag inference. */
+export function recipeIngredientLines(
+  recipe: Pick<Recipe, "ingredients" | "ingredientGroups">,
+): string[] {
+  const names = new Set<string>();
+  for (const n of recipe.ingredients ?? []) {
+    if (n.trim()) names.add(n.trim());
+  }
+  for (const group of recipe.ingredientGroups ?? []) {
+    for (const name of ingredientNamesFromLines(group.items)) {
+      names.add(name);
+    }
+  }
+  return [...names];
+}
+
+/**
+ * Infer dietary tags from ingredients only (stored tags ignored).
+ * Independent detectors: vegan recipes also get vegetarian / egg / lactose chips.
+ * No tags when there are no ingredient lines yet.
+ */
+export function resolveRecipeTags(
+  recipe: Pick<Recipe, "ingredients" | "ingredientGroups" | "tags">,
+): RecipeTag[] {
+  const lines = recipeIngredientLines(recipe);
+  if (lines.length === 0) return [];
+
+  const hasMeat = ingredientsContainMeat(lines);
+  const hasDairy = ingredientsContainDairy(lines);
+  const hasEgg = ingredientsContainEgg(lines);
+  const hasGluten = ingredientsContainGluten(lines);
+  const hasNonVeganExtra = ingredientsContainNonVeganExtras(lines);
+
+  const tags: RecipeTag[] = [];
+  if (!hasMeat) tags.push("vegetarian");
+  if (!hasMeat && !hasDairy && !hasEgg && !hasNonVeganExtra) tags.push("vegan");
+  if (!hasGluten) tags.push("glutenFree");
+  if (!hasDairy) tags.push("lactoseFree");
+  if (!hasEgg) tags.push("eggFree");
+  return tags;
+}
+
+export function normalizeNutrition(
+  input: RecipeNutrition | undefined | null,
+): RecipeNutrition {
+  if (!input || typeof input !== "object") return {};
+  const out: RecipeNutrition = {};
+  const keys = [
+    "calories",
+    "protein",
+    "fat",
+    "cholesterol",
+    "sodium",
+    "carbs",
+  ] as const;
+  for (const key of keys) {
+    const raw = input[key];
+    if (typeof raw !== "string") continue;
+    const trimmed = raw.trim();
+    if (!trimmed || trimmed === "—" || trimmed === "-") continue;
+    out[key] = trimmed;
+  }
+  return out;
+}
+
+export function hasNutritionFacts(nutrition: RecipeNutrition | undefined): boolean {
+  return nutritionFactRows(nutrition).length > 0;
+}
+
+/** Ordered nutrition rows for display (only filled values). */
+export function nutritionFactRows(
+  nutrition: RecipeNutrition | undefined,
+): { key: keyof RecipeNutrition; label: string; value: string }[] {
+  const n = nutrition ?? {};
+  const order: { key: keyof RecipeNutrition; label: string }[] = [
+    { key: "calories", label: "Calories" },
+    { key: "fat", label: "Total Fat" },
+    { key: "cholesterol", label: "Cholesterol" },
+    { key: "sodium", label: "Sodium" },
+    { key: "carbs", label: "Carbs" },
+    { key: "protein", label: "Protein" },
+  ];
+  return order
+    .filter(({ key }) => {
+      const v = n[key];
+      return typeof v === "string" && v.trim().length > 0;
+    })
+    .map(({ key, label }) => ({ key, label, value: n[key]!.trim() }));
+}
 
 /** Shared recipes that appear in Discover/Recipes and can be saved. */
 export const CATALOG_RECIPES: Recipe[] = [
@@ -106,14 +570,14 @@ export const CATALOG_RECIPES: Recipe[] = [
     id: "1",
     name: "Ricotta Ravioli",
     author: "courtneyhenry",
-    category: "pasta",
+    categories: ["pasta", "dinner"],
     thumbnailUrl: "/icons/recipes/pasta.png",
     bookmarkCount: 128,
     description:
       "Homemade ravioli filled with a creamy ricotta and mascarpone mix, finished with fresh basil.",
-    prepTime: "2 hours",
+    prepTime: "120 minutes",
     cookTime: "5 minutes",
-    totalTime: "2 Hours 5 minutes",
+    totalTime: "125 minutes",
     servings: 4,
     nutrition: {
       fat: "5.8g",
@@ -125,31 +589,36 @@ export const CATALOG_RECIPES: Recipe[] = [
       {
         title: "For the Pasta Dough",
         items: [
-          "3 large eggs",
-          "1 large egg yolk",
-          "Olive oil",
-          "Semolina flour, for dusting",
-          "300g Flour",
+          { name: "Eggs", amount: "3", unit: "large" },
+          { name: "Egg Yolk", amount: "1", unit: "large" },
+          { name: "Olive Oil", amount: "", unit: "" },
+          { name: "Semolina Flour", amount: "", unit: "" },
+          { name: "Flour", amount: "300", unit: "g" },
         ],
       },
       {
         title: "Ravioli Cheese Filling",
         items: [
-          "100g (1/2 cup) drained whole milk ricotta",
-          "100 g (1/2 cup) mascarpone cheese",
-          "10 g (1/4 cup) chopped basil leaves",
-          "30 g freshly grated Parmesan cheese",
-          "1 egg",
-          "Salt & Pepper, to taste",
+          { name: "Ricotta", amount: "100", unit: "g" },
+          { name: "Mascarpone", amount: "100", unit: "g" },
+          { name: "Basil", amount: "10", unit: "g" },
+          { name: "Parmesan", amount: "30", unit: "g" },
+          { name: "Eggs", amount: "1", unit: "" },
+          { name: "Salt", amount: "", unit: "pinch" },
+          { name: "Black Pepper", amount: "", unit: "pinch" },
         ],
       },
     ],
     ingredients: [
       "Flour",
       "Eggs",
+      "Egg Yolk",
       "Ricotta",
+      "Mascarpone",
       "Basil",
+      "Parmesan",
       "Olive Oil",
+      "Semolina Flour",
       "Salt",
       "Black Pepper",
       "Spinach",
@@ -224,7 +693,7 @@ export const CATALOG_RECIPES: Recipe[] = [
     id: "2",
     name: "Egg on Toast",
     author: "chefamy",
-    category: "toasty",
+    categories: ["toasty", "breakfast"],
     thumbnailUrl: "/icons/recipes/toasty.png",
     bookmarkCount: 96,
     description:
@@ -243,11 +712,12 @@ export const CATALOG_RECIPES: Recipe[] = [
       {
         title: "Ingredients",
         items: [
-          "2 large eggs",
-          "2 slices bread",
-          "1 tbsp butter",
-          "1 tsp olive oil",
-          "Salt & black pepper, to taste",
+          { name: "Eggs", amount: "2", unit: "large" },
+          { name: "Bread", amount: "2", unit: "slice" },
+          { name: "Butter", amount: "1", unit: "tbsp" },
+          { name: "Olive Oil", amount: "1", unit: "tsp" },
+          { name: "Salt", amount: "", unit: "pinch" },
+          { name: "Black Pepper", amount: "", unit: "pinch" },
         ],
       },
     ],
@@ -275,7 +745,7 @@ export const CATALOG_RECIPES: Recipe[] = [
     id: "3",
     name: "Blueberry Pancakes",
     author: "bakerben",
-    category: "breakfast",
+    categories: ["breakfast", "sweets"],
     thumbnailUrl: "/icons/recipes/breakfast.png",
     bookmarkCount: 112,
     description:
@@ -294,13 +764,13 @@ export const CATALOG_RECIPES: Recipe[] = [
       {
         title: "Batter",
         items: [
-          "200g Flour",
-          "2 large eggs",
-          "250ml Milk",
-          "2 tbsp melted butter",
-          "2 tbsp sugar",
-          "1 tsp lemon zest",
-          "150g Blueberries",
+          { name: "Flour", amount: "200", unit: "g" },
+          { name: "Eggs", amount: "2", unit: "large" },
+          { name: "Milk", amount: "250", unit: "ml" },
+          { name: "Butter", amount: "2", unit: "tbsp" },
+          { name: "Sugar", amount: "2", unit: "tbsp" },
+          { name: "Lemon Zest", amount: "1", unit: "tsp" },
+          { name: "Blueberries", amount: "150", unit: "g" },
         ],
       },
     ],
@@ -340,7 +810,7 @@ export const CATALOG_RECIPES: Recipe[] = [
     id: "4",
     name: "Pasta Salad",
     author: "courtneyhenry",
-    category: "lunch",
+    categories: ["lunch", "pasta"],
     thumbnailUrl: "/icons/recipes/lunch.png",
     bookmarkCount: 74,
     description:
@@ -359,13 +829,14 @@ export const CATALOG_RECIPES: Recipe[] = [
       {
         title: "Salad",
         items: [
-          "300g Pasta",
-          "200g Cherry tomatoes, halved",
-          "2 Garlic cloves, minced",
-          "Handful of parsley, chopped",
-          "3 tbsp olive oil",
-          "Juice of 1 lemon",
-          "Salt & black pepper, to taste",
+          { name: "Pasta", amount: "300", unit: "g" },
+          { name: "Cherry Tomatoes", amount: "200", unit: "g" },
+          { name: "Garlic Cloves", amount: "2", unit: "clove" },
+          { name: "Parsley", amount: "1", unit: "handful" },
+          { name: "Olive Oil", amount: "3", unit: "tbsp" },
+          { name: "Lemon", amount: "1", unit: "Whole" },
+          { name: "Salt", amount: "", unit: "pinch" },
+          { name: "Black Pepper", amount: "", unit: "pinch" },
         ],
       },
     ],
@@ -398,14 +869,14 @@ export const CATALOG_RECIPES: Recipe[] = [
     id: "5",
     name: "Pork Roast",
     author: "grillguy",
-    category: "dinner",
+    categories: ["dinner"],
     thumbnailUrl: "/icons/recipes/dinner.png",
     bookmarkCount: 88,
     description:
       "Herb-rubbed pork roast with rosemary and thyme, roasted until juicy with a crisp exterior.",
     prepTime: "20 minutes",
-    cookTime: "1 hour 30 minutes",
-    totalTime: "1 hour 50 minutes",
+    cookTime: "90 minutes",
+    totalTime: "110 minutes",
     servings: 6,
     nutrition: {
       fat: "18g",
@@ -417,12 +888,13 @@ export const CATALOG_RECIPES: Recipe[] = [
       {
         title: "Rub & roast",
         items: [
-          "1.5kg Pork roast",
-          "4 Garlic cloves, crushed",
-          "2 tbsp dried rosemary",
-          "1 tbsp dried thyme",
-          "3 tbsp olive oil",
-          "Salt & black pepper, to taste",
+          { name: "Pork", amount: "1.5", unit: "kg" },
+          { name: "Garlic Cloves", amount: "4", unit: "clove" },
+          { name: "Dried Rosemary", amount: "2", unit: "tbsp" },
+          { name: "Dried Thyme", amount: "1", unit: "tbsp" },
+          { name: "Olive Oil", amount: "3", unit: "tbsp" },
+          { name: "Salt", amount: "", unit: "pinch" },
+          { name: "Black Pepper", amount: "", unit: "pinch" },
         ],
       },
     ],
@@ -458,7 +930,7 @@ export const CATALOG_RECIPES: Recipe[] = [
     id: "6",
     name: "Chocolate Cookies",
     author: "sweetsue",
-    category: "sweets",
+    categories: ["sweets"],
     thumbnailUrl: "/icons/recipes/sweets.png",
     bookmarkCount: 141,
     description:
@@ -477,13 +949,13 @@ export const CATALOG_RECIPES: Recipe[] = [
       {
         title: "Dough",
         items: [
-          "250g Flour",
-          "170g Butter, softened",
-          "150g Sugar",
-          "2 large eggs",
-          "200g Chocolate, chopped",
-          "1 tsp vanilla extract",
-          "1/2 tsp salt",
+          { name: "Flour", amount: "250", unit: "g" },
+          { name: "Butter", amount: "170", unit: "g" },
+          { name: "Sugar", amount: "150", unit: "g" },
+          { name: "Eggs", amount: "2", unit: "large" },
+          { name: "Chocolate", amount: "200", unit: "g" },
+          { name: "Vanilla Extract", amount: "1", unit: "tsp" },
+          { name: "Salt", amount: "1/2", unit: "tsp" },
         ],
       },
     ],
@@ -519,14 +991,14 @@ export const CATALOG_RECIPES: Recipe[] = [
     id: "7",
     name: "Traditional Ravioli",
     author: "courtneyhenry",
-    category: "pasta",
+    categories: ["pasta"],
     thumbnailUrl: "/icons/recipes/pasta.png",
     bookmarkCount: 63,
     description:
       "Classic ricotta ravioli with a simple dough and fresh basil — a weeknight pasta classic.",
-    prepTime: "1 hour",
+    prepTime: "60 minutes",
     cookTime: "5 minutes",
-    totalTime: "1 hour 5 minutes",
+    totalTime: "65 minutes",
     servings: 4,
     nutrition: {
       fat: "6g",
@@ -538,12 +1010,12 @@ export const CATALOG_RECIPES: Recipe[] = [
       {
         title: "Dough & filling",
         items: [
-          "300g Flour",
-          "3 large eggs",
-          "150g Ricotta",
-          "2 tbsp olive oil",
-          "Salt, to taste",
-          "Handful of basil, chopped",
+          { name: "Flour", amount: "300", unit: "g" },
+          { name: "Eggs", amount: "3", unit: "large" },
+          { name: "Ricotta", amount: "150", unit: "g" },
+          { name: "Olive Oil", amount: "2", unit: "tbsp" },
+          { name: "Salt", amount: "", unit: "pinch" },
+          { name: "Basil", amount: "1", unit: "handful" },
         ],
       },
     ],
@@ -571,7 +1043,7 @@ export const CATALOG_RECIPES: Recipe[] = [
     id: "8",
     name: "Egg & Tomatoes on Toast",
     author: "chefamy",
-    category: "toasty",
+    categories: ["toasty"],
     thumbnailUrl: "/icons/recipes/toasty.png",
     bookmarkCount: 51,
     description:
@@ -590,13 +1062,14 @@ export const CATALOG_RECIPES: Recipe[] = [
       {
         title: "Ingredients",
         items: [
-          "4 large eggs",
-          "2 ripe tomatoes, chopped",
-          "2 Garlic cloves, sliced",
-          "2 tbsp olive oil",
-          "Fresh basil leaves",
-          "Salt & black pepper, to taste",
-          "4 slices bread, toasted",
+          { name: "Eggs", amount: "4", unit: "large" },
+          { name: "Tomatoes", amount: "2", unit: "" },
+          { name: "Garlic Cloves", amount: "2", unit: "clove" },
+          { name: "Olive Oil", amount: "2", unit: "tbsp" },
+          { name: "Basil", amount: "", unit: "" },
+          { name: "Salt", amount: "", unit: "pinch" },
+          { name: "Black Pepper", amount: "", unit: "pinch" },
+          { name: "Bread", amount: "4", unit: "slice" },
         ],
       },
     ],
@@ -628,7 +1101,7 @@ export const CATALOG_RECIPES: Recipe[] = [
     id: "9",
     name: "Popcorn",
     author: "snacksam",
-    category: "snacks",
+    categories: ["snacks"],
     thumbnailUrl: "/icons/recipes/snacks.png",
     bookmarkCount: 39,
     description:
@@ -647,10 +1120,10 @@ export const CATALOG_RECIPES: Recipe[] = [
       {
         title: "Ingredients",
         items: [
-          "80g Popcorn kernels",
-          "2 tbsp olive oil",
-          "2 tbsp butter, melted",
-          "Salt, to taste",
+          { name: "Popcorn Kernels", amount: "80", unit: "g" },
+          { name: "Olive Oil", amount: "2", unit: "tbsp" },
+          { name: "Butter", amount: "2", unit: "tbsp" },
+          { name: "Salt", amount: "", unit: "pinch" },
         ],
       },
     ],
@@ -674,14 +1147,14 @@ export const CATALOG_RECIPES: Recipe[] = [
     id: "10",
     name: "Roast Pork",
     author: "grillguy",
-    category: "dinner",
+    categories: ["dinner"],
     thumbnailUrl: "/icons/recipes/dinner.png",
     bookmarkCount: 57,
     description:
       "Lemon-rosemary roast pork with garlic — a simpler cousin of the classic pork roast.",
     prepTime: "15 minutes",
-    cookTime: "1 hour 15 minutes",
-    totalTime: "1 hour 30 minutes",
+    cookTime: "75 minutes",
+    totalTime: "90 minutes",
     servings: 6,
     nutrition: {
       fat: "16g",
@@ -693,12 +1166,13 @@ export const CATALOG_RECIPES: Recipe[] = [
       {
         title: "Rub & roast",
         items: [
-          "1.2kg Pork roast",
-          "4 Garlic cloves",
-          "2 tbsp dried rosemary",
-          "3 tbsp olive oil",
-          "Juice of 1 lemon",
-          "Salt & black pepper, to taste",
+          { name: "Pork", amount: "1.2", unit: "kg" },
+          { name: "Garlic Cloves", amount: "4", unit: "clove" },
+          { name: "Dried Rosemary", amount: "2", unit: "tbsp" },
+          { name: "Olive Oil", amount: "3", unit: "tbsp" },
+          { name: "Lemon", amount: "1", unit: "Whole" },
+          { name: "Salt", amount: "", unit: "pinch" },
+          { name: "Black Pepper", amount: "", unit: "pinch" },
         ],
       },
     ],
@@ -726,7 +1200,7 @@ export const CATALOG_RECIPES: Recipe[] = [
     id: "11",
     name: "Salmon with Roast Potatoes",
     author: "fishfan",
-    category: "dinner",
+    categories: ["dinner"],
     thumbnailUrl: "/icons/recipes/dinner.png",
     bookmarkCount: 82,
     description:
@@ -745,13 +1219,14 @@ export const CATALOG_RECIPES: Recipe[] = [
       {
         title: "Sheet pan",
         items: [
-          "4 Salmon fillets",
-          "800g Potatoes, cubed",
-          "4 tbsp olive oil",
-          "1 Lemon, sliced",
-          "Fresh dill",
-          "3 Garlic cloves",
-          "Salt & black pepper, to taste",
+          { name: "Salmon", amount: "4", unit: "fillet" },
+          { name: "Potatoes", amount: "800", unit: "g" },
+          { name: "Olive Oil", amount: "4", unit: "tbsp" },
+          { name: "Lemon", amount: "1", unit: "Whole" },
+          { name: "Dill", amount: "", unit: "" },
+          { name: "Garlic Cloves", amount: "3", unit: "clove" },
+          { name: "Salt", amount: "", unit: "pinch" },
+          { name: "Black Pepper", amount: "", unit: "pinch" },
         ],
       },
     ],
@@ -784,14 +1259,14 @@ export const CATALOG_RECIPES: Recipe[] = [
     id: "12",
     name: "Steak and Potato Jacket",
     author: "grillguy",
-    category: "savoury",
+    categories: ["savoury"],
     thumbnailUrl: "/icons/recipes/savoury.png",
     bookmarkCount: 69,
     description:
       "Seared steak sliced over a fluffy jacket potato with garlic butter.",
     prepTime: "10 minutes",
     cookTime: "50 minutes",
-    totalTime: "1 hour",
+    totalTime: "60 minutes",
     servings: 2,
     nutrition: {
       fat: "28g",
@@ -803,12 +1278,13 @@ export const CATALOG_RECIPES: Recipe[] = [
       {
         title: "Ingredients",
         items: [
-          "2 Steaks",
-          "2 large Potatoes",
-          "2 tbsp olive oil",
-          "2 tbsp butter",
-          "2 Garlic cloves, crushed",
-          "Salt & black pepper, to taste",
+          { name: "Steak", amount: "2", unit: "piece" },
+          { name: "Potatoes", amount: "2", unit: "large" },
+          { name: "Olive Oil", amount: "2", unit: "tbsp" },
+          { name: "Butter", amount: "2", unit: "tbsp" },
+          { name: "Garlic Cloves", amount: "2", unit: "clove" },
+          { name: "Salt", amount: "", unit: "pinch" },
+          { name: "Black Pepper", amount: "", unit: "pinch" },
         ],
       },
     ],
@@ -840,14 +1316,14 @@ export const CATALOG_RECIPES: Recipe[] = [
     id: "13",
     name: "Raspberry Cheesecake",
     author: "sweetsue",
-    category: "fruity",
+    categories: ["sweets", "fruity"],
     thumbnailUrl: "/icons/recipes/fruity.png",
     bookmarkCount: 104,
     description:
       "No-fuss raspberry cheesecake with a buttery base and tangy yogurt cream.",
     prepTime: "25 minutes",
     cookTime: "0 minutes",
-    totalTime: "25 minutes (+ chill)",
+    totalTime: "25 minutes",
     servings: 8,
     nutrition: {
       fat: "16g",
@@ -859,13 +1335,13 @@ export const CATALOG_RECIPES: Recipe[] = [
       {
         title: "Base & filling",
         items: [
-          "200g Digestive biscuits, crushed",
-          "80g Butter, melted",
-          "300g Yogurt",
-          "100g Sugar",
-          "1 tsp vanilla extract",
-          "Zest of 1 lemon",
-          "200g Raspberries",
+          { name: "Digestive Biscuits", amount: "200", unit: "g" },
+          { name: "Butter", amount: "80", unit: "g" },
+          { name: "Yogurt", amount: "300", unit: "g" },
+          { name: "Sugar", amount: "100", unit: "g" },
+          { name: "Vanilla Extract", amount: "1", unit: "tsp" },
+          { name: "Lemon Zest", amount: "1", unit: "" },
+          { name: "Raspberries", amount: "200", unit: "g" },
         ],
       },
     ],
@@ -908,14 +1384,14 @@ export function emptyRecipeDraft(
   return {
     name: "",
     author,
-    category: "dinner",
+    categories: ["dinner"],
     description: "",
     prepTime: "",
     cookTime: "",
     totalTime: "",
     servings: 4,
     nutrition: emptyNutrition(),
-    ingredientGroups: [{ title: "Ingredients", items: [""] }],
+    ingredientGroups: [{ title: "Ingredients", items: [] }],
     ingredients: [],
     instructions: [{ n: "1.0", text: "" }],
     ...partial,

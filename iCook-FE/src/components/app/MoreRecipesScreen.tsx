@@ -13,6 +13,7 @@ import {
   useSavedRecipes,
   type CatalogRecipe,
 } from "@/components/recipes/SavedRecipesProvider";
+import { primaryCategory } from "@/components/recipes/recipesData";
 import { rankRecipesByPantry } from "@/lib/pantryMatch";
 
 function MoreRecipeCard({ recipe }: { recipe: CatalogRecipe }) {
@@ -30,7 +31,7 @@ function MoreRecipeCard({ recipe }: { recipe: CatalogRecipe }) {
             className="size-full"
             iconClassName="h-[60px] w-[68px]"
             src={recipe.thumbnailUrl}
-            category={recipe.category}
+            category={primaryCategory(recipe)}
             alt={recipe.name}
           />
         </Link>
