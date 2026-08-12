@@ -80,6 +80,8 @@ export type Recipe = {
   /** Community bookmark baseline (other users). Current user save adds +1 at runtime. */
   bookmarkCount: number;
   description: string;
+  /** Epoch ms when the recipe was created (user recipes + optional catalog). */
+  createdAt?: number;
   thumbnailUrl?: string;
   prepTime: string;
   cookTime: string;
@@ -1567,6 +1569,32 @@ export const CATALOG_RECIPES: Recipe[] = [
 
 export function getCatalogRecipe(id: string): Recipe | undefined {
   return CATALOG_RECIPES.find((r) => r.id === id);
+}
+
+/** Stable demo created-at for catalog recipes that omit `createdAt`. */
+export function catalogRecipeCreatedAt(id: string): number {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    hash = (hash * 33 + id.charCodeAt(i)) >>> 0;
+  }
+  return Date.UTC(2024, 0, 1) + (hash % 400) * 86_400_000;
+}
+
+export function formatRecipeCreatedDate(ms: number): string {
+  return new Date(ms).toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+export function resolveRecipeCreatedAt(
+  recipe: Pick<Recipe, "id" | "createdAt">,
+  storedCreatedAt?: number,
+): number {
+  if (typeof storedCreatedAt === "number") return storedCreatedAt;
+  if (typeof recipe.createdAt === "number") return recipe.createdAt;
+  return catalogRecipeCreatedAt(recipe.id);
 }
 
 export function emptyRecipeDraft(

@@ -28,7 +28,17 @@ import { useCreatedContent } from "@/components/app/CreatedContentProvider";
 import { absoluteAppUrl, shareContent } from "@/lib/share";
 import { isOwnAuthor, resolveAuthor } from "@/components/app/user/authors";
 import { useCurrentFeedUser } from "@/components/app/user/useCurrentFeedUser";
-import { primaryCategory, type Recipe, hasNutritionFacts, nutritionFactRows, resolveRecipeTags, RECIPE_TAG_LABELS, formatIngredientLine } from "@/components/recipes/recipesData";
+import {
+  primaryCategory,
+  type Recipe,
+  hasNutritionFacts,
+  nutritionFactRows,
+  resolveRecipeTags,
+  RECIPE_TAG_LABELS,
+  formatIngredientLine,
+  formatRecipeCreatedDate,
+  resolveRecipeCreatedAt,
+} from "@/components/recipes/recipesData";
 
 function pickRandomRecipe(recipes: CatalogRecipe[]) {
   if (recipes.length === 0) return null;
@@ -144,6 +154,7 @@ export default function RecipeDetailScreen({
   const nutrition = nutritionFactRows(recipe.nutrition);
   const showNutrition = hasNutritionFacts(recipe.nutrition);
   const tags = resolveRecipeTags(recipe);
+  const createdAt = resolveRecipeCreatedAt(recipe, created?.createdAt);
 
   const timeRows = [
     { label: "Preparation Time", value: recipe.prepTime },
@@ -212,16 +223,29 @@ export default function RecipeDetailScreen({
                 <ShareIcon className="size-6" />
               </button>
             </div>
-            <p className="mt-2 flex gap-2 text-sm text-ink">
-              <span className="font-bold text-ink-secondary">
-                {recipe.categories.length > 1 ? "Categories" : "Category"}
-              </span>
-              <span className="italic text-muted">
-                {recipe.categories.map((c) => getCategoryLabel(c)).join(", ")}
-              </span>
-            </p>
-            {tags.length > 0 ? (
-              <div className="mt-2 flex flex-wrap gap-1.5">
+            {recipe.description ? (
+              <p className="mt-2 text-sm leading-5 text-ink-secondary">
+                {recipe.description}
+              </p>
+            ) : null}
+            <div className="mt-2 flex flex-col gap-1">
+              <p className="flex gap-2 text-sm text-ink">
+                <span className="font-bold text-ink-secondary">
+                  {recipe.categories.length > 1 ? "Categories" : "Category"}
+                </span>
+                <span className="italic text-muted">
+                  {recipe.categories.map((c) => getCategoryLabel(c)).join(", ")}
+                </span>
+              </p>
+              <p className="flex gap-2 text-sm text-ink">
+                <span className="font-bold text-ink-secondary">Created date</span>
+                <span className="italic text-muted">
+                  {formatRecipeCreatedDate(createdAt)}
+                </span>
+              </p>
+                        {tags.length > 0 ? (
+            <div>
+              <div className="mt-1.5 flex flex-wrap gap-1.5">
                 {tags.map((tag) => (
                   <span
                     key={tag}
@@ -231,15 +255,12 @@ export default function RecipeDetailScreen({
                   </span>
                 ))}
               </div>
-            ) : null}
-            {recipe.description ? (
-              <p className="mt-2 text-sm leading-5 text-ink-secondary">
-                {recipe.description}
-              </p>
-            ) : null}
+            </div>
+          ) : null}
+            </div>
           </div>
 
-          <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start justify-between gap-3">
             <div className="flex flex-col gap-2.5">
               {timeRows.map((row) => (
                 <div key={row.label} className="flex items-center gap-2.5">
@@ -262,9 +283,10 @@ export default function RecipeDetailScreen({
           {showNutrition ? (
             <div className="flex flex-col gap-2.5">
               <div>
-                <h2 className="section-title text-lg">Nutrition</h2>
-                <p className="mt-0.5 text-xs italic text-muted">Per serving</p>
+                <h2 className="section-title text-lg">Nutrition</h2><p className="mt-0.5 text-xs italic text-muted">Per serving</p>
+                
               </div>
+              
               <div className="flex flex-wrap items-center justify-start gap-2">
                 {nutrition.map((n) => (
                   <NutritionRing key={n.key} label={n.label} value={n.value} />
@@ -272,6 +294,7 @@ export default function RecipeDetailScreen({
               </div>
             </div>
           ) : null}
+          
         </section>
 
         {ingredientsFeatured ? (
