@@ -65,20 +65,38 @@ function NutritionRing({ label, value }: { label: string; value: string }) {
 }
 
 function MoreCard({ recipe }: { recipe: Recipe }) {
+  const { isSaved, toggleSave } = useSavedRecipes();
+  const saved = isSaved(recipe.id);
+
   return (
     <div className="flex w-[30%] flex-col items-center">
-      <Link
-        href={`/recipe/${recipe.id}`}
-        className="relative aspect-square w-full overflow-hidden rounded border border-line"
-      >
-        <RecipeThumbnail
-          className="size-full"
-          iconClassName="h-10 w-11"
-          src={recipe.thumbnailUrl}
-          category={primaryCategory(recipe)}
-          alt={recipe.name}
-        />
-      </Link>
+      <div className="relative w-full">
+        <Link
+          href={`/recipe/${recipe.id}`}
+          className="relative block aspect-square w-full overflow-hidden rounded border border-line"
+        >
+          <RecipeThumbnail
+            className="size-full"
+            iconClassName="h-10 w-11"
+            src={recipe.thumbnailUrl}
+            category={primaryCategory(recipe)}
+            alt={recipe.name}
+          />
+        </Link>
+        <button
+          type="button"
+          aria-label={saved ? `Unsave ${recipe.name}` : `Save ${recipe.name}`}
+          aria-pressed={saved}
+          onClick={() => toggleSave(recipe)}
+          className="absolute top-1.5 right-1.5 flex size-7 items-center justify-center rounded bg-brand text-white"
+        >
+          {saved ? (
+            <HeartFillIcon className="size-3.5" />
+          ) : (
+            <HeartIcon className="size-3.5" />
+          )}
+        </button>
+      </div>
       <p className="mt-1 w-full truncate text-sm text-ink-secondary">{recipe.name}</p>
       <RecipeAuthor author={recipe.author} className="w-full" />
     </div>
