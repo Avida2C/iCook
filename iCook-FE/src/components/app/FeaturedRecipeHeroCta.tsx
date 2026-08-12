@@ -17,21 +17,21 @@ export default function FeaturedRecipeHeroCta({
 }: FeaturedRecipeHeroCtaProps) {
   return (
     <section
-      className={`relative w-full overflow-hidden ${className}`}
+      className={`relative h-[248px] w-full shrink-0 overflow-hidden ${className}`}
     >
-      <div className="h-62 w-full overflow-hidden bg-app">
+      <div className="absolute inset-0 bg-app">
         <RecipeThumbnail
-          className="size-full aspect-auto! h-full"
+          className="size-full aspect-auto! h-full min-h-full"
           iconClassName="h-[60px] w-[68px]"
           src={recipe.thumbnailUrl}
           category={primaryCategory(recipe)}
           alt={recipe.name}
         />
       </div>
-      <div className="absolute inset-0 flex h-62 flex-col justify-center gap-2 bg-brand/40 p-4 text-white">
+      <div className="absolute inset-0 flex flex-col justify-center gap-2 bg-brand/40 p-4 text-white">
         <div className="flex w-full flex-col items-start rounded-lg border-3 border-white/40 px-5 py-4 text-base leading-[22.4px] font-normal">
-          <p className="whitespace-nowrap text-xl font-bold">{recipe.name}</p>
-          <p className="text-base text-white/80 line-clamp-4">{description}</p>
+          <p className="truncate text-xl font-bold">{recipe.name}</p>
+          <p className="line-clamp-4 text-base text-white/80">{description}</p>
         </div>
         <Link
           href={`/recipe/${recipe.id}`}

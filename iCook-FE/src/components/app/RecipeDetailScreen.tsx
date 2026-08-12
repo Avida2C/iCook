@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   HeartIcon,
   HeartFillIcon,
@@ -15,17 +15,33 @@ import {
 import RecipeAuthor from "@/components/app/RecipeAuthor";
 import CommentsSection from "@/components/app/CommentsSection";
 import ContentCreatorCard from "@/components/app/ContentCreatorCard";
+import FeaturedRecipeBannerCta from "@/components/app/FeaturedRecipeBannerCta";
+import { recipeFeaturedDescription } from "@/components/app/FeaturedRecipeDisplay";
 import RecipeThumbnail from "@/components/app/RecipeThumbnail";
 import {
   CATALOG_RECIPES,
   getCategoryLabel,
   useSavedRecipes,
+  type CatalogRecipe,
 } from "@/components/recipes/SavedRecipesProvider";
 import { useCreatedContent } from "@/components/app/CreatedContentProvider";
 import { absoluteAppUrl, shareContent } from "@/lib/share";
 import { isOwnAuthor, resolveAuthor } from "@/components/app/user/authors";
 import { useCurrentFeedUser } from "@/components/app/user/useCurrentFeedUser";
 import { primaryCategory, type Recipe, hasNutritionFacts, nutritionFactRows, resolveRecipeTags, RECIPE_TAG_LABELS, formatIngredientLine } from "@/components/recipes/recipesData";
+
+function pickRandomRecipe(recipes: CatalogRecipe[]) {
+  if (recipes.length === 0) return null;
+  return recipes[Math.floor(Math.random() * recipes.length)] ?? null;
+}
+
+function pickTwoRandomRecipes(recipes: CatalogRecipe[]) {
+  if (recipes.length === 0) return [null, null] as const;
+  const first = pickRandomRecipe(recipes);
+  if (!first || recipes.length === 1) return [first, first] as const;
+  const rest = recipes.filter((r) => r.id !== first.id);
+  return [first, pickRandomRecipe(rest)] as const;
+}
 
 function NutritionRing({ label, value }: { label: string; value: string }) {
   return (
@@ -75,6 +91,27 @@ export default function RecipeDetailScreen({
   const recipe = resolveRecipe(recipeId);
   const { isSaved, toggleSave } = useSavedRecipes();
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [ingredientsFeatured, setIngredientsFeatured] =
+    useState<CatalogRecipe | null>(null);
+  const [commentsFeatured, setCommentsFeatured] =
+    useState<CatalogRecipe | null>(null);
+
+  const featuredPool = [
+    ...createdRecipes.filter((r) => r.id !== recipeId),
+    ...CATALOG_RECIPES.filter(
+      (r) => r.id !== recipeId && !createdRecipes.some((c) => c.id === r.id),
+    ),
+  ];
+  const featuredPoolKey = featuredPool.map((r) => r.id).join(",");
+
+  useEffect(() => {
+    const [aboveIngredients, underComments] =
+      pickTwoRandomRecipes(featuredPool);
+    setIngredientsFeatured(aboveIngredients);
+    setCommentsFeatured(underComments);
+    // Intentionally keyed by pool identity so the CTAs stay stable while viewing.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- featuredPoolKey
+  }, [recipeId, featuredPoolKey]);
 
   if (!recipe) {
     return (
@@ -102,12 +139,7 @@ export default function RecipeDetailScreen({
   const saved = isSaved(recipe.id);
   const author = resolveAuthor(recipe.author, me);
 
-  const moreRecipes = [
-    ...createdRecipes.filter((r) => r.id !== recipe.id),
-    ...CATALOG_RECIPES.filter(
-      (r) => r.id !== recipe.id && !createdRecipes.some((c) => c.id === r.id),
-    ),
-  ].slice(0, 6);
+  const moreRecipes = featuredPool.slice(0, 6);
 
   const nutrition = nutritionFactRows(recipe.nutrition);
   const showNutrition = hasNutritionFacts(recipe.nutrition);
@@ -242,6 +274,13 @@ export default function RecipeDetailScreen({
           ) : null}
         </section>
 
+        {ingredientsFeatured ? (
+          <FeaturedRecipeBannerCta
+            recipe={ingredientsFeatured}
+            description={recipeFeaturedDescription(ingredientsFeatured)}
+          />
+        ) : null}
+
         {/* Ingredients */}
         <section className="feed-card flex flex-col gap-3">
           <h2 className="section-title text-lg">Ingredients</h2>
@@ -347,6 +386,13 @@ export default function RecipeDetailScreen({
             isContentOwner={isOwner}
           />
         </ContentCreatorCard>
+
+        {commentsFeatured ? (
+          <FeaturedRecipeBannerCta
+            recipe={commentsFeatured}
+            description={recipeFeaturedDescription(commentsFeatured)}
+          />
+        ) : null}
 
         {/* More to love */}
         <section className="feed-card flex flex-col gap-3">

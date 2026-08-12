@@ -45,7 +45,13 @@ export default function RecipeThumbnail({
       <div
         className={`relative flex aspect-square items-center justify-center overflow-hidden bg-brand/10 ${className}`}
       >
-        <img src={resolved} alt={alt} className="size-full object-cover" />
+        <img
+          src={resolved}
+          alt={alt}
+          loading="lazy"
+          decoding="async"
+          className="size-full object-cover"
+        />
       </div>
     );
   }
@@ -58,6 +64,8 @@ export default function RecipeThumbnail({
         <img
           src={resolved}
           alt={alt}
+          loading="lazy"
+          decoding="async"
           className="size-full object-contain opacity-25"
         />
       </div>

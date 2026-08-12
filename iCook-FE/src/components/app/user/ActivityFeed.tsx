@@ -6,6 +6,7 @@ import {
   HeartFillIcon,
   CommentIcon,
 } from "@/components/app/icons";
+import InfiniteFeedSentinel from "@/components/app/InfiniteFeedSentinel";
 import RecipeThumbnail from "@/components/app/RecipeThumbnail";
 import UserAvatar from "@/components/app/UserAvatar";
 import UserNameLink from "@/components/app/UserNameLink";
@@ -19,6 +20,9 @@ import { useActivityFilters } from "./ActivityFiltersProvider";
 import { withLiveProfile } from "./authors";
 import { useCurrentFeedUser } from "./useCurrentFeedUser";
 import { userProfilePath } from "@/lib/userProfile";
+import { useInfiniteFeed } from "@/lib/useInfiniteFeed";
+
+const PAGE_SIZE = 4;
 
 function Avatar({
   user,
@@ -336,6 +340,16 @@ export default function ActivityFeed({
     searchQuery,
   );
 
+  const resetKey = `${searchQuery}\0${Object.entries(prefs)
+    .map(([key, value]) => `${key}:${value ? 1 : 0}`)
+    .join(",")}`;
+  const { entries, loadingMore, hasMore, sentinelRef } = useInfiniteFeed({
+    items: feed,
+    pageSize: PAGE_SIZE,
+    resetKey,
+    cycle: true,
+  });
+
   if (feed.length === 0) {
     return (
       <p className="feed-card px-3 py-8 text-center text-base text-muted">
@@ -348,9 +362,14 @@ export default function ActivityFeed({
 
   return (
     <>
-      {feed.map((item) => (
-        <FeedCard key={item.id} item={item} me={me} />
+      {entries.map(({ key, item }) => (
+        <FeedCard key={key} item={item} me={me} />
       ))}
+      <InfiniteFeedSentinel
+        sentinelRef={sentinelRef}
+        loadingMore={loadingMore}
+        hasMore={hasMore}
+      />
     </>
   );
 }

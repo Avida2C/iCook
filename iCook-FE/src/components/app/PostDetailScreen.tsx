@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -16,6 +16,8 @@ import { useCreatedContent } from "@/components/app/CreatedContentProvider";
 import { useComments } from "@/components/app/CommentsProvider";
 import CommentsSection from "@/components/app/CommentsSection";
 import ContentCreatorCard from "@/components/app/ContentCreatorCard";
+import FeaturedRecipeBannerCta from "@/components/app/FeaturedRecipeBannerCta";
+import { recipeFeaturedDescription } from "@/components/app/FeaturedRecipeDisplay";
 import RecipeThumbnail from "@/components/app/RecipeThumbnail";
 import { CATALOG_POSTS } from "@/components/app/postsData";
 import {
@@ -24,9 +26,18 @@ import {
   withLiveProfile,
 } from "@/components/app/user/authors";
 import { useCurrentFeedUser } from "@/components/app/user/useCurrentFeedUser";
-import { getCategoryLabel } from "@/components/recipes/SavedRecipesProvider";
+import {
+  CATALOG_RECIPES,
+  getCategoryLabel,
+  type CatalogRecipe,
+} from "@/components/recipes/SavedRecipesProvider";
 import { absoluteAppUrl, shareContent } from "@/lib/share";
 import { primaryCategory } from "@/components/recipes/recipesData";
+
+function pickRandomRecipe(recipes: CatalogRecipe[]) {
+  if (recipes.length === 0) return null;
+  return recipes[Math.floor(Math.random() * recipes.length)] ?? null;
+}
 
 export default function PostDetailScreen({ postId }: { postId: string }) {
   const router = useRouter();
@@ -43,6 +54,27 @@ export default function PostDetailScreen({ postId }: { postId: string }) {
   const resolvedId = created?.id ?? (catalog ? postId : "1");
   const isOwner = Boolean(created);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [featuredRecipe, setFeaturedRecipe] = useState<CatalogRecipe | null>(
+    null,
+  );
+
+  const linkedExcludeId = created?.linkedRecipeId;
+  const featuredPool = [
+    ...createdRecipes.filter((r) => r.id !== linkedExcludeId),
+    ...CATALOG_RECIPES.filter(
+      (r) =>
+        r.id !== linkedExcludeId &&
+        !createdRecipes.some((c) => c.id === r.id),
+    ),
+  ];
+  const featuredPoolKey = featuredPool.map((r) => r.id).join(",");
+
+  useEffect(() => {
+    setFeaturedRecipe(pickRandomRecipe(featuredPool));
+    // Intentionally keyed by pool identity so the CTA stays stable while viewing.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- featuredPoolKey
+  }, [postId, featuredPoolKey]);
+
   const post = created
     ? {
         title: created.title,
@@ -261,6 +293,13 @@ export default function PostDetailScreen({ postId }: { postId: string }) {
             isContentOwner={isOwner || isSelf}
           />
         </ContentCreatorCard>
+
+        {featuredRecipe ? (
+          <FeaturedRecipeBannerCta
+            recipe={featuredRecipe}
+            description={recipeFeaturedDescription(featuredRecipe)}
+          />
+        ) : null}
       </div>
     </div>
   );

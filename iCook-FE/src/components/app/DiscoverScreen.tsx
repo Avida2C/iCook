@@ -1,5 +1,6 @@
 "use client";
 
+import { Fragment, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   HeartIcon,
@@ -7,6 +8,9 @@ import {
   CommentIcon,
   ShareIcon,
 } from "@/components/app/icons";
+import FeaturedRecipeHeroCta from "@/components/app/FeaturedRecipeHeroCta";
+import { recipeFeaturedDescription } from "@/components/app/FeaturedRecipeDisplay";
+import InfiniteFeedSentinel from "@/components/app/InfiniteFeedSentinel";
 import RecipeThumbnail from "@/components/app/RecipeThumbnail";
 import UserAvatar from "@/components/app/UserAvatar";
 import UserNameLink from "@/components/app/UserNameLink";
@@ -14,13 +18,31 @@ import { useLikedPosts } from "@/components/app/LikedPostsProvider";
 import {
   CATALOG_RECIPES,
   useSavedRecipes,
+  type CatalogRecipe,
 } from "@/components/recipes/SavedRecipesProvider";
 import { primaryCategory } from "@/components/recipes/recipesData";
 import { withLiveProfile } from "@/components/app/user/authors";
 import { useCurrentFeedUser } from "@/components/app/user/useCurrentFeedUser";
 import type { FeedUser } from "@/components/app/user/types";
 import { absoluteAppUrl, shareContent } from "@/lib/share";
+import { useInfiniteFeed } from "@/lib/useInfiniteFeed";
 import { userProfilePath } from "@/lib/userProfile";
+import { CATALOG_POSTS } from "@/components/app/postsData";
+
+const FEATURED_EVERY = 4;
+/** Roughly one viewport of feed cards per load. */
+const PAGE_SIZE = 3;
+
+function pickFeaturedSlots(count: number, pool: CatalogRecipe[]) {
+  if (count <= 0 || pool.length === 0) return [] as CatalogRecipe[];
+  const picks: CatalogRecipe[] = [];
+  for (let i = 0; i < count; i++) {
+    const available = pool.filter((r) => !picks.some((p) => p.id === r.id));
+    const from = available.length > 0 ? available : pool;
+    picks.push(from[Math.floor(Math.random() * from.length)]!);
+  }
+  return picks;
+}
 
 type CommunityItem =
   | {
@@ -78,7 +100,7 @@ const fish: FeedUser = {
   initials: "FF",
 };
 
-const COMMUNITY_FEED: CommunityItem[] = [
+const RECIPE_FEED: Extract<CommunityItem, { kind: "recipe" }>[] = [
   {
     id: "c1",
     kind: "recipe",
@@ -90,19 +112,6 @@ const COMMUNITY_FEED: CommunityItem[] = [
       "Soft pasta pockets filled with ricotta and basil — classic Italian comfort, made simple.",
     likes: 42,
     comments: 8,
-  },
-  {
-    id: "c2",
-    kind: "post",
-    user: sue,
-    time: "2h ago",
-    postId: "1",
-    title: "My go-to cookie tip",
-    preview:
-      "Chill your dough for at least 30 minutes — it keeps the cookies thick and chewy every time. Extra points if you brown the butter first.",
-    likes: 28,
-    comments: 5,
-    thumbnailUrl: "/icons/recipes/sweets.png",
   },
   {
     id: "c3",
@@ -117,19 +126,6 @@ const COMMUNITY_FEED: CommunityItem[] = [
     comments: 12,
   },
   {
-    id: "c4",
-    kind: "post",
-    user: amy,
-    time: "Yesterday",
-    postId: "2",
-    title: "Kitchen reset",
-    preview:
-      "Cleared out the spice rack this morning — sharing what stayed, what went, and the three bottles I always refill first.",
-    likes: 19,
-    comments: 3,
-    thumbnailUrl: "/icons/recipes/savoury.png",
-  },
-  {
     id: "c5",
     kind: "recipe",
     user: grill,
@@ -140,19 +136,6 @@ const COMMUNITY_FEED: CommunityItem[] = [
       "Slow-roasted with rosemary and garlic until the crust is golden and crisp.",
     likes: 51,
     comments: 9,
-  },
-  {
-    id: "c6",
-    kind: "post",
-    user: grill,
-    time: "2d ago",
-    postId: "3",
-    title: "Charcoal vs gas — honest take",
-    preview:
-      "Gas is convenient. Charcoal wins on flavour. If you only grill on weekends, charcoal is worth the mess.",
-    likes: 34,
-    comments: 14,
-    thumbnailUrl: "/icons/recipes/dinner.png",
   },
   {
     id: "c7",
@@ -179,19 +162,6 @@ const COMMUNITY_FEED: CommunityItem[] = [
     comments: 21,
   },
   {
-    id: "c9",
-    kind: "post",
-    user: courtney,
-    time: "4d ago",
-    postId: "4",
-    title: "Weeknight pasta formula",
-    preview:
-      "One pan, one handful of greens, whatever cheese you have. The formula I use when dinner needs to happen in 20 minutes.",
-    likes: 56,
-    comments: 11,
-    thumbnailUrl: "/icons/recipes/pasta.png",
-  },
-  {
     id: "c10",
     kind: "recipe",
     user: amy,
@@ -204,6 +174,67 @@ const COMMUNITY_FEED: CommunityItem[] = [
     comments: 4,
   },
 ];
+
+const POST_COMMENTS: Record<string, number> = {
+  "1": 5,
+  "2": 3,
+  "3": 14,
+  "4": 11,
+  "5": 7,
+  "6": 9,
+  "7": 4,
+  "8": 6,
+  "9": 8,
+  "10": 5,
+  "11": 10,
+  "12": 12,
+  "13": 15,
+  "14": 9,
+  "15": 4,
+  "16": 11,
+  "17": 6,
+  "18": 13,
+  "19": 8,
+  "20": 16,
+};
+
+const POST_FEED: Extract<CommunityItem, { kind: "post" }>[] = Object.entries(
+  CATALOG_POSTS,
+)
+  .sort(([a], [b]) => Number(a) - Number(b))
+  .map(([postId, post]) => ({
+    id: `post-${postId}`,
+    kind: "post" as const,
+    user: post.user,
+    time: post.time,
+    postId,
+    title: post.title,
+    preview: post.body,
+    likes: post.likes,
+    comments: POST_COMMENTS[postId] ?? 3,
+    thumbnailUrl: post.thumbnailUrl,
+  }));
+
+/** Interleave catalog posts with recipe shares for a mixed community feed. */
+function buildCommunityFeed(): CommunityItem[] {
+  const feed: CommunityItem[] = [];
+  let recipeIndex = 0;
+  POST_FEED.forEach((post, index) => {
+    feed.push(post);
+    // Drop a recipe share after every few posts for variety.
+    if ((index + 1) % 4 === 0 && recipeIndex < RECIPE_FEED.length) {
+      feed.push(RECIPE_FEED[recipeIndex]!);
+      recipeIndex += 1;
+    }
+  });
+  while (recipeIndex < RECIPE_FEED.length) {
+    feed.push(RECIPE_FEED[recipeIndex]!);
+    recipeIndex += 1;
+  }
+  return feed;
+}
+
+const COMMUNITY_FEED = buildCommunityFeed();
 
 function Avatar({ user }: { user: FeedUser }) {
   const me = useCurrentFeedUser();
@@ -409,21 +440,73 @@ function PostFeedCard({ item }: { item: Extract<CommunityItem, { kind: "post" }>
 }
 
 export default function DiscoverScreen() {
+  const [featuredSlots, setFeaturedSlots] = useState<CatalogRecipe[]>([]);
+  const { entries, loadingMore, hasMore, sentinelRef } = useInfiniteFeed({
+    items: COMMUNITY_FEED,
+    pageSize: PAGE_SIZE,
+    cycle: true,
+  });
+
+  const featuredNeeded = useMemo(() => {
+    let postsSeen = 0;
+    for (const { item } of entries) {
+      if (item.kind === "post") postsSeen += 1;
+    }
+    return Math.floor(postsSeen / FEATURED_EVERY);
+  }, [entries]);
+
+  useEffect(() => {
+    setFeaturedSlots((prev) => {
+      if (featuredNeeded <= prev.length) return prev;
+      const needed = featuredNeeded - prev.length;
+      const used = new Set(prev.map((r) => r.id));
+      const pool = CATALOG_RECIPES.filter((r) => !used.has(r.id));
+      return [
+        ...prev,
+        ...pickFeaturedSlots(needed, pool.length > 0 ? pool : CATALOG_RECIPES),
+      ];
+    });
+  }, [featuredNeeded]);
+
+  let postsSeen = 0;
+
   return (
     <div className="page-fill">
-      <div className="feed-stack">
+      <div className="feed-stack touch-pan-y">
         <div className="flex items-center justify-between px-3">
           <h2 className="section-title">Community</h2>
           <span className="text-xs text-muted">Recipes &amp; posts</span>
         </div>
 
-        {COMMUNITY_FEED.map((item) =>
-          item.kind === "recipe" ? (
-            <RecipeFeedCard key={item.id} item={item} />
-          ) : (
-            <PostFeedCard key={item.id} item={item} />
-          ),
-        )}
+        {entries.map(({ key, item }) => {
+          const showFeatured =
+            item.kind === "post" && (++postsSeen) % FEATURED_EVERY === 0;
+          const featured = showFeatured
+            ? featuredSlots[postsSeen / FEATURED_EVERY - 1]
+            : undefined;
+
+          return (
+            <Fragment key={key}>
+              {item.kind === "recipe" ? (
+                <RecipeFeedCard item={item} />
+              ) : (
+                <PostFeedCard item={item} />
+              )}
+              {featured ? (
+                <FeaturedRecipeHeroCta
+                  recipe={featured}
+                  description={recipeFeaturedDescription(featured)}
+                />
+              ) : null}
+            </Fragment>
+          );
+        })}
+
+        <InfiniteFeedSentinel
+          sentinelRef={sentinelRef}
+          loadingMore={loadingMore}
+          hasMore={hasMore}
+        />
       </div>
     </div>
   );

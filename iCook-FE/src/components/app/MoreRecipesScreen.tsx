@@ -1,7 +1,11 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import FeaturedRecipeBannerCta from "@/components/app/FeaturedRecipeBannerCta";
+import { recipeFeaturedDescription } from "@/components/app/FeaturedRecipeDisplay";
 import { HeartIcon, HeartFillIcon } from "@/components/app/icons";
+import InfiniteFeedSentinel from "@/components/app/InfiniteFeedSentinel";
 import RecipeAuthor from "@/components/app/RecipeAuthor";
 import RecipeThumbnail from "@/components/app/RecipeThumbnail";
 import { usePantry } from "@/components/pantry/PantryProvider";
@@ -15,6 +19,10 @@ import {
 } from "@/components/recipes/SavedRecipesProvider";
 import { primaryCategory } from "@/components/recipes/recipesData";
 import { rankRecipesByPantry } from "@/lib/pantryMatch";
+import { useInfiniteFeed } from "@/lib/useInfiniteFeed";
+
+/** Three columns × ~2 rows per scroll. */
+const PAGE_SIZE = 6;
 
 function MoreRecipeCard({ recipe }: { recipe: CatalogRecipe }) {
   const { isSaved, toggleSave } = useSavedRecipes();
@@ -63,6 +71,11 @@ function MoreRecipeCard({ recipe }: { recipe: CatalogRecipe }) {
   );
 }
 
+function pickRandomRecipe(recipes: CatalogRecipe[]) {
+  if (recipes.length === 0) return null;
+  return recipes[Math.floor(Math.random() * recipes.length)] ?? null;
+}
+
 export default function MoreRecipesScreen({
   category,
   sort,
@@ -98,8 +111,35 @@ export default function MoreRecipesScreen({
       : "No recipes match your pantry ingredients yet."
     : "No recipes in this category yet.";
 
+  const recipePoolKey = `${category ?? ""}|${sort ?? ""}|${recipes
+    .map((r) => r.id)
+    .join(",")}`;
+  const [featuredRecipe, setFeaturedRecipe] = useState<CatalogRecipe | null>(
+    null,
+  );
+
+  useEffect(() => {
+    setFeaturedRecipe(pickRandomRecipe(recipes));
+    // Intentionally keyed by pool identity so the CTA stays stable while browsing.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- recipePoolKey
+  }, [recipePoolKey]);
+
+  const { entries, loadingMore, hasMore, sentinelRef } = useInfiniteFeed({
+    items: recipes,
+    pageSize: PAGE_SIZE,
+    resetKey: recipePoolKey,
+    cycle: true,
+  });
+
   return (
-    <div className="page">
+    <div className="page gap-1.5 pb-2">
+      {featuredRecipe ? (
+        <FeaturedRecipeBannerCta
+          recipe={featuredRecipe}
+          description={recipeFeaturedDescription(featuredRecipe)}
+        />
+      ) : null}
+
       <section className="flex w-full flex-col gap-2 bg-surface px-2 pt-2 pb-4">
         <h1 className="text-xl leading-6 text-brand">{title}</h1>
         {byPantry && pantryNames.length === 0 ? (
@@ -117,11 +157,18 @@ export default function MoreRecipesScreen({
             {emptyMessage}
           </p>
         ) : (
-          <div className="grid grid-cols-3 gap-2">
-            {recipes.map((recipe) => (
-              <MoreRecipeCard key={recipe.id} recipe={recipe} />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-3 gap-2">
+              {entries.map(({ key, item }) => (
+                <MoreRecipeCard key={key} recipe={item} />
+              ))}
+            </div>
+            <InfiniteFeedSentinel
+              sentinelRef={sentinelRef}
+              loadingMore={loadingMore}
+              hasMore={hasMore}
+            />
+          </>
         )}
       </section>
     </div>

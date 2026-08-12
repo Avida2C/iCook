@@ -84,7 +84,7 @@ export default function UserScreen() {
         <UserTabBar tab={tab} counts={tabCounts} onSelect={onSelectTab} />
       </div>
 
-      <div className="feed-stack">
+      <div className="feed-stack touch-pan-y">
         <div className="flex items-center justify-between px-3">
           <h2 className="section-title">{PANEL_TITLE[tab]}</h2>
           {tab === "activity" ? (
