@@ -221,3 +221,59 @@ body {
     @apply flex items-center gap-2 rounded border border-line bg-app px-2.5 py-1.5;
   }
 }
+
+@keyframes icook-typing {
+  0%,
+  70%,
+  100% {
+    opacity: 0.25;
+    transform: translateY(0) scale(0.7);
+  }
+  35% {
+    opacity: 1;
+    transform: translateY(-3px) scale(1);
+  }
+}
+
+.typing-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  height: 0.7rem;
+}
+
+.typing-dot {
+  display: block;
+  width: 0.32rem;
+  height: 0.32rem;
+  border-radius: 9999px;
+  background: currentColor;
+  animation: icook-typing 1s ease-in-out infinite both;
+}
+
+.typing-dots .typing-dot:nth-child(2) {
+  animation-delay: 0.18s;
+}
+
+.typing-dots .typing-dot:nth-child(3) {
+  animation-delay: 0.36s;
+}
+
+@keyframes msg-badge-pop {
+  0% {
+    transform: scale(0.4);
+    opacity: 0.4;
+  }
+  60% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.msg-badge-pop {
+  animation: msg-badge-pop 0.45s ease-out;
+}

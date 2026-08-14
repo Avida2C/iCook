@@ -10,10 +10,9 @@ import UserAvatar from "@/components/app/UserAvatar";
 import { useCreatedContent } from "@/components/app/CreatedContentProvider";
 import { MessageIcon, UserAddIcon, UserCheckIcon, UsersIcon } from "@/components/app/icons";
 import {
-  COMMUNITY_AUTHORS,
   normalizeAuthorKey,
+  resolveAuthor,
 } from "@/components/app/user/authors";
-import { CURRENT_USER } from "@/components/app/user/data";
 import { useCurrentFeedUser } from "@/components/app/user/useCurrentFeedUser";
 import {
   CATALOG_RECIPES,
@@ -34,6 +33,7 @@ import {
   writeFollowing,
 } from "@/lib/accountData";
 import { MY_RECIPES } from "@/components/app/UserCollectionScreens";
+import { messagePath } from "@/components/app/messagesData";
 
 /** Stable demo follower/following counts for other users' public profiles. */
 function demoSocialCounts(handle: string) {
@@ -48,16 +48,7 @@ function demoSocialCounts(handle: string) {
 }
 
 function resolveUser(handle: string) {
-  const key = decodeURIComponent(handle).toLowerCase();
-  if (COMMUNITY_AUTHORS[key]) return COMMUNITY_AUTHORS[key];
-  if (key === CURRENT_USER.handle) return CURRENT_USER;
-  const initials = key.slice(0, 2).toUpperCase();
-  return {
-    name: key,
-    handle: key,
-    initials,
-    about: "iCook community member.",
-  };
+  return resolveAuthor(decodeURIComponent(handle));
 }
 
 function ProfileRecipeCard({ recipe }: { recipe: CatalogRecipe }) {
@@ -283,7 +274,7 @@ export default function PublicProfileScreen({ handle }: { handle: string }) {
                 {isFollowing ? "Unfollow" : "Follow"}
               </span>
             </button>
-            <Link href="/messages/1" className="btn-secondary">
+            <Link href={messagePath(user.handle)} className="btn-secondary">
               <MessageIcon className="size-5 shrink-0" />
               <span className="leading-tight">Message</span>
             </Link>

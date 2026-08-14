@@ -47,6 +47,30 @@ export const COMMUNITY_AUTHORS: Record<string, FeedUser> = {
     initials: "PP",
     about: "Noodles, sauces, and weeknight pasta for a crowd.",
   },
+  arlenemccoy: {
+    name: "Arlene McCoy",
+    handle: "arlenemccoy",
+    initials: "AM",
+    about: "Weeknight home cook. If it works twice, it's a keeper.",
+  },
+  jacobjones: {
+    name: "Jacob Jones",
+    handle: "jacobjones",
+    initials: "JJ",
+    about: "Always testing someone else's recipe on a Tuesday.",
+  },
+  theresawebb: {
+    name: "Theresa Webb",
+    handle: "theresawebb",
+    initials: "TW",
+    about: "Baking with whatever is already in the pantry.",
+  },
+  darlenerobertson: {
+    name: "Darlene Robertson",
+    handle: "darlenerobertson",
+    initials: "DR",
+    about: "Meal prep Sundays and leftover magic.",
+  },
 };
 
 const SELF_ALIASES = new Set(["you", "username", "me"]);

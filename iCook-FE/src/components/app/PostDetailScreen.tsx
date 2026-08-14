@@ -19,7 +19,7 @@ import ContentCreatorCard from "@/components/app/ContentCreatorCard";
 import FeaturedRecipeBannerCta from "@/components/app/FeaturedRecipeBannerCta";
 import { recipeFeaturedDescription } from "@/components/app/FeaturedRecipeDisplay";
 import RecipeThumbnail from "@/components/app/RecipeThumbnail";
-import { CATALOG_POSTS } from "@/components/app/postsData";
+import { CATALOG_POSTS, catalogPostCreatedAt } from "@/components/app/postsData";
 import {
   isOwnAuthor,
   resolveAuthor,
@@ -32,7 +32,10 @@ import {
   type CatalogRecipe,
 } from "@/components/recipes/SavedRecipesProvider";
 import { absoluteAppUrl, shareContent } from "@/lib/share";
-import { primaryCategory } from "@/components/recipes/recipesData";
+import {
+  formatRecipeCreatedDate,
+  primaryCategory,
+} from "@/components/recipes/recipesData";
 
 function pickRandomRecipe(recipes: CatalogRecipe[]) {
   if (recipes.length === 0) return null;
@@ -48,15 +51,13 @@ export default function PostDetailScreen({ postId }: { postId: string }) {
     recipes: createdRecipes,
     deletePost,
   } = useCreatedContent();
-  const { getComments } = useComments();
   const created = getPost(postId);
   const catalog = CATALOG_POSTS[postId];
-  const resolvedId = created?.id ?? (catalog ? postId : "1");
+  const resolvedId = created?.id ?? postId;
   const isOwner = Boolean(created);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [featuredRecipe, setFeaturedRecipe] = useState<CatalogRecipe | null>(
-    null,
-  );
+  const [commentsFeatured, setCommentsFeatured] =
+    useState<CatalogRecipe | null>(null);
 
   const linkedExcludeId = created?.linkedRecipeId;
   const featuredPool = [
@@ -70,32 +71,48 @@ export default function PostDetailScreen({ postId }: { postId: string }) {
   const featuredPoolKey = featuredPool.map((r) => r.id).join(",");
 
   useEffect(() => {
-    setFeaturedRecipe(pickRandomRecipe(featuredPool));
+    setCommentsFeatured(pickRandomRecipe(featuredPool));
     // Intentionally keyed by pool identity so the CTA stays stable while viewing.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- featuredPoolKey
   }, [postId, featuredPoolKey]);
+
+  const { isLiked, likeCount, toggleLike } = useLikedPosts();
+  const { getComments } = useComments();
+
+  if (!created && !catalog) {
+    return (
+      <div className="page">
+        <div className="feed-card flex flex-col items-center gap-3 py-12">
+          <p className="text-center text-base text-muted">
+            This post could not be found.
+          </p>
+          <Link href="/discover" className="btn-primary text-sm">
+            Browse posts
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const post = created
     ? {
         title: created.title,
         body: created.body,
-        time: "Just now",
         category: created.category || "Tips",
         user: me,
-        likes: 0,
         thumbnailUrl: created.thumbnailUrl,
         linkedRecipeId: created.linkedRecipeId,
       }
     : {
-        ...(catalog ?? CATALOG_POSTS["1"]),
+        ...catalog,
         linkedRecipeId: undefined as string | undefined,
       };
   const author = withLiveProfile(resolveAuthor(post.user.handle, me), me);
   const isSelf = author.handle === me.handle;
-  const { isLiked, likeCount, toggleLike } = useLikedPosts();
   const liked = isLiked(resolvedId);
-  const likes = likeCount(resolvedId, post.likes);
+  const likes = likeCount(resolvedId, created ? 0 : catalog.likes);
   const commentCount = getComments("post", resolvedId).length;
+  const createdAt = created?.createdAt ?? catalogPostCreatedAt(resolvedId);
 
   const linkedRecipe = post.linkedRecipeId
     ? resolveRecipe(post.linkedRecipeId)
@@ -140,7 +157,7 @@ export default function PostDetailScreen({ postId }: { postId: string }) {
   return (
     <div className="page">
       <div className="list-stack py-2">
-        {/* Hero — matches recipe detail; uses linked own-recipe thumb when set */}
+        {/* Hero */}
         <div className="relative h-56 w-full overflow-hidden">
           <RecipeThumbnail
             className="size-full aspect-auto! h-full"
@@ -151,61 +168,60 @@ export default function PostDetailScreen({ postId }: { postId: string }) {
           />
         </div>
 
-        {/* Title / content */}
+        {/* Title / meta */}
         <section className="feed-card flex flex-col gap-3">
           <div>
             <div className="flex items-center gap-2 border-b-2 border-brand py-2">
-              <h1 className="min-w-0 flex-1 text-xl font-bold text-ink">
+              <h1 className="min-w-0 flex-1 text-base font-bold text-ink">
                 {post.title}
               </h1>
-              <button
-                type="button"
-                aria-label={
-                  liked ? `Unlike ${post.title}` : `Like ${post.title}`
-                }
-                aria-pressed={liked}
-                onClick={onToggleLike}
-                className="shrink-0 text-brand"
-              >
-                {liked ? (
-                  <HeartFillIcon className="size-7" />
-                ) : (
-                  <HeartIcon className="size-7" />
-                )}
-              </button>
-              <button
-                type="button"
-                aria-label={`Share ${post.title}`}
-                onClick={onShare}
-                className="shrink-0 text-brand"
-              >
-                <ShareIcon className="size-6" />
-              </button>
             </div>
-            <p className="mt-2 flex gap-2 text-sm text-ink">
-              <span className="font-bold text-ink-secondary">Category</span>
-              <span className="italic text-muted">{post.category}</span>
+            <div className="mt-2 flex flex-col gap-1">
+              <p className="flex gap-2 text-sm text-ink">
+                <span className="font-bold text-ink-secondary">Category</span>
+                <span className="italic text-muted">{post.category}</span>
+              </p>
+              <p className="flex gap-2 text-sm text-ink">
+                <span className="font-bold text-ink-secondary">Created date</span>
+                <span className="italic text-muted">
+                  {formatRecipeCreatedDate(createdAt)}
+                </span>
+              </p>
+            </div>
+            <p className="mt-2 whitespace-pre-wrap text-sm leading-5 text-ink-secondary">
+              {post.body}
             </p>
-            <p className="mt-1 text-xs text-muted">{post.time}</p>
+            {linkedIsOwn && linkedRecipe ? (
+              <div className="mt-3 flex flex-col gap-2">
+                <h2 className="section-title text-lg">Linked Recipe</h2>
+                <Link
+                  href={`/recipe/${linkedRecipe.id}`}
+                  className="flex items-center gap-3 overflow-hidden rounded border border-line"
+                >
+                  <RecipeThumbnail
+                    className="size-20 shrink-0"
+                    iconClassName="h-10 w-11"
+                    src={linkedRecipe.thumbnailUrl}
+                    category={primaryCategory(linkedRecipe)}
+                    alt={linkedRecipe.name}
+                  />
+                  <div className="min-w-0 flex-1 py-2 pe-3">
+                    <p className="truncate text-sm font-bold text-ink">
+                      {linkedRecipe.name}
+                    </p>
+                    <p className="mt-0.5 text-xs capitalize text-muted">
+                      {linkedRecipe.categories
+                        .map((c) => getCategoryLabel(c))
+                        .join(", ")}
+                    </p>
+                  </div>
+                </Link>
+              </div>
+            ) : null}
           </div>
 
-          <p className="text-base leading-6 text-ink-secondary">{post.body}</p>
-
-          <div className="flex items-center gap-5 border-t border-line pt-3 text-sm text-muted">
-            <span className="inline-flex items-center gap-1.5">
-              {liked ? (
-                <HeartFillIcon className="size-5 text-brand" />
-              ) : (
-                <HeartIcon className="size-5 text-brand" />
-              )}
-              {likes}
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <CommentIcon className="size-5 text-brand" />
-              {commentCount}
-            </span>
-
-            {isOwner ? (
+          {isOwner ? (
+            <div className="flex items-center pt-1 text-sm text-muted">
               <div className="ms-auto flex items-center gap-1">
                 {confirmDelete ? (
                   <>
@@ -247,57 +263,67 @@ export default function PostDetailScreen({ postId }: { postId: string }) {
                   </>
                 )}
               </div>
-            ) : null}
+            </div>
+          ) : null}
+
+          <div className="flex items-start justify-between border-t border-line pt-4 pb-2">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                aria-label={
+                  liked ? `Unlike ${post.title}` : `Like ${post.title}`
+                }
+                aria-pressed={liked}
+                onClick={onToggleLike}
+                className="inline-flex items-center gap-0.5 text-xs text-muted"
+              >
+                {liked ? (
+                  <HeartFillIcon className="size-5 text-brand" />
+                ) : (
+                  <HeartIcon className="size-5 text-brand" />
+                )}
+                {likes}
+              </button>
+              <a
+                href="#post-comments"
+                className="inline-flex items-center gap-0.5 text-xs text-muted"
+              >
+                <CommentIcon className="size-5 text-brand" />
+                {commentCount}
+              </a>
+            </div>
+            <button
+              type="button"
+              aria-label={`Share ${post.title}`}
+              onClick={onShare}
+              className="shrink-0 text-brand"
+            >
+              <ShareIcon className="size-5" />
+            </button>
           </div>
         </section>
 
-        {linkedIsOwn && linkedRecipe ? (
-          <section className="feed-card flex flex-col gap-2">
-            <h2 className="section-title">Linked Recipe</h2>
-            <Link
-              href={`/recipe/${linkedRecipe.id}`}
-              className="flex items-center gap-3 overflow-hidden rounded border border-line"
-            >
-              <RecipeThumbnail
-                className="size-20 shrink-0"
-                iconClassName="h-10 w-11"
-                src={linkedRecipe.thumbnailUrl}
-                category={primaryCategory(linkedRecipe)}
-                alt={linkedRecipe.name}
-              />
-              <div className="min-w-0 flex-1 py-2 pe-3">
-                <p className="truncate text-sm font-bold text-ink">
-                  {linkedRecipe.name}
-                </p>
-                <p className="mt-0.5 text-xs capitalize text-muted">
-                  {linkedRecipe.categories
-                    .map((c) => getCategoryLabel(c))
-                    .join(", ")}
-                </p>
-              </div>
-            </Link>
-          </section>
-        ) : null}
-
         {/* Creator + comments */}
-        <ContentCreatorCard
-          author={author}
-          me={me}
-          shareLabel={`Share ${post.title}`}
-          onShare={onShare}
-        >
-          <CommentsSection
-            targetKind="post"
-            targetId={resolvedId}
-            targetTitle={post.title}
-            isContentOwner={isOwner || isSelf}
-          />
-        </ContentCreatorCard>
+        <div id="post-comments">
+          <ContentCreatorCard
+            author={author}
+            me={me}
+            shareLabel={`Share ${post.title}`}
+            onShare={onShare}
+          >
+            <CommentsSection
+              targetKind="post"
+              targetId={resolvedId}
+              targetTitle={post.title}
+              isContentOwner={isOwner || isSelf}
+            />
+          </ContentCreatorCard>
+        </div>
 
-        {featuredRecipe ? (
+        {commentsFeatured ? (
           <FeaturedRecipeBannerCta
-            recipe={featuredRecipe}
-            description={recipeFeaturedDescription(featuredRecipe)}
+            recipe={commentsFeatured}
+            description={recipeFeaturedDescription(commentsFeatured)}
           />
         ) : null}
       </div>

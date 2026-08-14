@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { LikedPostsProvider } from "@/components/app/LikedPostsProvider";
 import { CreatedContentProvider } from "@/components/app/CreatedContentProvider";
 import { CommentsProvider } from "@/components/app/CommentsProvider";
+import { MessagesProvider } from "@/components/app/MessagesProvider";
 import { ActivityFiltersProvider } from "@/components/app/user/ActivityFiltersProvider";
 import { PantryProvider } from "@/components/pantry/PantryProvider";
 import { SavedRecipesProvider } from "@/components/recipes/SavedRecipesProvider";
@@ -54,11 +55,13 @@ export default function RootLayout({
               <PantryProvider>
                 <CreatedContentProvider>
                   <CommentsProvider>
-                    <LikedPostsProvider>
-                      <ActivityFiltersProvider>
-                        {children}
-                      </ActivityFiltersProvider>
-                    </LikedPostsProvider>
+                    <MessagesProvider>
+                      <LikedPostsProvider>
+                        <ActivityFiltersProvider>
+                          {children}
+                        </ActivityFiltersProvider>
+                      </LikedPostsProvider>
+                    </MessagesProvider>
                   </CommentsProvider>
                 </CreatedContentProvider>
               </PantryProvider>

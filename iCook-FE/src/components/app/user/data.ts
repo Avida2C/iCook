@@ -108,19 +108,17 @@ export const INITIAL_FOLLOWERS = [
   "Jacob Jones",
   "Darlene Robertson",
   "Theresa Webb",
+  "Arlene McCoy",
 ];
 
 export const INITIAL_FOLLOWING = [
-  "Guy Hawkins",
-  "Savannah Nguyen",
-  "Annette Black",
-  "Kristin Watson",
-  "Bessie Cooper",
-  "Leslie Alexander",
-  "Robert Fox",
-  "Kathryn Murphy",
-  "Eleanor Pena",
-  "Devon Lane",
+  "Chef Amy",
+  "Baker Ben",
+  "Sweet Sue",
+  "Grill Guy",
+  "Pasta Paula",
+  "Fish Fan",
+  "Snack Sam",
 ];
 
 export const TAB_META: Record<MeTab, { label: string }> = {

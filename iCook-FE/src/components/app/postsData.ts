@@ -10,6 +10,15 @@ export type CatalogPost = {
   thumbnailUrl?: string;
 };
 
+/** Stable demo created-at for catalog posts. */
+export function catalogPostCreatedAt(id: string): number {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    hash = (hash * 33 + id.charCodeAt(i)) >>> 0;
+  }
+  return Date.UTC(2024, 0, 1) + (hash % 400) * 86_400_000;
+}
+
 /** Catalog posts shown on Discover / post detail (without comments). */
 export const CATALOG_POSTS: Record<string, CatalogPost> = {
   "1": {

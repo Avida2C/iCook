@@ -28,25 +28,9 @@ const sue = COMMUNITY_AUTHORS.sweetsue;
 const grill = COMMUNITY_AUTHORS.grillguy;
 const fish = COMMUNITY_AUTHORS.fishfan;
 const sam = COMMUNITY_AUTHORS.snacksam;
-
-const arlene: FeedUser = {
-  name: "Arlene McCoy",
-  handle: "arlenemccoy",
-  initials: "AM",
-};
-
-const jacob: FeedUser = {
-  name: "Jacob Jones",
-  handle: "jacobjones",
-  initials: "JJ",
-};
-
-const theresa: FeedUser = {
-  name: "Theresa Webb",
-  handle: "theresawebb",
-  initials: "TW",
-};
-
+const arlene = COMMUNITY_AUTHORS.arlenemccoy;
+const jacob = COMMUNITY_AUTHORS.jacobjones;
+const theresa = COMMUNITY_AUTHORS.theresawebb;
 const courtney: FeedUser = {
   name: "Courtney Henry",
   handle: "courtneyhenry",

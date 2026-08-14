@@ -1,7 +1,10 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Logo from "@/components/Logo";
 import { SearchIcon, MessageIcon } from "@/components/app/icons";
-import { unreadMessageUsers } from "@/components/app/messagesData";
+import { useMessages } from "@/components/app/MessagesProvider";
 
 /** Top app bar shared across logged-in screens: logo + search/messages. */
 export default function AppBar({
@@ -9,7 +12,19 @@ export default function AppBar({
 }: {
   onSearchClick: () => void;
 }) {
-  const unreadUsers = unreadMessageUsers();
+  const { unreadCount } = useMessages();
+  const prevUnread = useRef(unreadCount);
+  const [badgePop, setBadgePop] = useState(false);
+
+  useEffect(() => {
+    if (unreadCount > prevUnread.current) {
+      setBadgePop(true);
+      const t = window.setTimeout(() => setBadgePop(false), 900);
+      prevUnread.current = unreadCount;
+      return () => window.clearTimeout(t);
+    }
+    prevUnread.current = unreadCount;
+  }, [unreadCount]);
 
   return (
     <header className="relative z-10 flex shrink-0 items-center justify-between bg-surface px-3 pt-4 pb-1 shadow-bar sm:-mt-11 sm:pt-[3.25rem]">
@@ -23,22 +38,28 @@ export default function AppBar({
         <Link
           href="/messages"
           aria-label={
-            unreadUsers === 0
+            unreadCount === 0
               ? "Messages"
-              : unreadUsers === 1
+              : unreadCount === 1
                 ? "Messages, 1 unread"
-                : `Messages, ${unreadUsers} unread conversations`
+                : `Messages, ${unreadCount} unread conversations`
           }
           className="relative"
         >
           <MessageIcon className="size-7" />
-          {unreadUsers === 1 ? (
-            <span className="absolute -top-1 -right-1.5 grid min-w-4 place-items-center rounded-full bg-brand px-1 text-[10px] leading-4 font-bold text-white">
+          {unreadCount === 1 ? (
+            <span
+              className={`absolute -top-1 -right-1.5 grid min-w-4 place-items-center rounded-full bg-brand px-1 text-[10px] leading-4 font-bold text-white ${
+                badgePop ? "msg-badge-pop" : ""
+              }`}
+            >
               1
             </span>
-          ) : unreadUsers > 1 ? (
+          ) : unreadCount > 1 ? (
             <span
-              className="absolute -top-0.5 -right-0.5 size-2.5 rounded-full bg-brand"
+              className={`absolute -top-0.5 -right-0.5 size-2.5 rounded-full bg-brand ${
+                badgePop ? "msg-badge-pop" : ""
+              }`}
               aria-hidden
             />
           ) : null}

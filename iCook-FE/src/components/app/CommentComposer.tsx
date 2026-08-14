@@ -16,7 +16,7 @@ import {
 } from "@/components/app/icons";
 import { loadImageAsDataUrl } from "@/lib/imageUpload";
 
-const COMMENT_EMOJIS = [
+export const COMMENT_EMOJIS = [
   "😀",
   "😍",
   "😋",

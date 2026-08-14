@@ -13,6 +13,7 @@ import UserNameLink from "@/components/app/UserNameLink";
 import type { FeedUser } from "@/components/app/user/types";
 import { readFollowing, writeFollowing, isFollowingPerson, setFollowingPerson } from "@/lib/accountData";
 import { userProfilePath } from "@/lib/userProfile";
+import { messagePath } from "@/components/app/messagesData";
 
 type ContentCreatorCardProps = {
   author: FeedUser;
@@ -91,9 +92,12 @@ export default function ContentCreatorCard({
                     <UserAddIcon className="size-6" />
                   )}
                 </button>
-                <button type="button" aria-label="Message">
+                <Link
+                  href={messagePath(author.handle)}
+                  aria-label={`Message ${author.name}`}
+                >
                   <MessageIcon className="size-6" />
-                </button>
+                </Link>
                 <button type="button" aria-label={shareLabel} onClick={onShare}>
                   <ShareIcon className="size-5" />
                 </button>

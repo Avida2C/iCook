@@ -1,65 +1,241 @@
 "use client";
 
-import { useState } from "react";
+import {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+} from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { SendIcon, BackIcon } from "@/components/app/icons";
+import { useParams, useRouter } from "next/navigation";
+import {
+  BackIcon,
+  CloseIcon,
+  EmojiIcon,
+  ImageIcon,
+  SendIcon,
+} from "@/components/app/icons";
 import UserAvatar from "@/components/app/UserAvatar";
 import UserNameLink from "@/components/app/UserNameLink";
+import { COMMENT_EMOJIS } from "@/components/app/CommentComposer";
+import { useMessages } from "@/components/app/MessagesProvider";
+import {
+  formatChatTime,
+  formatDayLabel,
+  HISTORY_LOAD_MS,
+  HISTORY_PAGE_SIZE,
+  isRecentMessage,
+  messageDayKey,
+  pickAutoReply,
+  PREVIEW_HANDLE,
+  type ChatMessage,
+} from "@/components/app/messagesData";
+import { resolveAuthor } from "@/components/app/user/authors";
 import { useCurrentFeedUser } from "@/components/app/user/useCurrentFeedUser";
+import { loadImageAsDataUrl } from "@/lib/imageUpload";
 import { userProfilePath } from "@/lib/userProfile";
 
-type Message = { from: "you" | "them"; text: string; time?: string };
-
-const initialMessages: Message[] = [
-  {
-    from: "you",
-    text: "Hey there! Quick question for you—do you have a good recipe for lasagna? I'm hosting dinner tomorrow, and I want to impress.",
-  },
-  {
-    from: "them",
-    time: "09:19",
-    text: "Oh, absolutely! My go-to recipe is a classic. Do you want a meat or vegetarian version?",
-  },
-  { from: "you", text: "Definitely meat. Something hearty." },
-  {
-    from: "them",
-    time: "09:21",
-    text: "Perfect. Here's what you do—start with a rich meat sauce. Use ground beef and Italian sausage, simmer it with crushed tomatoes, garlic, onion, and a splash of red wine.",
-  },
-  { from: "you", text: "Sounds amazing already. What about the layers?" },
-  {
-    from: "them",
-    time: "09:23",
-    text: "Keep it simple—no-boil lasagna sheets, ricotta mixed with egg and parsley, mozzarella, and Parmesan. Just alternate the layers and finish with a generous amount of cheese on top.",
-  },
-  { from: "you", text: "Got it. How long do I bake it?" },
-  {
-    from: "them",
-    time: "09:25",
-    text: "About 45 minutes at 375°F, covered with foil. Then uncover and let it brown for another 10-15 minutes. Let it rest before slicing.",
-  },
-  { from: "you", text: "This is perfect. Thank you so much!" },
-  {
-    from: "them",
-    time: "09:31",
-    text: "Anytime! Let me know how it turns out—I might have to come over for a taste!",
-  },
-];
+function TypingDots({ name }: { name: string }) {
+  return (
+    <div
+      className="feed-card"
+      aria-live="polite"
+      aria-label={`${name} is typing`}
+    >
+      <p className="flex items-center gap-1.5 text-sm italic text-muted">
+        {name} is typing
+        <span className="typing-dots" aria-hidden>
+          <span className="typing-dot" />
+          <span className="typing-dot" />
+          <span className="typing-dot" />
+        </span>
+      </p>
+    </div>
+  );
+}
 
 export default function ChatboxScreen() {
   const router = useRouter();
+  const params = useParams<{ id: string }>();
+  const raw = decodeURIComponent(params.id ?? PREVIEW_HANDLE).toLowerCase();
+  const handle = raw === "1" ? PREVIEW_HANDLE : raw;
+  const them = resolveAuthor(handle);
   const me = useCurrentFeedUser();
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
+  const {
+    threadFor,
+    sendFromYou,
+    sendFromThem,
+    markRead,
+    previewUi,
+    interruptPreview,
+  } = useMessages();
+  const thread = threadFor(handle);
+  const fileInputId = useId();
   const [draft, setDraft] = useState("");
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [imageError, setImageError] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [emojiOpen, setEmojiOpen] = useState(false);
+  const [localThemTyping, setLocalThemTyping] = useState(false);
+  const autoTyping =
+    previewUi?.handle === handle && previewUi.autoTyping;
+  const themTyping =
+    (previewUi?.handle === handle && previewUi.themTyping) || localThemTyping;
+  const composerDraft = autoTyping && previewUi ? previewUi.youDraft : draft;
+  const [revealedOlder, setRevealedOlder] = useState(0);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const listRef = useRef<HTMLDivElement>(null);
+  const topSentinelRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const replyTimer = useRef<number>(0);
+  const historyTimer = useRef<number>(0);
 
-  function send(e: React.FormEvent) {
-    e.preventDefault();
-    const text = draft.trim();
-    if (!text) return;
-    setMessages((prev) => [...prev, { from: "you", text }]);
+  const olderMessages = useMemo(
+    () => thread.messages.filter((m) => !isRecentMessage(m.createdAt)),
+    [thread.messages],
+  );
+  const recentMessages = useMemo(
+    () => thread.messages.filter((m) => isRecentMessage(m.createdAt)),
+    [thread.messages],
+  );
+  const visibleMessages = useMemo(() => {
+    const start = Math.max(0, olderMessages.length - revealedOlder);
+    return [...olderMessages.slice(start), ...recentMessages];
+  }, [olderMessages, recentMessages, revealedOlder]);
+  const hasOlder = revealedOlder < olderMessages.length;
+
+  useEffect(() => {
+    markRead(handle);
     setDraft("");
+    setImageUrl(null);
+    setImageError("");
+    setEmojiOpen(false);
+    setRevealedOlder(0);
+    setLoadingHistory(false);
+    window.clearTimeout(historyTimer.current);
+    if (fileRef.current) fileRef.current.value = "";
+  }, [handle, markRead]);
+
+  useLayoutEffect(() => {
+    if (!autoTyping) return;
+    const el = inputRef.current;
+    if (!el) return;
+    el.focus();
+    const end = el.value.length;
+    el.setSelectionRange(end, end);
+    el.scrollLeft = Math.max(0, el.scrollWidth - el.clientWidth);
+  }, [composerDraft, autoTyping]);
+
+  function cancelPreview() {
+    interruptPreview(handle);
   }
+
+  function insertEmoji(emoji: string) {
+    cancelPreview();
+    const el = inputRef.current;
+    if (!el) {
+      setDraft((prev) => prev + emoji);
+      return;
+    }
+    const start = el.selectionStart ?? draft.length;
+    const end = el.selectionEnd ?? draft.length;
+    const next = draft.slice(0, start) + emoji + draft.slice(end);
+    setDraft(next);
+    requestAnimationFrame(() => {
+      el.focus();
+      const caret = start + emoji.length;
+      el.setSelectionRange(caret, caret);
+    });
+  }
+
+  async function handleFile(file: File | undefined) {
+    if (!file || autoTyping) return;
+    cancelPreview();
+    setUploading(true);
+    setImageError("");
+    const result = await loadImageAsDataUrl(file);
+    setUploading(false);
+    if (!result.ok) {
+      setImageError(result.error);
+      if (fileRef.current) fileRef.current.value = "";
+      return;
+    }
+    setImageUrl(result.dataUrl);
+  }
+
+  function clearImage() {
+    setImageUrl(null);
+    setImageError("");
+    if (fileRef.current) fileRef.current.value = "";
+  }
+
+  function scheduleReply(userText: string, history: ChatMessage[], hasImage?: boolean) {
+    window.clearTimeout(replyTimer.current);
+    const reply = pickAutoReply(handle, userText, history, { hasImage });
+    setLocalThemTyping(true);
+    const delay = 800 + Math.min(reply.length * 20, 2000);
+    replyTimer.current = window.setTimeout(() => {
+      setLocalThemTyping(false);
+      sendFromThem(handle, reply, { keepRead: true });
+    }, delay);
+  }
+
+  const canSend = Boolean(draft.trim() || imageUrl) && !uploading && !autoTyping;
+
+  function send(e?: FormEvent) {
+    e?.preventDefault();
+    if (!canSend) return;
+    const text = draft.trim();
+    const photo = imageUrl ?? undefined;
+    cancelPreview();
+    setDraft("");
+    setImageUrl(null);
+    setImageError("");
+    setEmojiOpen(false);
+    if (fileRef.current) fileRef.current.value = "";
+    const sent = sendFromYou(handle, text, { imageUrl: photo });
+    if (!sent) return;
+    scheduleReply(text, [...thread.messages, sent], Boolean(photo));
+  }
+
+  function loadOlderHistory() {
+    if (!hasOlder || loadingHistory) return;
+    setLoadingHistory(true);
+    window.clearTimeout(historyTimer.current);
+    historyTimer.current = window.setTimeout(() => {
+      setRevealedOlder((n) =>
+        Math.min(olderMessages.length, n + HISTORY_PAGE_SIZE),
+      );
+      setLoadingHistory(false);
+    }, HISTORY_LOAD_MS);
+  }
+
+  useEffect(() => {
+    const root = listRef.current;
+    const target = topSentinelRef.current;
+    if (!root || !target || !hasOlder || loadingHistory) return;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting) return;
+        if (root.scrollHeight <= root.clientHeight + 4) return;
+        loadOlderHistory();
+      },
+      { root, threshold: 0 },
+    );
+    io.observe(target);
+    return () => io.disconnect();
+  }, [handle, hasOlder, loadingHistory, visibleMessages.length]);
+
+  useEffect(() => {
+    return () => {
+      window.clearTimeout(replyTimer.current);
+      window.clearTimeout(historyTimer.current);
+    };
+  }, []);
 
   return (
     <div className="page-fill">
@@ -68,78 +244,255 @@ export default function ChatboxScreen() {
           <BackIcon className="size-6 text-ink" />
         </button>
         <Link
-          href={userProfilePath("eleanorpena", me.handle)}
-          aria-label="Eleanor Pena"
+          href={userProfilePath(them.handle, me.handle)}
+          aria-label={them.name}
         >
-          <UserAvatar initials="EP" handle="eleanorpena" />
+          <UserAvatar
+            initials={them.initials}
+            handle={them.handle}
+            src={them.avatarUrl}
+          />
         </Link>
         <div className="min-w-0 flex-1 leading-tight">
           <UserNameLink
-            name="Eleanor Pena"
-            handle="eleanorpena"
+            name={them.name}
+            handle={them.handle}
             className="truncate text-sm font-bold text-brand"
           />
           <p className="flex items-center gap-0.5 text-xs leading-[14px]">
             <span className="text-brand-soft">@</span>
             <Link
-              href={userProfilePath("eleanorpena", me.handle)}
+              href={userProfilePath(them.handle, me.handle)}
               className="truncate text-placeholder"
             >
-              eleanorpena
+              {them.handle}
             </Link>
             <span className="text-muted"> · </span>
-            <span className="italic text-online">Online</span>
+            <span
+              className={`inline-flex items-center gap-1 italic ${
+                thread.online || themTyping ? "text-online" : "text-muted"
+              }`}
+            >
+              {themTyping ? (
+                <>
+                  typing
+                  <span className="typing-dots" aria-hidden>
+                    <span className="typing-dot" />
+                    <span className="typing-dot" />
+                    <span className="typing-dot" />
+                  </span>
+                </>
+              ) : thread.online ? (
+                "Online"
+              ) : (
+                "Last seen recently"
+              )}
+            </span>
           </p>
         </div>
       </div>
 
-      <div className="list-stack min-h-0 flex-1 overflow-y-auto overscroll-contain py-2">
-        {messages.map((message, i) => (
-          <div key={i} className="feed-card flex items-start gap-3">
-            {message.from === "them" ? (
-              <UserAvatar initials="EP" size="sm" />
-            ) : (
-              <UserAvatar
-                initials={me.initials}
-                handle={me.handle}
-                src={me.avatarUrl}
-                size="sm"
-                me
-              />
-            )}
-            <div className="min-w-0 flex-1">
-              <div className="flex items-baseline justify-between gap-2">
-                <p className="text-sm font-bold text-brand">
-                  {message.from === "them" ? "Eleanor Pena" : "You"}
-                </p>
-                {message.time ? (
-                  <p className="shrink-0 text-xs text-muted">{message.time}</p>
-                ) : null}
-              </div>
-              <p className="mt-1 text-sm leading-5 text-ink-secondary">
-                {message.text}
-              </p>
-            </div>
-          </div>
-        ))}
+      <div
+        ref={listRef}
+        className="flex min-h-0 flex-1 flex-col-reverse overflow-y-auto overscroll-contain"
+      >
+        <div className="list-stack py-2">
+          {visibleMessages.length === 0 ? (
+            <p className="px-3 py-6 text-center text-sm text-muted">
+              {olderMessages.length > 0
+                ? "Nothing from the last 24 hours. Scroll up for earlier chats."
+                : `Say hi to ${them.name.split(" ")[0]}. They cook on here too.`}
+            </p>
+          ) : null}
+            {visibleMessages.map((message, index) => {
+              const prev = visibleMessages[index - 1];
+              const newDay =
+                !prev ||
+                messageDayKey(prev.createdAt) !== messageDayKey(message.createdAt);
+              return (
+                <div key={message.id}>
+                  {newDay ? (
+                    <p className="px-3 py-1.5 text-center text-[11px] font-bold tracking-wide text-muted uppercase">
+                      {formatDayLabel(message.createdAt)}
+                    </p>
+                  ) : null}
+                  <div className="feed-card flex items-start gap-3">
+                    {message.from === "them" ? (
+                      <UserAvatar
+                        initials={them.initials}
+                        handle={them.handle}
+                        src={them.avatarUrl}
+                        size="sm"
+                      />
+                    ) : (
+                      <UserAvatar
+                        initials={me.initials}
+                        handle={me.handle}
+                        src={me.avatarUrl}
+                        size="sm"
+                        me
+                      />
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <p className="text-sm font-bold text-brand">
+                          {message.from === "them" ? them.name : "You"}
+                        </p>
+                        <p className="shrink-0 text-xs text-muted">
+                          {formatChatTime(message.createdAt)}
+                        </p>
+                      </div>
+                      {message.text ? (
+                        <p className="mt-1 whitespace-pre-wrap text-sm leading-5 text-ink-secondary">
+                          {message.text}
+                        </p>
+                      ) : null}
+                      {message.imageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={message.imageUrl}
+                          alt={message.text ? "" : "Attached photo"}
+                          className="mt-2 h-40 w-full rounded border border-line object-cover"
+                        />
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            {themTyping ? <TypingDots name={them.name} /> : null}
+        </div>
+        <div
+          ref={topSentinelRef}
+          className="flex min-h-10 shrink-0 items-center justify-center px-3 py-1"
+        >
+          {loadingHistory ? (
+            <p className="text-xs italic text-muted">Loading earlier messages…</p>
+          ) : hasOlder ? (
+            <button
+              type="button"
+              className="text-xs text-muted"
+              onClick={loadOlderHistory}
+            >
+              Scroll up for earlier messages
+            </button>
+          ) : thread.messages.length > 0 ? (
+            <p className="text-xs text-muted">Beginning of conversation</p>
+          ) : null}
+        </div>
       </div>
 
       <form
-        className="flex shrink-0 items-center gap-2 border-t border-line bg-surface px-3 py-2"
+        className="flex shrink-0 flex-col gap-2 border-t border-line bg-surface px-3 py-2"
         onSubmit={send}
       >
-        <input
-          id="chat-message"
-          name="message"
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          className="field flex-1 !py-2 text-sm"
-          placeholder="Write a message…"
-          aria-label="Message"
-        />
-        <button type="submit" aria-label="Send" className="shrink-0 text-brand">
-          <SendIcon className="size-6" />
-        </button>
+        {imageUrl ? (
+          <div className="relative w-fit max-w-full">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={imageUrl}
+              alt="Attachment preview"
+              className="max-h-40 max-w-full rounded border border-line object-cover"
+            />
+            <button
+              type="button"
+              aria-label="Remove photo"
+              onClick={clearImage}
+              className="absolute top-1.5 right-1.5 grid size-7 place-items-center rounded-full bg-ink/70 text-white hover:bg-ink"
+            >
+              <CloseIcon className="size-3.5" />
+            </button>
+          </div>
+        ) : null}
+
+        {imageError ? (
+          <p className="text-xs text-brand" role="alert">
+            {imageError}
+          </p>
+        ) : null}
+
+        {emojiOpen ? (
+          <div
+            className="grid grid-cols-6 gap-1 rounded border border-line bg-app p-2 sm:grid-cols-10"
+            role="listbox"
+            aria-label="Emoji picker"
+          >
+            {COMMENT_EMOJIS.map((emoji) => (
+              <button
+                key={emoji}
+                type="button"
+                role="option"
+                aria-label={`Insert ${emoji}`}
+                disabled={autoTyping}
+                className="grid size-8 place-items-center rounded text-lg hover:bg-surface disabled:opacity-40"
+                onClick={() => insertEmoji(emoji)}
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
+        ) : null}
+
+        <div className="flex items-center gap-1">
+          <label
+            htmlFor={fileInputId}
+            className={`grid size-9 shrink-0 cursor-pointer place-items-center rounded text-brand hover:bg-app ${
+              uploading || autoTyping ? "pointer-events-none opacity-50" : ""
+            }`}
+            aria-label="Add photo"
+          >
+            <ImageIcon className="size-5" />
+            <input
+              ref={fileRef}
+              id={fileInputId}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="sr-only"
+              disabled={uploading || autoTyping}
+              onChange={(e) => void handleFile(e.target.files?.[0])}
+            />
+          </label>
+          <button
+            type="button"
+            aria-label={emojiOpen ? "Hide emojis" : "Add emoji"}
+            aria-pressed={emojiOpen}
+            disabled={autoTyping}
+            onClick={() => {
+              cancelPreview();
+              setEmojiOpen((open) => !open);
+            }}
+            className={`grid size-9 shrink-0 place-items-center rounded text-brand hover:bg-app disabled:opacity-40 ${
+              emojiOpen ? "bg-app" : ""
+            }`}
+          >
+            <EmojiIcon className="size-5" />
+          </button>
+          <input
+            ref={inputRef}
+            id="chat-message"
+            name="message"
+            type="text"
+            value={composerDraft}
+            onChange={(e) => {
+              cancelPreview();
+              setDraft(e.target.value);
+            }}
+            readOnly={autoTyping}
+            className="field min-h-9 flex-1 !py-2 text-sm"
+            placeholder={autoTyping ? "" : "Write a message…"}
+            aria-label="Message"
+            aria-busy={autoTyping}
+            autoComplete="off"
+          />
+          <button
+            type="submit"
+            aria-label="Send"
+            disabled={!canSend}
+            className="grid size-9 shrink-0 place-items-center text-brand disabled:opacity-40"
+          >
+            <SendIcon className="size-6" />
+          </button>
+        </div>
       </form>
     </div>
   );

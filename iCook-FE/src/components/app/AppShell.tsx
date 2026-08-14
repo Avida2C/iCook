@@ -21,6 +21,8 @@ export default function AppShell({ children }: { children: ReactNode }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
+  const chatThread =
+    pathname.startsWith("/messages/") && pathname !== "/messages";
 
   useEffect(() => {
     if (!loading && !user) {
@@ -29,8 +31,9 @@ export default function AppShell({ children }: { children: ReactNode }) {
   }, [loading, user, router]);
 
   useEffect(() => {
+    if (chatThread) return;
     mainRef.current?.scrollTo({ top: 0 });
-  }, [pathname]);
+  }, [pathname, chatThread]);
 
   return (
     <PhoneFrame>
@@ -42,7 +45,12 @@ export default function AppShell({ children }: { children: ReactNode }) {
         ) : (
           <>
             <AppBar onSearchClick={() => setSearchOpen(true)} />
-            <main ref={mainRef} className="min-h-0 flex-1 overflow-y-auto">
+            <main
+              ref={mainRef}
+              className={`min-h-0 flex-1 ${
+                chatThread ? "overflow-hidden" : "overflow-y-auto"
+              }`}
+            >
               {children}
             </main>
             <BottomNav

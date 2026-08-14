@@ -1,22 +1,12 @@
 import type { Metadata } from "next";
 import UserListScreen from "@/components/app/UserListScreen";
+import { INITIAL_FOLLOWING } from "@/components/app/user/data";
 
 export const metadata: Metadata = {
   title: "Following · iCook",
 };
 
-const following = [
-  "Guy Hawkins",
-  "Savannah Nguyen",
-  "Annette Black",
-  "Kristin Watson",
-  "Bessie Cooper",
-  "Leslie Alexander",
-  "Robert Fox",
-  "Kathryn Murphy",
-  "Eleanor Pena",
-  "Devon Lane",
-].map((name) => ({ name, following: true }));
+const following = INITIAL_FOLLOWING.map((name) => ({ name, following: true }));
 
 export default function FollowingPage() {
   return <UserListScreen title="Following" people={following} />;
