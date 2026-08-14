@@ -53,8 +53,7 @@ const NUTRITION_FIELDS = [
 
 const STEP_LABELS = [
   "Recipe Overview",
-  "Timing & Servings",
-  "Nutrition",
+  "Time & Nutrition",
   "Ingredients",
   "Instructions",
 ] as const;
@@ -434,136 +433,126 @@ export default function RecipeEditorScreen({
         ) : null}
 
         {step === 1 ? (
-          <div className="feed-card flex flex-col gap-2.5">
-            {(
-              [
-                ["prepTime", "Preparation Time"],
-                ["cookTime", "Cook Time"],
-              ] as const
-            ).map(([key, label]) => (
-              <label
-                key={key}
-                className="flex flex-col gap-1.5"
-                htmlFor={`recipe-${key}`}
-              >
-                <span className="text-sm font-bold text-ink">{label}</span>
-                <div className="flex items-center gap-2">
-                  <input
-                    id={`recipe-${key}`}
-                    name={key}
-                    type="number"
-                    inputMode="numeric"
-                    min={0}
-                    step={1}
-                    value={draft[key]}
-                    onChange={(e) => {
-                      const next = e.target.value.replace(/[^\d]/g, "");
-                      const prep =
-                        key === "prepTime"
-                          ? parseMinutes(next)
-                          : parseMinutes(draft.prepTime);
-                      const cook =
-                        key === "cookTime"
-                          ? parseMinutes(next)
-                          : parseMinutes(draft.cookTime);
-                      const total =
-                        (prep ?? 0) + (cook ?? 0);
-                      updateDraft({
-                        [key]: next,
-                        totalTime:
-                          prep == null && cook == null ? "" : String(total),
-                      });
-                    }}
-                    placeholder="0"
-                    className={fieldClass}
-                  />
-                  <span className="shrink-0 text-sm text-muted">minutes</span>
+          <>
+            <div className="feed-card flex flex-col gap-2">
+              <div className="grid grid-cols-3 gap-2">
+                {(
+                  [
+                    ["prepTime", "Preparation"],
+                    ["cookTime", "Cook"],
+                  ] as const
+                ).map(([key, label]) => (
+                  <label
+                    key={key}
+                    className="flex min-w-0 flex-col"
+                    htmlFor={`recipe-${key}`}
+                  >
+                    <span className="section-title">{label}</span>
+                    <input
+                      id={`recipe-${key}`}
+                      name={key}
+                      type="number"
+                      inputMode="numeric"
+                      min={0}
+                      max={999}
+                      step={1}
+                      value={draft[key]}
+                      onChange={(e) => {
+                        const next = e.target.value
+                          .replace(/[^\d]/g, "")
+                          .slice(0, 3);
+                        const prep =
+                          key === "prepTime"
+                            ? parseMinutes(next)
+                            : parseMinutes(draft.prepTime);
+                        const cook =
+                          key === "cookTime"
+                            ? parseMinutes(next)
+                            : parseMinutes(draft.cookTime);
+                        const total = (prep ?? 0) + (cook ?? 0);
+                        updateDraft({
+                          [key]: next,
+                          totalTime:
+                            prep == null && cook == null ? "" : String(total),
+                        });
+                      }}
+                      placeholder="0"
+                      className={fieldClass}
+                    />
+                    <span className="text-xs text-muted">Minutes</span>
+                  </label>
+                ))}
+                <div className="flex min-w-0 flex-col">
+                  <span className="section-title">Total</span>
+                  <p className={`${fieldClass} bg-app/60`}>
+                    {draft.totalTime || "—"}
+                  </p>
+                  <span className="text-xs text-muted">Minutes</span>
                 </div>
-              </label>
-            ))}
-            <div className="flex flex-col gap-1.5">
-              <span className="text-sm font-bold text-ink">Total Time</span>
-              <p className="rounded border border-line bg-app/60 px-2 py-1.5 text-base text-ink">
-                {draft.totalTime
-                  ? formatMinutes(Number(draft.totalTime) || 0)
-                  : "—"}
-              </p>
+              </div>
               <p className="text-xs italic text-muted">
-                Automatically calculated from prep + cook time.
+                Total is automatically calculated from prep + cook.
               </p>
             </div>
-            <label className="flex flex-col gap-1.5" htmlFor="recipe-servings">
-              <span className="text-sm font-bold text-ink">Servings</span>
-              <input
-                id="recipe-servings"
-                name="servings"
-                type="number"
-                min={1}
-                value={draft.servings}
-                onChange={(e) => updateDraft({ servings: e.target.value })}
-                className={fieldClass}
-              />
-            </label>
-          </div>
+
+            <div className="feed-card flex flex-col gap-5">
+              <div>
+                <p className="section-title">Nutrition (per serving)</p>
+                <p className="mt-1 text-xs italic text-muted">
+                  Leave a field blank to hide it on the recipe page. If all are
+                  blank, the Nutrition section is hidden.
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-5">
+                <label className="flex min-w-0 flex-col" htmlFor="recipe-servings">
+                  <span className="text-sm font-bold text-brand">Servings</span>
+                  <input
+                    id="recipe-servings"
+                    name="servings"
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    max={999}
+                    value={draft.servings}
+                    onChange={(e) =>
+                      updateDraft({
+                        servings: e.target.value.replace(/[^\d]/g, "").slice(0, 3),
+                      })
+                    }
+                    className={fieldClass}
+                  />
+                </label>
+                <div aria-hidden="true" />
+                {NUTRITION_FIELDS.map(([key, label, placeholder]) => (
+                  <label
+                    key={key}
+                    className="flex min-w-0 flex-col"
+                    htmlFor={`recipe-nutrition-${key}`}
+                  >
+                    <span className="text-sm font-bold text-brand">{label}</span>
+                    <input
+                      id={`recipe-nutrition-${key}`}
+                      name={`nutrition-${key}`}
+                      value={draft.nutrition[key]}
+                      onChange={(e) =>
+                        updateDraft({
+                          nutrition: {
+                            ...draft.nutrition,
+                            [key]: e.target.value,
+                          },
+                        })
+                      }
+                      placeholder={placeholder}
+                      className={fieldClass}
+                    />
+                  </label>
+                ))}
+              </div>
+            </div>
+          </>
         ) : null}
 
         {step === 2 ? (
-          <div className="feed-card flex flex-col gap-2.5">
-            <div>
-              <p className="text-sm font-bold text-ink">Per serving</p>
-              <p className="mt-1 text-xs italic text-muted">
-                Leave a field blank to hide it on the recipe page. If all are
-                blank, the Nutrition section is hidden.
-              </p>
-            </div>
-            {NUTRITION_FIELDS.map(([key, label, placeholder]) => (
-              <label
-                key={key}
-                className="flex flex-col gap-1.5"
-                htmlFor={`recipe-nutrition-${key}`}
-              >
-                <span className="text-sm font-bold text-ink">{label}</span>
-                <input
-                  id={`recipe-nutrition-${key}`}
-                  name={`nutrition-${key}`}
-                  value={draft.nutrition[key]}
-                  onChange={(e) =>
-                    updateDraft({
-                      nutrition: { ...draft.nutrition, [key]: e.target.value },
-                    })
-                  }
-                  placeholder={placeholder}
-                  className={fieldClass}
-                />
-              </label>
-            ))}
-            <div className="mt-1 flex flex-col gap-2 border-t border-line pt-3">
-              <p className="text-sm font-bold text-ink">Dietary tags</p>
-              <p className="text-xs italic text-muted">
-                Tags update automatically from ingredients.
-              </p>
-              {inferredTags.length === 0 ? (
-                <p className="text-xs text-muted">
-                  Add ingredients to see vegetarian, vegan, gluten free,
-                  lactose free, and egg free tags.
-                </p>
-              ) : (
-                <div className="flex flex-wrap gap-1.5">
-                  {inferredTags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="rounded-md border border-brand/30 bg-brand/10 px-2 py-0.5 text-xs font-bold text-brand"
-                    >
-                      {RECIPE_TAG_LABELS[tag]}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        ) : null}
-
-        {step === 3 ? (
           <>
             {draft.ingredientGroups.map((group, gi) => (
               <div key={gi} className="feed-card flex flex-col gap-2.5">
@@ -787,7 +776,7 @@ export default function RecipeEditorScreen({
           </>
         ) : null}
 
-        {step === 4 ? (
+        {step === 3 ? (
           <>
             <input
               ref={stepImageInputRef}
