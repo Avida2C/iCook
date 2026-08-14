@@ -277,3 +277,65 @@ body {
 .msg-badge-pop {
   animation: msg-badge-pop 0.45s ease-out;
 }
+
+.post-rich-text a,
+.post-rich-editor a {
+  @apply font-bold text-brand underline;
+}
+
+.post-rich-text img,
+.post-rich-editor img {
+  @apply my-2 max-h-56 w-full rounded object-cover;
+}
+
+.post-rich-text h1,
+.post-rich-editor h1 {
+  @apply mb-2 text-2xl font-bold text-ink;
+}
+
+.post-rich-text h2,
+.post-rich-editor h2 {
+  @apply mb-2 text-xl font-bold text-ink;
+}
+
+.post-rich-text h3,
+.post-rich-editor h3 {
+  @apply mb-1.5 text-lg font-bold text-ink;
+}
+
+.post-rich-text p,
+.post-rich-editor p {
+  @apply mb-2 text-base;
+}
+
+.post-rich-text .post-small,
+.post-rich-editor .post-small,
+.post-rich-text small,
+.post-rich-editor small {
+  @apply mb-2 block text-sm;
+}
+
+.post-rich-text .post-tiny,
+.post-rich-editor .post-tiny {
+  @apply mb-2 block text-xs;
+}
+
+.post-rich-text .post-color-ink,
+.post-rich-editor .post-color-ink {
+  color: var(--ink) !important;
+}
+
+.post-rich-text .post-color-brand,
+.post-rich-editor .post-color-brand {
+  color: var(--brand) !important;
+}
+
+.post-rich-text .post-color-muted,
+.post-rich-editor .post-color-muted {
+  color: var(--muted) !important;
+}
+
+.post-rich-editor:empty:before {
+  content: attr(data-placeholder);
+  @apply pointer-events-none italic text-muted;
+}

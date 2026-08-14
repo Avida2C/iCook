@@ -23,6 +23,7 @@ import {
   writeFeaturedRecipePrefs,
   type FeaturedRecipePrefs,
 } from "@/lib/featuredRecipePrefs";
+import { plainTextFromHtml } from "@/lib/postRichText";
 
 type Filter = "all" | "recipes" | "posts";
 
@@ -335,7 +336,7 @@ export default function CreatedLibraryScreen() {
                     </p>
                     {item.post.body ? (
                       <p className="mt-0.5 line-clamp-2 text-xs leading-4 text-ink-secondary">
-                        {item.post.body}
+                        {plainTextFromHtml(item.post.body)}
                       </p>
                     ) : null}
                   </div>

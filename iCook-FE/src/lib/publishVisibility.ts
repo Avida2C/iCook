@@ -48,6 +48,44 @@ export function formatPublishAge(publishedAt: number, now = Date.now()) {
   return `${days}d ago`;
 }
 
+/** Activity stays "new" (unread dot) for this long after it happened. */
+export const NEW_ACTIVITY_MS = 14 * 60 * 60 * 1000;
+
+export function isNewActivity(createdAt: number | undefined, now = Date.now()) {
+  return (
+    typeof createdAt === "number" &&
+    Number.isFinite(createdAt) &&
+    now - createdAt < NEW_ACTIVITY_MS
+  );
+}
+
+/** Relative activity labels: Just now, 1min ago, 1hr ago, Yesterday, 3d ago, then a date. */
+export function formatActivityAge(createdAt: number, now = Date.now()) {
+  const age = Math.max(0, now - createdAt);
+  const minutes = Math.floor(age / 60_000);
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes}min ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}hr ago`;
+  const days = Math.floor(hours / 24);
+  if (days === 1) return "Yesterday";
+  if (days < 7) return `${days}d ago`;
+  return new Date(createdAt).toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+export function activityTimeLabel(
+  item: { createdAt?: number; time: string },
+  now = Date.now(),
+) {
+  return typeof item.createdAt === "number" && Number.isFinite(item.createdAt)
+    ? formatActivityAge(item.createdAt, now)
+    : item.time;
+}
+
 /** Created recipes the viewer may see, then catalog entries that are not replaced. */
 export function mergePublicRecipes<T extends Recipe>(
   visibleCreated: T[],

@@ -672,34 +672,36 @@ export default function RecipeEditorScreen({
               </button>
             </div>
 
-            <div className="feed-card flex flex-col gap-2">
-              <label
-                className="flex flex-col gap-1.5"
-                htmlFor="ingredient-target-group"
-              >
-                <span className="text-sm font-bold text-ink">
-                  Add ingredients to
-                </span>
-                <select
-                  id="ingredient-target-group"
-                  name="ingredient-target-group"
-                  className={fieldClass}
-                  value={Math.min(
-                    activeGroupIndex,
-                    Math.max(0, draft.ingredientGroups.length - 1),
-                  )}
-                  onChange={(e) =>
-                    setActiveGroupIndex(Number(e.target.value) || 0)
-                  }
+            {draft.ingredientGroups.length > 1 ? (
+              <div className="feed-card flex flex-col gap-2">
+                <label
+                  className="flex flex-col gap-1.5"
+                  htmlFor="ingredient-target-group"
                 >
-                  {draft.ingredientGroups.map((group, gi) => (
-                    <option key={gi} value={gi}>
-                      {group.title.trim() || `Group ${gi + 1}`}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
+                  <span className="text-sm font-bold text-ink">
+                    Add ingredients to
+                  </span>
+                  <select
+                    id="ingredient-target-group"
+                    name="ingredient-target-group"
+                    className={fieldClass}
+                    value={Math.min(
+                      activeGroupIndex,
+                      Math.max(0, draft.ingredientGroups.length - 1),
+                    )}
+                    onChange={(e) =>
+                      setActiveGroupIndex(Number(e.target.value) || 0)
+                    }
+                  >
+                    {draft.ingredientGroups.map((group, gi) => (
+                      <option key={gi} value={gi}>
+                        {group.title.trim() || `Group ${gi + 1}`}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            ) : null}
 
             <IngredientCatalogPicker
               className="max-h-64 shrink-0 rounded-lg"

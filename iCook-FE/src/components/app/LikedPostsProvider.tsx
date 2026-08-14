@@ -11,23 +11,34 @@ import {
 } from "react";
 import { ACTIVITY_FEED } from "@/components/app/user/data";
 import type { FeedItem } from "@/components/app/user/types";
+import { activityFromPeopleYouFollow } from "@/components/app/user/followingActivity";
+import { useCurrentFeedUser } from "@/components/app/user/useCurrentFeedUser";
 import {
   useSavedRecipes,
   type CatalogRecipe,
 } from "@/components/recipes/SavedRecipesProvider";
 import { useCreatedContent } from "@/components/app/CreatedContentProvider";
 import { useComments } from "@/components/app/CommentsProvider";
-import { isProfileSeedEnabled } from "@/lib/accountData";
+import {
+  FOLLOWING_CHANGED_EVENT,
+  isProfileSeedEnabled,
+  readFollowing,
+} from "@/lib/accountData";
+import {
+  formatActivityAge,
+  isNewActivity,
+  NEW_ACTIVITY_MS,
+} from "@/lib/publishVisibility";
 
 const STORAGE_KEY = "icook.likedPosts";
 
-type LikedPost = { id: string; title: string };
+type LikedPost = { id: string; title: string; likedAt: number };
 
 type LikedPostsContextValue = {
   likedIds: string[];
   isLiked: (postId: string) => boolean;
   likeCount: (postId: string, baseLikes: number) => number;
-  toggleLike: (post: LikedPost) => void;
+  toggleLike: (post: { id: string; title: string }) => void;
   activityItems: FeedItem[];
 };
 
@@ -39,73 +50,138 @@ function readLikedPosts(): LikedPost[] {
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter(
-      (item): item is LikedPost =>
-        item &&
-        typeof item === "object" &&
-        typeof item.id === "string" &&
-        typeof item.title === "string",
-    );
+    const fallbackAt = Date.now() - NEW_ACTIVITY_MS;
+    return parsed.flatMap((item): LikedPost[] => {
+      if (
+        !item ||
+        typeof item !== "object" ||
+        typeof item.id !== "string" ||
+        typeof item.title !== "string"
+      ) {
+        return [];
+      }
+      return [
+        {
+          id: item.id,
+          title: item.title,
+          likedAt:
+            typeof item.likedAt === "number" && Number.isFinite(item.likedAt)
+              ? item.likedAt
+              : fallbackAt,
+        },
+      ];
+    });
   } catch {
     return [];
   }
 }
 
-function youLikedPost(post: LikedPost): FeedItem {
+function youLikedPost(post: LikedPost, now: number): FeedItem {
   return {
     id: `you-liked-post-${post.id}`,
     kind: "like",
     self: true,
-    time: "Just now",
+    time: formatActivityAge(post.likedAt, now),
+    createdAt: post.likedAt,
     target: post.title,
     targetKind: "post",
     postId: post.id,
-    unread: true,
+    unread: isNewActivity(post.likedAt, now),
   };
 }
 
-function youLikedRecipe(recipe: CatalogRecipe): FeedItem {
+function youLikedRecipe(
+  recipe: CatalogRecipe,
+  savedAt: number,
+  now: number,
+): FeedItem {
   return {
     id: `you-liked-recipe-${recipe.id}`,
     kind: "like",
     self: true,
-    time: "Just now",
+    time: formatActivityAge(savedAt, now),
+    createdAt: savedAt,
     target: recipe.name,
     targetKind: "recipe",
     recipeId: recipe.id,
-    unread: true,
+    unread: isNewActivity(savedAt, now),
+  };
+}
+
+function withLiveAge(item: FeedItem, now: number): FeedItem {
+  if (typeof item.createdAt !== "number") return item;
+  return {
+    ...item,
+    time: formatActivityAge(item.createdAt, now),
+    unread: isNewActivity(item.createdAt, now),
   };
 }
 
 function buildActivity(
   likedPosts: LikedPost[],
   savedRecipes: CatalogRecipe[],
+  savedAtById: Record<string, number>,
   createdActivity: FeedItem[],
   commentActivity: FeedItem[],
-  includeSeededFeed: boolean,
+  followingActivity: FeedItem[],
+  includeSeededSocial: boolean,
+  now: number,
 ): FeedItem[] {
-  const seeded = includeSeededFeed
-    ? ACTIVITY_FEED.filter((item) => !(item.kind === "like" && item.self))
+  const seededFollows = includeSeededSocial
+    ? ACTIVITY_FEED.filter((item) => item.kind === "follow")
     : [];
-  return [
+  const seen = new Set<string>();
+  const merged: FeedItem[] = [];
+  for (const item of [
     ...createdActivity,
     ...commentActivity,
-    ...likedPosts.map(youLikedPost),
-    ...savedRecipes.map(youLikedRecipe),
-    ...seeded,
-  ];
+    ...likedPosts.map((post) => youLikedPost(post, now)),
+    ...savedRecipes.map((recipe) =>
+      youLikedRecipe(recipe, savedAtById[recipe.id] ?? now, now),
+    ),
+    ...followingActivity,
+    ...seededFollows,
+  ]) {
+    if (seen.has(item.id)) continue;
+    seen.add(item.id);
+    merged.push(withLiveAge(item, now));
+  }
+  return merged.sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
 }
 
 export function LikedPostsProvider({ children }: { children: ReactNode }) {
-  const { savedRecipes } = useSavedRecipes();
-  const { activityItems: createdActivity } = useCreatedContent();
+  const me = useCurrentFeedUser();
+  const { savedRecipes, savedAtById } = useSavedRecipes();
+  const {
+    activityItems: createdActivity,
+    visiblePosts,
+    visibleRecipes,
+  } = useCreatedContent();
   const { activityItems: commentActivity } = useComments();
   const [likedPosts, setLikedPosts] = useState<LikedPost[]>([]);
   const [seeded, setSeeded] = useState(true);
+  const [following, setFollowing] = useState<string[]>([]);
+  const [nowTick, setNowTick] = useState(() => Date.now());
 
   useEffect(() => {
     setLikedPosts(readLikedPosts());
     setSeeded(isProfileSeedEnabled());
+    setFollowing(readFollowing());
+  }, []);
+
+  useEffect(() => {
+    const syncFollowing = () => setFollowing(readFollowing());
+    window.addEventListener("focus", syncFollowing);
+    window.addEventListener(FOLLOWING_CHANGED_EVENT, syncFollowing);
+    return () => {
+      window.removeEventListener("focus", syncFollowing);
+      window.removeEventListener(FOLLOWING_CHANGED_EVENT, syncFollowing);
+    };
+  }, []);
+
+  useEffect(() => {
+    const id = window.setInterval(() => setNowTick(Date.now()), 30_000);
+    return () => window.clearInterval(id);
   }, []);
 
   const persist = useCallback((posts: LikedPost[]) => {
@@ -129,12 +205,12 @@ export function LikedPostsProvider({ children }: { children: ReactNode }) {
   );
 
   const toggleLike = useCallback(
-    (post: LikedPost) => {
+    (post: { id: string; title: string }) => {
       const already = likedPosts.some((p) => p.id === post.id);
       persist(
         already
           ? likedPosts.filter((p) => p.id !== post.id)
-          : [...likedPosts, post],
+          : [...likedPosts, { ...post, likedAt: Date.now() }],
       );
     },
     [likedPosts, persist],
@@ -142,16 +218,40 @@ export function LikedPostsProvider({ children }: { children: ReactNode }) {
 
   const likedIds = useMemo(() => likedPosts.map((p) => p.id), [likedPosts]);
 
+  const followingActivity = useMemo(
+    () =>
+      activityFromPeopleYouFollow({
+        following,
+        me,
+        createdPosts: visiblePosts,
+        createdRecipes: visibleRecipes,
+        now: nowTick,
+      }),
+    [following, me, visiblePosts, visibleRecipes, nowTick],
+  );
+
   const activityItems = useMemo(
     () =>
       buildActivity(
         likedPosts,
         savedRecipes,
+        savedAtById,
         createdActivity,
         commentActivity,
+        followingActivity,
         seeded,
+        nowTick,
       ),
-    [likedPosts, savedRecipes, createdActivity, commentActivity, seeded],
+    [
+      likedPosts,
+      savedRecipes,
+      savedAtById,
+      createdActivity,
+      commentActivity,
+      followingActivity,
+      seeded,
+      nowTick,
+    ],
   );
 
   const value = useMemo(

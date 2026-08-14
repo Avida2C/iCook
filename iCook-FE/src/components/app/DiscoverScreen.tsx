@@ -24,6 +24,7 @@ import { primaryCategory } from "@/components/recipes/recipesData";
 import { useCreatedContent } from "@/components/app/CreatedContentProvider";
 import { CATALOG_POSTS } from "@/components/app/postsData";
 import { formatPublishAge } from "@/lib/publishVisibility";
+import { plainTextFromHtml } from "@/lib/postRichText";
 import { resolveAuthor, withLiveProfile } from "@/components/app/user/authors";
 import { useCurrentFeedUser } from "@/components/app/user/useCurrentFeedUser";
 import type { FeedUser } from "@/components/app/user/types";
@@ -460,10 +461,11 @@ export default function DiscoverScreen() {
         time: formatPublishAge(post.createdAt),
         postId: post.id,
         title: post.title,
-        preview: post.body,
+        preview: plainTextFromHtml(post.body),
         likes: 0,
         comments: 0,
         thumbnailUrl: post.thumbnailUrl,
+        createdAt: post.createdAt,
       })),
       ...visibleRecipes
         .filter((recipe) => !recipe.isPrivate)
@@ -477,9 +479,13 @@ export default function DiscoverScreen() {
         preview: recipe.preview || recipe.description,
         likes: recipe.bookmarkCount,
         comments: 0,
+        createdAt: recipe.createdAt,
       })),
+    ].sort((a, b) => b.createdAt - a.createdAt);
+    return [
+      ...createdItems.map(({ createdAt: _createdAt, ...item }) => item),
+      ...COMMUNITY_FEED,
     ];
-    return [...createdItems, ...COMMUNITY_FEED];
   }, [visiblePosts, visibleRecipes, me]);
 
   const { entries, loadingMore, hasMore, sentinelRef } = useInfiniteFeed({

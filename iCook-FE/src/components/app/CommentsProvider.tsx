@@ -24,6 +24,7 @@ import {
 import { useCreatedContent } from "@/components/app/CreatedContentProvider";
 import { CURRENT_USER } from "@/components/app/user/data";
 import { CATALOG_POSTS } from "@/components/app/postsData";
+import { formatActivityAge, isNewActivity } from "@/lib/publishVisibility";
 
 const STORAGE_KEY = "icook.contentComments";
 const LEGACY_RECIPE_KEY = "icook.recipeComments";
@@ -403,11 +404,12 @@ export function CommentsProvider({ children }: { children: ReactNode }) {
           id: `comment-activity-${c.id}`,
           kind: "comment",
           user: c.user,
-          time: "Just now",
+          time: formatActivityAge(c.createdAt),
+          createdAt: c.createdAt,
           target: c.targetTitle,
           recipeId: c.targetId,
           preview: c.text.slice(0, 160) || "Shared a photo",
-          unread: true,
+          unread: isNewActivity(c.createdAt),
         });
         continue;
       }
@@ -418,11 +420,12 @@ export function CommentsProvider({ children }: { children: ReactNode }) {
         id: `comment-activity-${c.id}`,
         kind: "comment",
         user: c.user,
-        time: "Just now",
+        time: formatActivityAge(c.createdAt),
+        createdAt: c.createdAt,
         target: c.targetTitle,
         postId: c.targetId,
         preview: c.text.slice(0, 160) || "Shared a photo",
-        unread: true,
+        unread: isNewActivity(c.createdAt),
       });
     }
 

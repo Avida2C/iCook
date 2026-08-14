@@ -16,6 +16,7 @@ export type FeedItem =
       kind: "follow";
       user: FeedUser;
       time: string;
+      createdAt?: number;
       unread?: boolean;
     }
   | {
@@ -26,6 +27,7 @@ export type FeedItem =
       recipeId: string;
       recipeName: string;
       preview: string;
+      createdAt?: number;
       unread?: boolean;
     }
     | {
@@ -37,6 +39,7 @@ export type FeedItem =
       title: string;
       preview: string;
       thumbnailUrl?: string;
+      createdAt?: number;
       unread?: boolean;
     }
   | {
@@ -48,6 +51,7 @@ export type FeedItem =
       targetKind: "recipe" | "post";
       postId?: string;
       recipeId?: string;
+      createdAt?: number;
       unread?: boolean;
     }
   | {
@@ -60,6 +64,7 @@ export type FeedItem =
       targetKind?: "recipe" | "post";
       postId?: string;
       recipeId?: string;
+      createdAt?: number;
       unread?: boolean;
     }
   | {
@@ -71,5 +76,6 @@ export type FeedItem =
       recipeId?: string;
       postId?: string;
       preview: string;
+      createdAt?: number;
       unread?: boolean;
     };

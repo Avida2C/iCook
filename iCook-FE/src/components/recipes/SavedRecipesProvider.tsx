@@ -76,8 +76,11 @@ export function sortByMostBookmarked(
 
 const STORAGE_KEY = "icook.savedRecipes";
 
+type SavedEntry = { id: string; savedAt: number };
+
 type SavedRecipesContextValue = {
   savedIds: string[];
+  savedAtById: Record<string, number>;
   savedRecipes: Recipe[];
   isSaved: (id: string) => boolean;
   toggleSave: (recipe: Pick<Recipe, "id">) => void;
@@ -88,34 +91,58 @@ const SavedRecipesContext = createContext<SavedRecipesContextValue | null>(
   null,
 );
 
-function readSavedIds(): string[] {
+function readSavedEntries(): SavedEntry[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed)
-      ? parsed.filter((id): id is string => typeof id === "string")
-      : [];
+    if (!Array.isArray(parsed)) return [];
+    const fallbackAt = Date.now() - 14 * 60 * 60 * 1000;
+    return parsed.flatMap((item): SavedEntry[] => {
+      if (typeof item === "string") return [{ id: item, savedAt: fallbackAt }];
+      if (
+        item &&
+        typeof item === "object" &&
+        typeof item.id === "string"
+      ) {
+        return [
+          {
+            id: item.id,
+            savedAt:
+              typeof item.savedAt === "number" && Number.isFinite(item.savedAt)
+                ? item.savedAt
+                : fallbackAt,
+          },
+        ];
+      }
+      return [];
+    });
   } catch {
     return [];
   }
 }
 
 export function SavedRecipesProvider({ children }: { children: ReactNode }) {
-  const [savedIds, setSavedIds] = useState<string[]>([]);
+  const [entries, setEntries] = useState<SavedEntry[]>([]);
 
   useEffect(() => {
-    setSavedIds(readSavedIds());
+    setEntries(readSavedEntries());
   }, []);
 
-  const persist = useCallback((ids: string[]) => {
-    setSavedIds(ids);
+  const persist = useCallback((next: SavedEntry[]) => {
+    setEntries(next);
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
     } catch {
       // ignore
     }
   }, []);
+
+  const savedIds = useMemo(() => entries.map((e) => e.id), [entries]);
+  const savedAtById = useMemo(
+    () => Object.fromEntries(entries.map((e) => [e.id, e.savedAt])),
+    [entries],
+  );
 
   const isSaved = useCallback(
     (id: string) => savedIds.includes(id),
@@ -126,18 +153,18 @@ export function SavedRecipesProvider({ children }: { children: ReactNode }) {
     (recipe: Pick<Recipe, "id">) => {
       persist(
         savedIds.includes(recipe.id)
-          ? savedIds.filter((id) => id !== recipe.id)
-          : [...savedIds, recipe.id],
+          ? entries.filter((e) => e.id !== recipe.id)
+          : [...entries, { id: recipe.id, savedAt: Date.now() }],
       );
     },
-    [persist, savedIds],
+    [persist, savedIds, entries],
   );
 
   const unsave = useCallback(
     (id: string) => {
-      persist(savedIds.filter((savedId) => savedId !== id));
+      persist(entries.filter((e) => e.id !== id));
     },
-    [persist, savedIds],
+    [persist, entries],
   );
 
   const savedRecipes = useMemo(
@@ -149,8 +176,15 @@ export function SavedRecipesProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo(
-    () => ({ savedIds, savedRecipes, isSaved, toggleSave, unsave }),
-    [savedIds, savedRecipes, isSaved, toggleSave, unsave],
+    () => ({
+      savedIds,
+      savedAtById,
+      savedRecipes,
+      isSaved,
+      toggleSave,
+      unsave,
+    }),
+    [savedIds, savedAtById, savedRecipes, isSaved, toggleSave, unsave],
   );
 
   return (

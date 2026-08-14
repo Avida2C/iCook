@@ -49,7 +49,7 @@ export default function UserScreen() {
 
   const followingSet = useMemo(() => new Set(following), [following]);
   const visibleActivity = useMemo(
-    () => filterActivityItems(activityItems, prefs),
+    () => filterActivityItems(activityItems, prefs, me.handle),
     [activityItems, prefs],
   );
 

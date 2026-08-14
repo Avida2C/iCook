@@ -24,6 +24,7 @@ const FOLLOWERS_KEY = "icook.followers";
 const FOLLOWING_KEY = "icook.following";
 /** When `"0"`, seeded activity / starter recipes / default social lists are off. */
 const SEEDED_PROFILE_KEY = "icook.seededProfile";
+export const FOLLOWING_CHANGED_EVENT = "icook-following-changed";
 
 function readNameList(key: string, fallback: string[]): string[] {
   try {
@@ -62,6 +63,7 @@ export function writeFollowers(names: string[]) {
 
 export function writeFollowing(names: string[]) {
   localStorage.setItem(FOLLOWING_KEY, JSON.stringify(names));
+  window.dispatchEvent(new Event(FOLLOWING_CHANGED_EVENT));
 }
 
 type FollowPerson = { name: string; handle: string };

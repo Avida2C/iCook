@@ -3,40 +3,21 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  BoldIcon,
-  ItalicIcon,
-  UnderlineIcon,
-  AlignLeftIcon,
-  AlignCenterIcon,
-  AlignRightIcon,
-  LinkIcon,
-  ImageIcon,
-} from "@/components/app/icons";
 import { useCreatedContent } from "@/components/app/CreatedContentProvider";
-import ThumbnailUploadField from "@/components/app/ThumbnailUploadField";
+import PostRichTextEditor from "@/components/app/PostRichTextEditor";
 import RecipeThumbnail from "@/components/app/RecipeThumbnail";
+import ThumbnailUploadField from "@/components/app/ThumbnailUploadField";
 import { MY_RECIPES } from "@/components/app/UserCollectionScreens";
 import { isOwnAuthor } from "@/components/app/user/authors";
 import { useCurrentFeedUser } from "@/components/app/user/useCurrentFeedUser";
-import { isProfileSeedEnabled } from "@/lib/accountData";
 import {
   primaryCategory,
   type Recipe,
 } from "@/components/recipes/recipesData";
+import { isProfileSeedEnabled } from "@/lib/accountData";
+import { postBodyHasContent, sanitizePostHtml } from "@/lib/postRichText";
 
 const categories = ["Tips", "Recipes", "Cooking Techniques"];
-
-const toolbar = [
-  { label: "Bold", Icon: BoldIcon },
-  { label: "Italic", Icon: ItalicIcon },
-  { label: "Underline", Icon: UnderlineIcon },
-  { label: "Align left", Icon: AlignLeftIcon },
-  { label: "Align center", Icon: AlignCenterIcon },
-  { label: "Align right", Icon: AlignRightIcon },
-  { label: "Insert link", Icon: LinkIcon },
-  { label: "Insert image", Icon: ImageIcon },
-];
 
 export default function PostEditorScreen({
   postId,
@@ -141,9 +122,9 @@ export default function PostEditorScreen({
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const nextTitle = title.trim();
-    const nextBody = body.trim();
+    const nextBody = sanitizePostHtml(body);
     const nextCategory = category.trim();
-    if (!nextTitle || !nextBody || !nextCategory) return;
+    if (!nextTitle || !postBodyHasContent(nextBody) || !nextCategory) return;
 
     const linked = linkedRecipeId
       ? ownRecipes.find((r) => r.id === linkedRecipeId)
@@ -305,30 +286,12 @@ export default function PostEditorScreen({
           <label htmlFor="post-content" className="section-title">
             Post Content <span className="font-bold">*</span>
           </label>
-          <div className="flex flex-col overflow-hidden rounded border border-line">
-            <div className="flex items-center justify-between border-b border-line bg-app p-2.5 text-ink-secondary">
-              {toolbar.map(({ label, Icon }) => (
-                <button
-                  key={label}
-                  type="button"
-                  aria-label={label}
-                  className="grid size-6 place-items-center transition-colors hover:text-brand"
-                >
-                  <Icon className="size-4" />
-                </button>
-              ))}
-            </div>
-            <textarea
-              id="post-content"
-              name="content"
-              rows={10}
-              required
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              placeholder="Content must be at least 100 words."
-              className="resize-none bg-surface p-2.5 text-base text-ink outline-none placeholder:italic placeholder:text-muted"
-            />
-          </div>
+          <PostRichTextEditor
+            id="post-content"
+            value={body}
+            onChange={setBody}
+            placeholder="Write your post…"
+          />
           <p className="text-xs font-semibold text-muted">
             Review your post to ensure clarity and engagement!
           </p>

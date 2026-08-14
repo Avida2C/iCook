@@ -68,6 +68,7 @@ import {
   FaAlignCenter,
   FaAlignRight,
   FaLink,
+  FaPalette,
 } from "react-icons/fa";
 import { BiCommentDots, BiCommentEdit } from "react-icons/bi";
 import { FcGoogle } from "react-icons/fc";
@@ -150,6 +151,7 @@ export const AlignLeftIcon = FaAlignLeft;
 export const AlignCenterIcon = FaAlignCenter;
 export const AlignRightIcon = FaAlignRight;
 export const LinkIcon = FaLink;
+export const ColorIcon = FaPalette;
 
 // Brand / social login
 export const GoogleIcon = FcGoogle;

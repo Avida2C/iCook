@@ -32,6 +32,7 @@ import {
   type CatalogRecipe,
 } from "@/components/recipes/SavedRecipesProvider";
 import { absoluteAppUrl, shareContent } from "@/lib/share";
+import { plainTextFromHtml, sanitizePostHtml } from "@/lib/postRichText";
 import {
   formatRecipeCreatedDate,
   primaryCategory,
@@ -127,7 +128,7 @@ export default function PostDetailScreen({ postId }: { postId: string }) {
   const onShare = () => {
     void shareContent({
       title: post.title,
-      text: post.body,
+      text: plainTextFromHtml(post.body),
       url: absoluteAppUrl(`/post/${resolvedId}`),
     });
   };
@@ -189,9 +190,16 @@ export default function PostDetailScreen({ postId }: { postId: string }) {
                 </p>
               ) : null}
             </div>
-            <p className="mt-2 whitespace-pre-wrap text-sm leading-5 text-ink-secondary">
-              {post.body}
-            </p>
+            {/<[a-z][\s\S]*>/i.test(post.body) ? (
+              <div
+                className="post-rich-text mt-2 text-sm leading-5 text-ink-secondary"
+                dangerouslySetInnerHTML={{ __html: sanitizePostHtml(post.body) }}
+              />
+            ) : (
+              <p className="mt-2 whitespace-pre-wrap text-sm leading-5 text-ink-secondary">
+                {post.body}
+              </p>
+            )}
             {linkedIsOwn && linkedRecipe ? (
               <div className="mt-3 flex flex-col gap-2">
                 <h2 className="section-title text-lg">Linked Recipe</h2>

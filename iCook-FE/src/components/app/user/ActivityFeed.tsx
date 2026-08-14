@@ -57,10 +57,11 @@ function FeedCard({
   me: FeedUser;
 }) {
   const { resolveRecipe, getPost } = useCreatedContent();
-  const unreadDot = item.unread ? (
+  const unread = Boolean(item.unread);
+  const unreadDot = unread ? (
     <span
       className="mt-1.5 size-2 shrink-0 rounded-full bg-brand"
-      aria-label="Unread"
+      aria-label="New activity"
     />
   ) : null;
 
@@ -78,12 +79,14 @@ function FeedCard({
             {unreadDot}
           </div>
           <p className="mt-1 text-xs text-muted">{item.time}</p>
-          <div className="mt-2 flex items-center gap-2">
-            <span className="inline-flex items-center gap-1 rounded bg-brand/10 px-2 py-1 text-xs font-bold text-brand">
-              <UserAddIcon className="size-3.5" />
-              New follower
-            </span>
-          </div>
+          {unread ? (
+            <div className="mt-2 flex items-center gap-2">
+              <span className="inline-flex items-center gap-1 rounded bg-brand/10 px-2 py-1 text-xs font-bold text-brand">
+                <UserAddIcon className="size-3.5" />
+                New follower
+              </span>
+            </div>
+          ) : null}
         </div>
       </article>
     );
@@ -100,7 +103,7 @@ function FeedCard({
             <div className="flex items-start gap-2">
               <p className="min-w-0 flex-1 text-sm leading-5 text-ink">
                 <UserNameLink name={user.name} handle={user.handle} />{" "}
-                posted a new recipe
+                posted {unread ? "a new recipe" : "a recipe"}
               </p>
               {unreadDot}
             </div>
@@ -340,7 +343,7 @@ export default function ActivityFeed({
     searchQuery,
   );
 
-  const resetKey = `${searchQuery}\0${Object.entries(prefs)
+  const resetKey = `${searchQuery}\0${feed.map((item) => item.id).join(",")}\0${Object.entries(prefs)
     .map(([key, value]) => `${key}:${value ? 1 : 0}`)
     .join(",")}`;
   const { entries, loadingMore, hasMore, sentinelRef } = useInfiniteFeed({

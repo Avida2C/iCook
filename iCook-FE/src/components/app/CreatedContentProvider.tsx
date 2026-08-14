@@ -15,8 +15,11 @@ import type { FeedItem, FeedUser } from "@/components/app/user/types";
 import {
   PUBLISH_EMBARGO_MS,
   canViewerSeePublishedItem,
+  formatActivityAge,
+  isNewActivity,
   mergePublicRecipes,
 } from "@/lib/publishVisibility";
+import { plainTextFromHtml } from "@/lib/postRichText";
 import {
   CATALOG_RECIPES,
   flatIngredientsFromGroups,
@@ -334,30 +337,40 @@ function readRecipes(fallbackAuthor: string): CreatedRecipe[] {
   }
 }
 
-function postActivityItem(post: CreatedPost, user: FeedUser): FeedItem {
+function postActivityItem(
+  post: CreatedPost,
+  user: FeedUser,
+  now: number,
+): FeedItem {
   return {
     id: `my-post-${post.id}`,
     kind: "post",
     user,
-    time: "Just now",
+    time: formatActivityAge(post.createdAt, now),
+    createdAt: post.createdAt,
     postId: post.id,
     title: post.title,
-    preview: post.body.slice(0, 160),
+    preview: plainTextFromHtml(post.body).slice(0, 160),
     thumbnailUrl: post.thumbnailUrl,
-    unread: true,
+    unread: isNewActivity(post.createdAt, now),
   };
 }
 
-function recipeActivityItem(recipe: CreatedRecipe, user: FeedUser): FeedItem {
+function recipeActivityItem(
+  recipe: CreatedRecipe,
+  user: FeedUser,
+  now: number,
+): FeedItem {
   return {
     id: `my-recipe-${recipe.id}`,
     kind: "recipe",
     user,
-    time: "Just now",
+    time: formatActivityAge(recipe.createdAt, now),
+    createdAt: recipe.createdAt,
     recipeId: recipe.id,
     recipeName: recipe.name,
     preview: recipe.preview,
-    unread: true,
+    unread: isNewActivity(recipe.createdAt, now),
   };
 }
 
@@ -658,15 +671,24 @@ export function CreatedContentProvider({ children }: { children: ReactNode }) {
   );
 
   const activityItems = useMemo(
-    () => [
-      ...posts
-        .filter((post) => isOwnAuthor(post.author, me))
-        .map((post) => postActivityItem(post, me)),
-      ...recipes
-        .filter((recipe) => isOwnAuthor(recipe.author, me))
-        .map((recipe) => recipeActivityItem(recipe, me)),
-    ],
-    [posts, recipes, me],
+    () =>
+      [
+        ...posts
+          .filter((post) => isOwnAuthor(post.author, me))
+          .map((post) => ({
+            at: post.createdAt,
+            item: postActivityItem(post, me, nowTick),
+          })),
+        ...recipes
+          .filter((recipe) => isOwnAuthor(recipe.author, me))
+          .map((recipe) => ({
+            at: recipe.createdAt,
+            item: recipeActivityItem(recipe, me, nowTick),
+          })),
+      ]
+        .sort((a, b) => b.at - a.at)
+        .map(({ item }) => item),
+    [posts, recipes, me, nowTick],
   );
 
   const value = useMemo(
