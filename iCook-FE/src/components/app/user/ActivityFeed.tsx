@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useRef } from "react";
 import {
   UserAddIcon,
   HeartFillIcon,
@@ -332,8 +333,9 @@ export default function ActivityFeed({
   searchQuery?: string;
 }) {
   const me = useCurrentFeedUser();
-  const { activityItems } = useLikedPosts();
+  const { activityItems, markActivityViewed } = useLikedPosts();
   const { prefs } = useActivityFilters();
+  const wrapRef = useRef<HTMLDivElement>(null);
   const feed = searchActivityItems(
     filterActivityItems(
       items ?? activityItems,
@@ -353,6 +355,55 @@ export default function ActivityFeed({
     cycle: true,
   });
 
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    const root = wrap?.closest(".feed-stack");
+    if (!wrap || !root) return;
+
+    let scrolled = false;
+
+    const visibleIds = () => {
+      const rootRect = root.getBoundingClientRect();
+      const ids: string[] = [];
+      wrap.querySelectorAll<HTMLElement>("[data-activity-id]").forEach((el) => {
+        const id = el.dataset.activityId;
+        if (!id) return;
+        const rect = el.getBoundingClientRect();
+        if (rect.bottom > rootRect.top && rect.top < rootRect.bottom) {
+          ids.push(id);
+        }
+      });
+      return ids;
+    };
+
+    const observer = new IntersectionObserver(
+      (observerEntries) => {
+        if (!scrolled) return;
+        const ids = observerEntries
+          .filter((entry) => entry.isIntersecting)
+          .map((entry) => (entry.target as HTMLElement).dataset.activityId)
+          .filter((id): id is string => Boolean(id));
+        if (ids.length > 0) markActivityViewed(ids);
+      },
+      { root, threshold: 0.35 },
+    );
+
+    wrap.querySelectorAll("[data-activity-id]").forEach((el) => observer.observe(el));
+
+    const onScroll = () => {
+      if (!scrolled && root.scrollTop < 8) return;
+      scrolled = true;
+      const ids = visibleIds();
+      if (ids.length > 0) markActivityViewed(ids);
+    };
+
+    root.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      observer.disconnect();
+      root.removeEventListener("scroll", onScroll);
+    };
+  }, [entries, markActivityViewed]);
+
   if (feed.length === 0) {
     return (
       <p className="feed-card px-3 py-8 text-center text-base text-muted">
@@ -364,15 +415,17 @@ export default function ActivityFeed({
   }
 
   return (
-    <>
+    <div ref={wrapRef} className="contents">
       {entries.map(({ key, item }) => (
-        <FeedCard key={key} item={item} me={me} />
+        <div key={key} data-activity-id={item.id}>
+          <FeedCard item={item} me={me} />
+        </div>
       ))}
       <InfiniteFeedSentinel
         sentinelRef={sentinelRef}
         loadingMore={loadingMore}
         hasMore={hasMore}
       />
-    </>
+    </div>
   );
 }

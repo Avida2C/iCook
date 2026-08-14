@@ -18,6 +18,7 @@ export const ACCOUNT_CONTENT_KEYS = [
   "icook.deletedRecipes",
   "icook.activityFilters",
   "icook.featuredRecipePrefs",
+  "icook.viewedActivity",
 ] as const;
 
 const FOLLOWERS_KEY = "icook.followers";

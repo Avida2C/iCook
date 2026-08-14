@@ -29,6 +29,10 @@ import {
   isNewActivity,
   NEW_ACTIVITY_MS,
 } from "@/lib/publishVisibility";
+import {
+  readViewedActivityIds,
+  writeViewedActivityIds,
+} from "@/lib/viewedActivity";
 
 const STORAGE_KEY = "icook.likedPosts";
 
@@ -40,6 +44,7 @@ type LikedPostsContextValue = {
   likeCount: (postId: string, baseLikes: number) => number;
   toggleLike: (post: { id: string; title: string }) => void;
   activityItems: FeedItem[];
+  markActivityViewed: (ids: string | string[]) => void;
 };
 
 const LikedPostsContext = createContext<LikedPostsContextValue | null>(null);
@@ -108,12 +113,19 @@ function youLikedRecipe(
   };
 }
 
-function withLiveAge(item: FeedItem, now: number): FeedItem {
-  if (typeof item.createdAt !== "number") return item;
+function withLiveAge(
+  item: FeedItem,
+  now: number,
+  viewedIds: Set<string>,
+): FeedItem {
+  const viewed = viewedIds.has(item.id);
+  if (typeof item.createdAt !== "number") {
+    return viewed && item.unread ? { ...item, unread: false } : item;
+  }
   return {
     ...item,
     time: formatActivityAge(item.createdAt, now),
-    unread: isNewActivity(item.createdAt, now),
+    unread: !viewed && isNewActivity(item.createdAt, now),
   };
 }
 
@@ -125,6 +137,7 @@ function buildActivity(
   commentActivity: FeedItem[],
   followingActivity: FeedItem[],
   includeSeededSocial: boolean,
+  viewedIds: Set<string>,
   now: number,
 ): FeedItem[] {
   const seededFollows = includeSeededSocial
@@ -144,7 +157,7 @@ function buildActivity(
   ]) {
     if (seen.has(item.id)) continue;
     seen.add(item.id);
-    merged.push(withLiveAge(item, now));
+    merged.push(withLiveAge(item, now, viewedIds));
   }
   return merged.sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
 }
@@ -161,12 +174,14 @@ export function LikedPostsProvider({ children }: { children: ReactNode }) {
   const [likedPosts, setLikedPosts] = useState<LikedPost[]>([]);
   const [seeded, setSeeded] = useState(true);
   const [following, setFollowing] = useState<string[]>([]);
+  const [viewedIds, setViewedIds] = useState<Set<string>>(() => new Set());
   const [nowTick, setNowTick] = useState(() => Date.now());
 
   useEffect(() => {
     setLikedPosts(readLikedPosts());
     setSeeded(isProfileSeedEnabled());
     setFollowing(readFollowing());
+    setViewedIds(readViewedActivityIds());
   }, []);
 
   useEffect(() => {
@@ -240,6 +255,7 @@ export function LikedPostsProvider({ children }: { children: ReactNode }) {
         commentActivity,
         followingActivity,
         seeded,
+        viewedIds,
         nowTick,
       ),
     [
@@ -250,9 +266,27 @@ export function LikedPostsProvider({ children }: { children: ReactNode }) {
       commentActivity,
       followingActivity,
       seeded,
+      viewedIds,
       nowTick,
     ],
   );
+
+  const markActivityViewed = useCallback((ids: string | string[]) => {
+    const list = Array.isArray(ids) ? ids : [ids];
+    if (list.length === 0) return;
+    setViewedIds((prev) => {
+      let changed = false;
+      const next = new Set(prev);
+      for (const id of list) {
+        if (!id || next.has(id)) continue;
+        next.add(id);
+        changed = true;
+      }
+      if (!changed) return prev;
+      writeViewedActivityIds(next);
+      return next;
+    });
+  }, []);
 
   const value = useMemo(
     () => ({
@@ -261,8 +295,9 @@ export function LikedPostsProvider({ children }: { children: ReactNode }) {
       likeCount,
       toggleLike,
       activityItems,
+      markActivityViewed,
     }),
-    [likedIds, isLiked, likeCount, toggleLike, activityItems],
+    [likedIds, isLiked, likeCount, toggleLike, activityItems, markActivityViewed],
   );
 
   return (
