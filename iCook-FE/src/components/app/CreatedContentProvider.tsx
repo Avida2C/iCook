@@ -10,8 +10,15 @@ import {
   type ReactNode,
 } from "react";
 import { useCurrentFeedUser } from "@/components/app/user/useCurrentFeedUser";
+import { isOwnAuthor } from "@/components/app/user/authors";
 import type { FeedItem, FeedUser } from "@/components/app/user/types";
 import {
+  PUBLISH_EMBARGO_MS,
+  canViewerSeePublishedItem,
+  mergePublicRecipes,
+} from "@/lib/publishVisibility";
+import {
+  CATALOG_RECIPES,
   flatIngredientsFromGroups,
   getCatalogRecipe,
   CATEGORY_THUMBNAILS,
@@ -33,6 +40,10 @@ import {
   coerceIngredientLines,
   type IngredientLine,
 } from "@/components/ingredients/ingredientCatalog";
+import {
+  readFeaturedRecipePrefs,
+  writeFeaturedRecipePrefs,
+} from "@/lib/featuredRecipePrefs";
 
 const POSTS_KEY = "icook.createdPosts";
 const RECIPES_KEY = "icook.createdRecipes";
@@ -42,16 +53,22 @@ export type CreatedPost = {
   id: string;
   title: string;
   body: string;
+  /** Creator handle — used to keep new posts private for an hour. */
+  author: string;
   category?: string;
   thumbnailUrl?: string;
   /** Optional recipe linked from the creator's own recipes. */
   linkedRecipeId?: string;
   createdAt: number;
+  /** When true, only the creator can see the post (no public publish). */
+  isPrivate?: boolean;
 };
 
 export type CreatedRecipe = Recipe & {
   preview: string;
   createdAt: number;
+  /** When true, only the creator can see the recipe (no public publish). */
+  isPrivate?: boolean;
 };
 
 export type RecipeInput = {
@@ -74,6 +91,12 @@ export type RecipeInput = {
 type CreatedContentContextValue = {
   posts: CreatedPost[];
   recipes: CreatedRecipe[];
+  /** Created posts the current viewer may see (own always; others after 1h). */
+  visiblePosts: CreatedPost[];
+  /** Created recipes the current viewer may see (own always; others after 1h). */
+  visibleRecipes: CreatedRecipe[];
+  /** Visible created recipes merged ahead of the static catalog. */
+  publicRecipes: Recipe[];
   publishPost: (input: {
     title: string;
     body: string;
@@ -92,14 +115,18 @@ type CreatedContentContextValue = {
     },
   ) => CreatedPost | null;
   deletePost: (id: string) => boolean;
+  setPostPrivate: (id: string, isPrivate: boolean) => boolean;
   publishRecipe: (input: RecipeInput) => CreatedRecipe;
   updateRecipe: (id: string, input: RecipeInput) => CreatedRecipe;
   deleteRecipe: (id: string) => boolean;
+  setRecipePrivate: (id: string, isPrivate: boolean) => boolean;
   /** Seeded/catalog recipe ids the user removed from their collection. */
   deletedRecipeIds: string[];
   getPost: (id: string) => CreatedPost | undefined;
   getRecipe: (id: string) => CreatedRecipe | undefined;
   resolveRecipe: (id: string) => Recipe | undefined;
+  getVisiblePost: (id: string) => CreatedPost | undefined;
+  resolveVisibleRecipe: (id: string) => Recipe | undefined;
   activityItems: FeedItem[];
 };
 
@@ -235,10 +262,11 @@ function coerceStoredRecipe(raw: unknown, fallbackAuthor: string): CreatedRecipe
           ? r.description
           : `A new ${primaryCategory({ categories })} recipe.`,
     createdAt: typeof r.createdAt === "number" ? r.createdAt : Date.now(),
+    isPrivate: r.isPrivate === true,
   };
 }
 
-function coerceStoredPost(raw: unknown): CreatedPost | null {
+function coerceStoredPost(raw: unknown, fallbackAuthor: string): CreatedPost | null {
   if (!raw || typeof raw !== "object") return null;
   const p = raw as Record<string, unknown>;
   if (typeof p.id !== "string" || typeof p.title !== "string") return null;
@@ -247,12 +275,14 @@ function coerceStoredPost(raw: unknown): CreatedPost | null {
     id: p.id,
     title: p.title,
     body: p.body,
+    author: typeof p.author === "string" ? p.author : fallbackAuthor,
     category: typeof p.category === "string" ? p.category : undefined,
     thumbnailUrl:
       typeof p.thumbnailUrl === "string" ? p.thumbnailUrl : undefined,
     linkedRecipeId:
       typeof p.linkedRecipeId === "string" ? p.linkedRecipeId : undefined,
     createdAt: typeof p.createdAt === "number" ? p.createdAt : Date.now(),
+    isPrivate: p.isPrivate === true,
   };
 }
 
@@ -276,14 +306,14 @@ function writeDeletedRecipeIds(ids: string[]) {
   }
 }
 
-function readPosts(): CreatedPost[] {
+function readPosts(fallbackAuthor: string): CreatedPost[] {
   try {
     const raw = localStorage.getItem(POSTS_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
     return parsed
-      .map(coerceStoredPost)
+      .map((item) => coerceStoredPost(item, fallbackAuthor))
       .filter((p): p is CreatedPost => Boolean(p));
   } catch {
     return [];
@@ -336,12 +366,24 @@ export function CreatedContentProvider({ children }: { children: ReactNode }) {
   const [posts, setPosts] = useState<CreatedPost[]>([]);
   const [recipes, setRecipes] = useState<CreatedRecipe[]>([]);
   const [deletedRecipeIds, setDeletedRecipeIds] = useState<string[]>([]);
+  const [nowTick, setNowTick] = useState(() => Date.now());
 
   useEffect(() => {
-    setPosts(readPosts());
+    setPosts(readPosts(me.handle));
     setRecipes(readRecipes(me.handle));
     setDeletedRecipeIds(readDeletedRecipeIds());
   }, [me.handle]);
+
+  useEffect(() => {
+    const nextExpiry = [...posts, ...recipes]
+      .map((item) => item.createdAt + PUBLISH_EMBARGO_MS)
+      .filter((at) => at > nowTick)
+      .sort((a, b) => a - b)[0];
+    if (nextExpiry == null) return;
+    const delay = Math.max(nextExpiry - Date.now(), 50);
+    const id = window.setTimeout(() => setNowTick(Date.now()), delay);
+    return () => window.clearTimeout(id);
+  }, [posts, recipes, nowTick]);
 
   const persistPosts = useCallback((next: CreatedPost[]) => {
     setPosts(next);
@@ -374,15 +416,17 @@ export function CreatedContentProvider({ children }: { children: ReactNode }) {
         id: `p-${Date.now()}`,
         title: input.title.trim(),
         body: input.body.trim(),
+        author: me.handle,
         category: input.category,
         thumbnailUrl: input.thumbnailUrl?.trim() || undefined,
         linkedRecipeId,
         createdAt: Date.now(),
+        isPrivate: false,
       };
       persistPosts([post, ...posts]);
       return post;
     },
-    [persistPosts, posts],
+    [persistPosts, posts, me.handle],
   );
 
   const updatePost = useCallback(
@@ -422,6 +466,16 @@ export function CreatedContentProvider({ children }: { children: ReactNode }) {
     [persistPosts, posts],
   );
 
+  const setPostPrivate = useCallback(
+    (id: string, isPrivate: boolean) => {
+      const existing = posts.find((p) => p.id === id);
+      if (!existing) return false;
+      persistPosts(posts.map((p) => (p.id === id ? { ...p, isPrivate } : p)));
+      return true;
+    },
+    [persistPosts, posts],
+  );
+
   const publishRecipe = useCallback(
     (input: RecipeInput) => {
       const fields = normalizeRecipeFields(input, me.handle);
@@ -435,6 +489,7 @@ export function CreatedContentProvider({ children }: { children: ReactNode }) {
         bookmarkCount: 0,
         preview,
         createdAt: Date.now(),
+        isPrivate: false,
       };
       persistRecipes([recipe, ...recipes]);
       return recipe;
@@ -459,6 +514,7 @@ export function CreatedContentProvider({ children }: { children: ReactNode }) {
           bookmarkCount: existing.bookmarkCount,
           preview,
           createdAt: existing.createdAt,
+          isPrivate: existing.isPrivate,
         };
         persistRecipes(recipes.map((r) => (r.id === id ? updated : r)));
         return updated;
@@ -472,6 +528,7 @@ export function CreatedContentProvider({ children }: { children: ReactNode }) {
         bookmarkCount: catalog?.bookmarkCount ?? 0,
         preview,
         createdAt: Date.now(),
+        isPrivate: false,
       };
       persistRecipes([cloned, ...recipes]);
       // Restored from deleted set if user re-publishes via edit.
@@ -503,6 +560,24 @@ export function CreatedContentProvider({ children }: { children: ReactNode }) {
     [persistRecipes, recipes],
   );
 
+  const setRecipePrivate = useCallback(
+    (id: string, isPrivate: boolean) => {
+      const existing = recipes.find((r) => r.id === id);
+      if (!existing) return false;
+      persistRecipes(
+        recipes.map((r) => (r.id === id ? { ...r, isPrivate } : r)),
+      );
+      if (isPrivate) {
+        const prefs = readFeaturedRecipePrefs(me.handle);
+        if (prefs.recipeId === id) {
+          writeFeaturedRecipePrefs(me.handle, { ...prefs, recipeId: null });
+        }
+      }
+      return true;
+    },
+    [persistRecipes, recipes, me.handle],
+  );
+
   const getPost = useCallback(
     (id: string) => posts.find((p) => p.id === id),
     [posts],
@@ -518,10 +593,78 @@ export function CreatedContentProvider({ children }: { children: ReactNode }) {
     [getRecipe],
   );
 
+  const visiblePosts = useMemo(
+    () =>
+      posts.filter((post) =>
+        canViewerSeePublishedItem(
+          post.createdAt,
+          post.author,
+          me,
+          nowTick,
+          post.isPrivate,
+        ),
+      ),
+    [posts, me, nowTick],
+  );
+
+  const visibleRecipes = useMemo(
+    () =>
+      recipes.filter((recipe) =>
+        canViewerSeePublishedItem(
+          recipe.createdAt,
+          recipe.author,
+          me,
+          nowTick,
+          recipe.isPrivate,
+        ),
+      ),
+    [recipes, me, nowTick],
+  );
+
+  const publicRecipes = useMemo(
+    () =>
+      mergePublicRecipes(
+        visibleRecipes.filter((recipe) => !recipe.isPrivate),
+        CATALOG_RECIPES,
+      ),
+    [visibleRecipes],
+  );
+
+  const getVisiblePost = useCallback(
+    (id: string) => visiblePosts.find((p) => p.id === id),
+    [visiblePosts],
+  );
+
+  const resolveVisibleRecipe = useCallback(
+    (id: string) => {
+      const created = getRecipe(id);
+      if (created) {
+        if (
+          canViewerSeePublishedItem(
+            created.createdAt,
+            created.author,
+            me,
+            nowTick,
+            created.isPrivate,
+          )
+        ) {
+          return created;
+        }
+        return getCatalogRecipe(id);
+      }
+      return getCatalogRecipe(id);
+    },
+    [getRecipe, me, nowTick],
+  );
+
   const activityItems = useMemo(
     () => [
-      ...posts.map((post) => postActivityItem(post, me)),
-      ...recipes.map((recipe) => recipeActivityItem(recipe, me)),
+      ...posts
+        .filter((post) => isOwnAuthor(post.author, me))
+        .map((post) => postActivityItem(post, me)),
+      ...recipes
+        .filter((recipe) => isOwnAuthor(recipe.author, me))
+        .map((recipe) => recipeActivityItem(recipe, me)),
     ],
     [posts, recipes, me],
   );
@@ -530,31 +673,45 @@ export function CreatedContentProvider({ children }: { children: ReactNode }) {
     () => ({
       posts,
       recipes,
+      visiblePosts,
+      visibleRecipes,
+      publicRecipes,
       publishPost,
       updatePost,
       deletePost,
+      setPostPrivate,
       publishRecipe,
       updateRecipe,
       deleteRecipe,
+      setRecipePrivate,
       deletedRecipeIds,
       getPost,
       getRecipe,
       resolveRecipe,
+      getVisiblePost,
+      resolveVisibleRecipe,
       activityItems,
     }),
     [
       posts,
       recipes,
+      visiblePosts,
+      visibleRecipes,
+      publicRecipes,
       publishPost,
       updatePost,
       deletePost,
+      setPostPrivate,
       publishRecipe,
       updateRecipe,
       deleteRecipe,
+      setRecipePrivate,
       deletedRecipeIds,
       getPost,
       getRecipe,
       resolveRecipe,
+      getVisiblePost,
+      resolveVisibleRecipe,
       activityItems,
     ],
   );

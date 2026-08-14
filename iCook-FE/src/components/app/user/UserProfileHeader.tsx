@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { EditIcon, PostIcon } from "@/components/app/icons";
+import CreateActionBar from "@/components/app/CreateActionBar";
+import { EditIcon } from "@/components/app/icons";
 import UserAvatar from "@/components/app/UserAvatar";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { CURRENT_USER } from "./data";
@@ -44,24 +45,16 @@ export default function UserProfileHeader() {
           </div>
           <Link
             href="/settings/user"
-            className="shrink-0 rounded border border-line px-3 py-1.5 text-sm font-bold text-ink-secondary"
+            className="inline-flex shrink-0 self-start items-center gap-1.5 rounded border border-line px-3 py-1.5 text-sm font-bold text-ink-secondary"
           >
+            <EditIcon className="size-4" />
             Edit profile
           </Link>
         </div>
       </div>
 
       <div className="px-3 pb-3">
-        <div className="grid grid-cols-2 gap-2">
-          <Link href="/create/recipe" className="btn-primary">
-            <EditIcon className="size-5 shrink-0" />
-            <span className="leading-tight">Create a Recipe</span>
-          </Link>
-          <Link href="/create/post" className="btn-secondary">
-            <PostIcon className="size-5 shrink-0" />
-            <span className="leading-tight">Write a Post</span>
-          </Link>
-        </div>
+        <CreateActionBar />
       </div>
     </>
   );

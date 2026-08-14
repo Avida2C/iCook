@@ -19,12 +19,12 @@ import FeaturedRecipeBannerCta from "@/components/app/FeaturedRecipeBannerCta";
 import { recipeFeaturedDescription } from "@/components/app/FeaturedRecipeDisplay";
 import RecipeThumbnail from "@/components/app/RecipeThumbnail";
 import {
-  CATALOG_RECIPES,
   getCategoryLabel,
   useSavedRecipes,
   type CatalogRecipe,
 } from "@/components/recipes/SavedRecipesProvider";
 import { useCreatedContent } from "@/components/app/CreatedContentProvider";
+import { isPublishEmbargoed } from "@/lib/publishVisibility";
 import { absoluteAppUrl, shareContent } from "@/lib/share";
 import { isOwnAuthor, resolveAuthor } from "@/components/app/user/authors";
 import { useCurrentFeedUser } from "@/components/app/user/useCurrentFeedUser";
@@ -111,12 +111,12 @@ export default function RecipeDetailScreen({
   const router = useRouter();
   const me = useCurrentFeedUser();
   const {
-    resolveRecipe,
+    resolveVisibleRecipe,
     getRecipe,
     deleteRecipe,
-    recipes: createdRecipes,
+    publicRecipes,
   } = useCreatedContent();
-  const recipe = resolveRecipe(recipeId);
+  const recipe = resolveVisibleRecipe(recipeId);
   const { isSaved, toggleSave } = useSavedRecipes();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [ingredientsFeatured, setIngredientsFeatured] =
@@ -124,12 +124,7 @@ export default function RecipeDetailScreen({
   const [commentsFeatured, setCommentsFeatured] =
     useState<CatalogRecipe | null>(null);
 
-  const featuredPool = [
-    ...createdRecipes.filter((r) => r.id !== recipeId),
-    ...CATALOG_RECIPES.filter(
-      (r) => r.id !== recipeId && !createdRecipes.some((c) => c.id === r.id),
-    ),
-  ];
+  const featuredPool = publicRecipes.filter((r) => r.id !== recipeId);
   const featuredPoolKey = featuredPool.map((r) => r.id).join(",");
 
   useEffect(() => {
@@ -261,6 +256,15 @@ export default function RecipeDetailScreen({
                   {formatRecipeCreatedDate(createdAt)}
                 </span>
               </p>
+              {isOwner && created?.isPrivate ? (
+                <p className="text-xs italic text-muted">
+                  This recipe is private. Only you can see it.
+                </p>
+              ) : isOwner && created && isPublishEmbargoed(created.createdAt) ? (
+                <p className="text-xs italic text-muted">
+                  Only you can see this recipe for the first hour after publishing.
+                </p>
+              ) : null}
                         {tags.length > 0 ? (
             <div>
               <div className="mt-1.5 flex flex-wrap gap-1.5">

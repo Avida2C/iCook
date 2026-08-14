@@ -10,7 +10,7 @@ export type FeaturedRecipePrefs = {
 
 export const DEFAULT_FEATURED_RECIPE_PREFS: FeaturedRecipePrefs = {
   recipeId: null,
-  layout: "banner",
+  layout: "hero",
 };
 
 const STORAGE_KEY = "icook.featuredRecipePrefs";
@@ -24,8 +24,7 @@ function normalizeHandle(handle: string): string {
 function normalizePrefs(raw: unknown): FeaturedRecipePrefs {
   if (!raw || typeof raw !== "object") return { ...DEFAULT_FEATURED_RECIPE_PREFS };
   const o = raw as Record<string, unknown>;
-  const layout: FeaturedRecipeLayout =
-    o.layout === "hero" || o.layout === "banner" ? o.layout : "banner";
+  const layout: FeaturedRecipeLayout = "hero";
   const recipeId =
     typeof o.recipeId === "string" && o.recipeId.trim()
       ? o.recipeId.trim()

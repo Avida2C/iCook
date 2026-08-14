@@ -380,9 +380,9 @@ export function CommentsProvider({ children }: { children: ReactNode }) {
 
   const createdPostAuthorById = useMemo(() => {
     const map = new Map<string, string>();
-    for (const p of createdPosts) map.set(p.id, me.handle);
+    for (const p of createdPosts) map.set(p.id, p.author);
     return map;
-  }, [createdPosts, me.handle]);
+  }, [createdPosts]);
 
   const activityItems = useMemo(() => {
     const myHandles = new Set([me.handle, CURRENT_USER.handle]);

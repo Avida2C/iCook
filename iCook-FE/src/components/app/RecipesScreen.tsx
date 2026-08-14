@@ -4,8 +4,8 @@ import FeaturedRecipeBannerCta from "@/components/app/FeaturedRecipeBannerCta";
 import FeaturedRecipeHeroCta from "@/components/app/FeaturedRecipeHeroCta";
 import RecipeAuthor from "@/components/app/RecipeAuthor";
 import RecipeThumbnail from "@/components/app/RecipeThumbnail";
+import { useCreatedContent } from "@/components/app/CreatedContentProvider";
 import {
-  CATALOG_RECIPES,
   RECIPE_CATEGORIES,
   categoryHref,
   sortByMostBookmarked,
@@ -102,13 +102,14 @@ function RecipeSection({
 
 export default function RecipesScreen() {
   const { savedIds } = useSavedRecipes();
-  const mostLoved = sortByMostBookmarked(CATALOG_RECIPES, savedIds);
+  const { publicRecipes } = useCreatedContent();
+  const mostLoved = sortByMostBookmarked(publicRecipes, savedIds);
   const heroRecipe =
-    CATALOG_RECIPES.find((r) => r.id === "1") ?? mostLoved[0] ?? CATALOG_RECIPES[0];
+    publicRecipes.find((r) => r.id === "1") ?? mostLoved[0] ?? publicRecipes[0];
   const compactRecipe =
-    CATALOG_RECIPES.find((r) => r.id === "11") ??
+    publicRecipes.find((r) => r.id === "11") ??
     mostLoved.find((r) => r.id !== heroRecipe.id) ??
-    CATALOG_RECIPES[1] ??
+    publicRecipes[1] ??
     heroRecipe;
   const topLoved = mostLoved.slice(0, 3);
   const moreLoved = mostLoved.slice(3, 6);

@@ -7,7 +7,6 @@ import RecipeThumbnail from "@/components/app/RecipeThumbnail";
 import { usePantry } from "@/components/pantry/PantryProvider";
 import { COMMUNITY_AUTHORS } from "@/components/app/user/authors";
 import { CURRENT_USER } from "@/components/app/user/data";
-import { CATALOG_RECIPES } from "@/components/recipes/SavedRecipesProvider";
 import { CATALOG_POSTS } from "@/components/app/postsData";
 import { useCreatedContent } from "@/components/app/CreatedContentProvider";
 import {
@@ -72,14 +71,14 @@ export default function SearchOverlay({
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
   const { items: pantryItems } = usePantry();
-  const { posts: createdPosts } = useCreatedContent();
+  const { posts: visiblePosts, publicRecipes } = useCreatedContent();
   const pantryNames = useMemo(
     () => pantryItems.map((i) => i.name).filter((n) => n.trim()),
     [pantryItems],
   );
   const pantryMatchCount = useMemo(
-    () => rankRecipesByPantry(CATALOG_RECIPES, pantryNames).length,
-    [pantryNames],
+    () => rankRecipesByPantry(publicRecipes, pantryNames).length,
+    [pantryNames, publicRecipes],
   );
   const showPantryOption = pantryMatchCount > 0;
 
@@ -110,9 +109,9 @@ export default function SearchOverlay({
     const q = query.trim().toLowerCase();
     if (!q) return [];
 
-    const recipes: SearchHit[] = CATALOG_RECIPES.filter((r) =>
-      r.name.toLowerCase().includes(q),
-    ).map((r) => ({
+    const recipes: SearchHit[] = publicRecipes
+      .filter((r) => r.name.toLowerCase().includes(q))
+      .map((r) => ({
       kind: "recipe" as const,
       id: r.id,
       name: r.name,
@@ -133,8 +132,8 @@ export default function SearchOverlay({
         thumbnailUrl: p.thumbnailUrl,
       }));
 
-    const createdPostHits: SearchHit[] = createdPosts
-      .filter((p) => p.title.toLowerCase().includes(q))
+    const createdPostHits: SearchHit[] = visiblePosts
+      .filter((p) => !p.isPrivate && p.title.toLowerCase().includes(q))
       .map((p) => ({
         kind: "post" as const,
         id: p.id,
@@ -150,7 +149,7 @@ export default function SearchOverlay({
     );
 
     return [...recipes, ...createdPostHits, ...catalogPostHits, ...people];
-  }, [query, createdPosts]);
+  }, [query, visiblePosts, publicRecipes]);
 
   return (
     <div

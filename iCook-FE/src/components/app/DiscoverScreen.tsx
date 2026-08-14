@@ -21,13 +21,15 @@ import {
   type CatalogRecipe,
 } from "@/components/recipes/SavedRecipesProvider";
 import { primaryCategory } from "@/components/recipes/recipesData";
-import { withLiveProfile } from "@/components/app/user/authors";
+import { useCreatedContent } from "@/components/app/CreatedContentProvider";
+import { CATALOG_POSTS } from "@/components/app/postsData";
+import { formatPublishAge } from "@/lib/publishVisibility";
+import { resolveAuthor, withLiveProfile } from "@/components/app/user/authors";
 import { useCurrentFeedUser } from "@/components/app/user/useCurrentFeedUser";
 import type { FeedUser } from "@/components/app/user/types";
 import { absoluteAppUrl, shareContent } from "@/lib/share";
 import { useInfiniteFeed } from "@/lib/useInfiniteFeed";
 import { userProfilePath } from "@/lib/userProfile";
-import { CATALOG_POSTS } from "@/components/app/postsData";
 
 const FEATURED_EVERY = 4;
 /** Roughly one viewport of feed cards per load. */
@@ -283,8 +285,11 @@ function AuthorLabel({ user }: { user: FeedUser }) {
 }
 
 function RecipeFeedCard({ item }: { item: Extract<CommunityItem, { kind: "recipe" }> }) {
+  const { publicRecipes } = useCreatedContent();
   const recipe =
-    CATALOG_RECIPES.find((r) => r.id === item.recipeId) ?? CATALOG_RECIPES[0];
+    publicRecipes.find((r) => r.id === item.recipeId) ??
+    CATALOG_RECIPES.find((r) => r.id === item.recipeId) ??
+    CATALOG_RECIPES[0];
   const { isSaved, toggleSave } = useSavedRecipes();
   const saved = isSaved(recipe.id);
   const likes = item.likes + (saved ? 1 : 0);
@@ -440,11 +445,48 @@ function PostFeedCard({ item }: { item: Extract<CommunityItem, { kind: "post" }>
 }
 
 export default function DiscoverScreen() {
+  const me = useCurrentFeedUser();
+  const { visiblePosts, visibleRecipes, publicRecipes } = useCreatedContent();
   const [featuredSlots, setFeaturedSlots] = useState<CatalogRecipe[]>([]);
+
+  const feed = useMemo(() => {
+    const createdItems: CommunityItem[] = [
+      ...visiblePosts
+        .filter((post) => !post.isPrivate)
+        .map((post) => ({
+        id: `created-post-${post.id}`,
+        kind: "post" as const,
+        user: resolveAuthor(post.author, me),
+        time: formatPublishAge(post.createdAt),
+        postId: post.id,
+        title: post.title,
+        preview: post.body,
+        likes: 0,
+        comments: 0,
+        thumbnailUrl: post.thumbnailUrl,
+      })),
+      ...visibleRecipes
+        .filter((recipe) => !recipe.isPrivate)
+        .map((recipe) => ({
+        id: `created-recipe-${recipe.id}`,
+        kind: "recipe" as const,
+        user: resolveAuthor(recipe.author, me),
+        time: formatPublishAge(recipe.createdAt),
+        recipeId: recipe.id,
+        recipeName: recipe.name,
+        preview: recipe.preview || recipe.description,
+        likes: recipe.bookmarkCount,
+        comments: 0,
+      })),
+    ];
+    return [...createdItems, ...COMMUNITY_FEED];
+  }, [visiblePosts, visibleRecipes, me]);
+
   const { entries, loadingMore, hasMore, sentinelRef } = useInfiniteFeed({
-    items: COMMUNITY_FEED,
+    items: feed,
     pageSize: PAGE_SIZE,
     cycle: true,
+    resetKey: feed.map((item) => item.id).join(","),
   });
 
   const featuredNeeded = useMemo(() => {
@@ -460,13 +502,16 @@ export default function DiscoverScreen() {
       if (featuredNeeded <= prev.length) return prev;
       const needed = featuredNeeded - prev.length;
       const used = new Set(prev.map((r) => r.id));
-      const pool = CATALOG_RECIPES.filter((r) => !used.has(r.id));
+      const pool = publicRecipes.filter((r) => !used.has(r.id));
       return [
         ...prev,
-        ...pickFeaturedSlots(needed, pool.length > 0 ? pool : CATALOG_RECIPES),
+        ...pickFeaturedSlots(
+          needed,
+          pool.length > 0 ? pool : publicRecipes,
+        ),
       ];
     });
-  }, [featuredNeeded]);
+  }, [featuredNeeded, publicRecipes]);
 
   let postsSeen = 0;
 

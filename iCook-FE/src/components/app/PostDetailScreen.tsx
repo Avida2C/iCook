@@ -14,6 +14,7 @@ import {
 import { useLikedPosts } from "@/components/app/LikedPostsProvider";
 import { useCreatedContent } from "@/components/app/CreatedContentProvider";
 import { useComments } from "@/components/app/CommentsProvider";
+import { isPublishEmbargoed } from "@/lib/publishVisibility";
 import CommentsSection from "@/components/app/CommentsSection";
 import ContentCreatorCard from "@/components/app/ContentCreatorCard";
 import FeaturedRecipeBannerCta from "@/components/app/FeaturedRecipeBannerCta";
@@ -27,7 +28,6 @@ import {
 } from "@/components/app/user/authors";
 import { useCurrentFeedUser } from "@/components/app/user/useCurrentFeedUser";
 import {
-  CATALOG_RECIPES,
   getCategoryLabel,
   type CatalogRecipe,
 } from "@/components/recipes/SavedRecipesProvider";
@@ -46,28 +46,21 @@ export default function PostDetailScreen({ postId }: { postId: string }) {
   const router = useRouter();
   const me = useCurrentFeedUser();
   const {
-    getPost,
-    resolveRecipe,
-    recipes: createdRecipes,
+    getVisiblePost,
+    resolveVisibleRecipe,
+    publicRecipes,
     deletePost,
   } = useCreatedContent();
-  const created = getPost(postId);
+  const created = getVisiblePost(postId);
   const catalog = CATALOG_POSTS[postId];
   const resolvedId = created?.id ?? postId;
-  const isOwner = Boolean(created);
+  const isOwner = Boolean(created && isOwnAuthor(created.author, me));
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [commentsFeatured, setCommentsFeatured] =
     useState<CatalogRecipe | null>(null);
 
   const linkedExcludeId = created?.linkedRecipeId;
-  const featuredPool = [
-    ...createdRecipes.filter((r) => r.id !== linkedExcludeId),
-    ...CATALOG_RECIPES.filter(
-      (r) =>
-        r.id !== linkedExcludeId &&
-        !createdRecipes.some((c) => c.id === r.id),
-    ),
-  ];
+  const featuredPool = publicRecipes.filter((r) => r.id !== linkedExcludeId);
   const featuredPoolKey = featuredPool.map((r) => r.id).join(",");
 
   useEffect(() => {
@@ -99,7 +92,7 @@ export default function PostDetailScreen({ postId }: { postId: string }) {
         title: created.title,
         body: created.body,
         category: created.category || "Tips",
-        user: me,
+        user: resolveAuthor(created.author, me),
         thumbnailUrl: created.thumbnailUrl,
         linkedRecipeId: created.linkedRecipeId,
       }
@@ -115,12 +108,11 @@ export default function PostDetailScreen({ postId }: { postId: string }) {
   const createdAt = created?.createdAt ?? catalogPostCreatedAt(resolvedId);
 
   const linkedRecipe = post.linkedRecipeId
-    ? resolveRecipe(post.linkedRecipeId)
+    ? resolveVisibleRecipe(post.linkedRecipeId)
     : undefined;
   const linkedIsOwn =
     linkedRecipe != null &&
-    (createdRecipes.some((r) => r.id === linkedRecipe.id) ||
-      isOwnAuthor(linkedRecipe.author, me) ||
+    (isOwnAuthor(linkedRecipe.author, me) ||
       linkedRecipe.author === post.user.handle);
 
   const thumbnailUrl =
@@ -187,6 +179,15 @@ export default function PostDetailScreen({ postId }: { postId: string }) {
                   {formatRecipeCreatedDate(createdAt)}
                 </span>
               </p>
+              {isOwner && created?.isPrivate ? (
+                <p className="text-xs italic text-muted">
+                  This post is private. Only you can see it.
+                </p>
+              ) : isOwner && created && isPublishEmbargoed(created.createdAt) ? (
+                <p className="text-xs italic text-muted">
+                  Only you can see this post for the first hour after publishing.
+                </p>
+              ) : null}
             </div>
             <p className="mt-2 whitespace-pre-wrap text-sm leading-5 text-ink-secondary">
               {post.body}

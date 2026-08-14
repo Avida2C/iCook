@@ -10,6 +10,7 @@ import UserAvatar from "@/components/app/UserAvatar";
 import { useCreatedContent } from "@/components/app/CreatedContentProvider";
 import { MessageIcon, UserAddIcon, UserCheckIcon, UsersIcon } from "@/components/app/icons";
 import {
+  isOwnAuthor,
   normalizeAuthorKey,
   resolveAuthor,
 } from "@/components/app/user/authors";
@@ -78,6 +79,7 @@ export default function PublicProfileScreen({ handle }: { handle: string }) {
   const me = useCurrentFeedUser();
   const {
     recipes: createdRecipes,
+    visibleRecipes,
     deletedRecipeIds,
     getRecipe,
   } = useCreatedContent();
@@ -133,8 +135,13 @@ export default function PublicProfileScreen({ handle }: { handle: string }) {
     const deleted = new Set(deletedRecipeIds);
 
     if (isSelf) {
-      const createdIds = new Set(createdRecipes.map((r) => r.id));
-      const own = createdRecipes.filter((r) => !deleted.has(r.id));
+      const own = createdRecipes.filter(
+        (r) =>
+          isOwnAuthor(r.author, me) &&
+          !deleted.has(r.id) &&
+          !r.isPrivate,
+      );
+      const createdIds = new Set(own.map((r) => r.id));
       if (!includeSeeded) return own;
       return [
         ...own,
@@ -145,9 +152,10 @@ export default function PublicProfileScreen({ handle }: { handle: string }) {
     }
 
     // Other users: created recipes authored by them, else catalog by handle.
-    const authoredCreated = createdRecipes.filter(
+    const authoredCreated = visibleRecipes.filter(
       (r) =>
         !deleted.has(r.id) &&
+        !r.isPrivate &&
         normalizeAuthorKey(r.author) === profileHandle,
     );
     if (authoredCreated.length > 0) return authoredCreated;
@@ -159,8 +167,10 @@ export default function PublicProfileScreen({ handle }: { handle: string }) {
     isSelf,
     includeSeeded,
     createdRecipes,
+    visibleRecipes,
     deletedRecipeIds,
     profileHandle,
+    me,
   ]);
 
   const featuredRecipe = useMemo(() => {
@@ -170,7 +180,10 @@ export default function PublicProfileScreen({ handle }: { handle: string }) {
       const fromCreated = getRecipe(prefs.recipeId);
       if (
         fromCreated &&
-        (isSelf || normalizeAuthorKey(fromCreated.author) === profileHandle)
+        !fromCreated.isPrivate &&
+        (isSelf ||
+          (visibleRecipes.some((r) => r.id === fromCreated.id) &&
+            normalizeAuthorKey(fromCreated.author) === profileHandle))
       ) {
         return fromCreated;
       }
@@ -188,7 +201,7 @@ export default function PublicProfileScreen({ handle }: { handle: string }) {
     }
 
     return null;
-  }, [prefs.recipeId, profileRecipes, getRecipe, isSelf, profileHandle]);
+  }, [prefs.recipeId, profileRecipes, getRecipe, isSelf, profileHandle, visibleRecipes]);
 
   const otherRecipes = useMemo(() => {
     const featuredId = featuredRecipe?.id;
@@ -289,10 +302,7 @@ export default function PublicProfileScreen({ handle }: { handle: string }) {
         </section>
 
         {featuredRecipe ? (
-          <FeaturedRecipeDisplay
-            recipe={featuredRecipe}
-            layout={prefs.layout}
-          />
+          <FeaturedRecipeDisplay recipe={featuredRecipe} />
         ) : null}
 
         {moreRecipes.length > 0 ? (

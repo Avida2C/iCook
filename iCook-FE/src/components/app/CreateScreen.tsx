@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { EditIcon, PostIcon, ChevronRightIcon } from "@/components/app/icons";
+import CreateActionBar from "@/components/app/CreateActionBar";
+import { ChevronRightIcon } from "@/components/app/icons";
 
 const guidelines = [
   "Be respectful in your language and avoid inappropriate content.",
@@ -26,15 +26,7 @@ export default function CreateScreen() {
             </p>
           </div>
 
-          <Link href="/create/recipe" className="btn-primary-lg gap-3">
-            <EditIcon className="size-5" />
-            Create a Recipe
-          </Link>
-
-          <Link href="/create/post" className="btn-primary-lg gap-3">
-            <PostIcon className="size-5" />
-            Write a Post
-          </Link>
+          <CreateActionBar />
 
           <div className="flex flex-col gap-3 border-t border-line pt-4">
             <button

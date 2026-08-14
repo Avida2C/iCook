@@ -52,6 +52,7 @@ import {
   FiEyeOff,
   FiSmile,
   FiFlag,
+  FiList,
 } from "react-icons/fi";
 import {
   FaPlay,
@@ -110,6 +111,7 @@ export const ChevronUpIcon = FiChevronUp;
 export const ChevronDownIcon = FiChevronDown;
 export const PlusIcon = FiPlus;
 export const FilterIcon = FiFilter;
+export const ListIcon = FiList;
 
 // Security / login
 export const ShieldIcon = FiShield;

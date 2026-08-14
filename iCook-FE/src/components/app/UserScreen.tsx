@@ -8,6 +8,8 @@ import {
 } from "@/components/app/UserCollectionScreens";
 import { useLikedPosts } from "@/components/app/LikedPostsProvider";
 import { useCreatedContent } from "@/components/app/CreatedContentProvider";
+import { isOwnAuthor } from "@/components/app/user/authors";
+import { useCurrentFeedUser } from "@/components/app/user/useCurrentFeedUser";
 import { useSavedRecipes } from "@/components/recipes/SavedRecipesProvider";
 import ActivityFeed from "@/components/app/user/ActivityFeed";
 import ActivityFilterPanel from "@/components/app/user/ActivityFilterPanel";
@@ -27,13 +29,14 @@ import {
 } from "@/lib/accountData";
 
 export default function UserScreen() {
+  const me = useCurrentFeedUser();
   const [tab, setTab] = useState<MeTab>("activity");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [activityQuery, setActivityQuery] = useState("");
   const [followers, setFollowers] = useState<string[]>([]);
   const [following, setFollowing] = useState<string[]>([]);
   const [seededRecipes, setSeededRecipes] = useState(true);
-  const { savedRecipes } = useSavedRecipes();
+  const { savedIds } = useSavedRecipes();
   const { activityItems } = useLikedPosts();
   const { recipes: createdRecipes } = useCreatedContent();
   const { prefs } = useActivityFilters();
@@ -53,8 +56,9 @@ export default function UserScreen() {
   const tabCounts: Record<MeTab, number> = {
     activity: visibleActivity.filter((item) => item.unread).length,
     recipes:
-      createdRecipes.length + (seededRecipes ? MY_RECIPES.length : 0),
-    saved: savedRecipes.length,
+      createdRecipes.filter((r) => isOwnAuthor(r.author, me)).length +
+      (seededRecipes ? MY_RECIPES.length : 0),
+    saved: savedIds.length,
     followers: followers.length,
     following: following.length,
   };

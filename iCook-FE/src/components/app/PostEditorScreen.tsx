@@ -17,6 +17,8 @@ import { useCreatedContent } from "@/components/app/CreatedContentProvider";
 import ThumbnailUploadField from "@/components/app/ThumbnailUploadField";
 import RecipeThumbnail from "@/components/app/RecipeThumbnail";
 import { MY_RECIPES } from "@/components/app/UserCollectionScreens";
+import { isOwnAuthor } from "@/components/app/user/authors";
+import { useCurrentFeedUser } from "@/components/app/user/useCurrentFeedUser";
 import { isProfileSeedEnabled } from "@/lib/accountData";
 import {
   primaryCategory,
@@ -43,6 +45,7 @@ export default function PostEditorScreen({
   postId?: string;
 }) {
   const router = useRouter();
+  const me = useCurrentFeedUser();
   const {
     publishPost,
     updatePost,
@@ -86,7 +89,7 @@ export default function PostEditorScreen({
     }
     if (!storageReady) return;
     const post = getPost(postId);
-    if (!post) {
+    if (!post || !isOwnAuthor(post.author, me)) {
       setMissing(true);
       setReady(true);
       return;
@@ -99,15 +102,16 @@ export default function PostEditorScreen({
     setCustomThumbnail(Boolean(post.thumbnailUrl && !post.linkedRecipeId));
     setMissing(false);
     setReady(true);
-  }, [postId, getPost, storageReady]);
+  }, [postId, getPost, storageReady, me]);
 
   const ownRecipes = useMemo(() => {
-    const createdIds = new Set(createdRecipes.map((r) => r.id));
+    const mine = createdRecipes.filter((r) => isOwnAuthor(r.author, me));
+    const createdIds = new Set(mine.map((r) => r.id));
     const seeded = includeSeeded
       ? MY_RECIPES.filter((r) => !createdIds.has(r.id))
       : [];
-    return [...createdRecipes, ...seeded] as Recipe[];
-  }, [createdRecipes, includeSeeded]);
+    return [...mine, ...seeded] as Recipe[];
+  }, [createdRecipes, includeSeeded, me]);
 
   const linkedRecipe = useMemo(
     () => ownRecipes.find((r) => r.id === linkedRecipeId),

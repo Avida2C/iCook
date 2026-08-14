@@ -8,9 +8,9 @@ import { HeartIcon, HeartFillIcon } from "@/components/app/icons";
 import InfiniteFeedSentinel from "@/components/app/InfiniteFeedSentinel";
 import RecipeAuthor from "@/components/app/RecipeAuthor";
 import RecipeThumbnail from "@/components/app/RecipeThumbnail";
+import { useCreatedContent } from "@/components/app/CreatedContentProvider";
 import { usePantry } from "@/components/pantry/PantryProvider";
 import {
-  CATALOG_RECIPES,
   filterRecipesByCategory,
   getCategoryLabel,
   sortByMostBookmarked,
@@ -84,15 +84,16 @@ export default function MoreRecipesScreen({
   sort?: string;
 }) {
   const { savedIds } = useSavedRecipes();
+  const { publicRecipes } = useCreatedContent();
   const { items: pantryItems } = usePantry();
   const byLoved = sort === "loved";
   const byPantry = sort === "pantry";
 
   const pantryNames = pantryItems.map((i) => i.name).filter((n) => n.trim());
-  const scoped = filterRecipesByCategory(CATALOG_RECIPES, category);
+  const scoped = filterRecipesByCategory(publicRecipes, category);
 
   const recipes: CatalogRecipe[] = byPantry
-    ? rankRecipesByPantry(CATALOG_RECIPES, pantryNames)
+    ? rankRecipesByPantry(publicRecipes, pantryNames)
     : byLoved
       ? sortByMostBookmarked(scoped, savedIds)
       : scoped;
