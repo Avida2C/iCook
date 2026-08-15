@@ -1,6 +1,11 @@
 import Link from "next/link";
 import UserAvatar from "@/components/app/UserAvatar";
 import UserNameLink from "@/components/app/UserNameLink";
+import {
+  MessageIcon,
+  UserAddIcon,
+  UserCheckIcon,
+} from "@/components/app/icons";
 import { resolveAuthor } from "@/components/app/user/authors";
 import { messagePath } from "@/components/app/messagesData";
 import { userProfilePath } from "@/lib/userProfile";
@@ -49,28 +54,38 @@ export default function PeoplePanel({
                   </Link>
                 </p>
               </div>
-              <Link
-                href={messagePath(person.handle)}
-                aria-label={`Message ${person.name}`}
-                className="shrink-0 rounded border border-line px-2.5 py-1.5 text-xs font-bold text-ink-secondary"
-              >
-                Message
-              </Link>
-              <button
-                type="button"
-                onClick={() => onToggleFollow(name)}
-                aria-label={
-                  isFollowing ? `Unfollow ${person.name}` : `Follow ${person.name}`
-                }
-                aria-pressed={isFollowing}
-                className={
-                  isFollowing
-                    ? "shrink-0 rounded border-2 border-brand bg-surface px-2.5 py-1.5 text-xs font-bold text-brand"
-                    : "shrink-0 rounded bg-brand px-2.5 py-1.5 text-xs font-bold text-white hover:bg-brand-hover"
-                }
-              >
-                {isFollowing ? "Following" : "Follow"}
-              </button>
+              <div className="flex shrink-0 flex-col items-stretch gap-1">
+                <Link
+                  href={messagePath(person.handle)}
+                  aria-label={`Message ${person.name}`}
+                  className="inline-flex items-center justify-center gap-1 rounded border border-line px-2 py-1.5 text-xs font-bold text-ink-secondary"
+                >
+                  <MessageIcon className="size-3.5 shrink-0" />
+                  Message
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => onToggleFollow(name)}
+                  aria-label={
+                    isFollowing
+                      ? `Unfollow ${person.name}`
+                      : `Follow ${person.name}`
+                  }
+                  aria-pressed={isFollowing}
+                  className={
+                    isFollowing
+                      ? "inline-flex items-center justify-center gap-1 rounded border-2 border-brand bg-surface px-2 py-1.5 text-xs font-bold text-brand"
+                      : "inline-flex items-center justify-center gap-1 rounded bg-brand px-2 py-1.5 text-xs font-bold text-white hover:bg-brand-hover"
+                  }
+                >
+                  {isFollowing ? (
+                    <UserCheckIcon className="size-3.5 shrink-0" />
+                  ) : (
+                    <UserAddIcon className="size-3.5 shrink-0" />
+                  )}
+                  {isFollowing ? "Following" : "Follow"}
+                </button>
+              </div>
             </li>
           );
         })

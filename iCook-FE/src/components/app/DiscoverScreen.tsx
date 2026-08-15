@@ -1,36 +1,19 @@
 "use client";
 
 import { Fragment, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import {
-  HeartIcon,
-  HeartFillIcon,
-  CommentIcon,
-  ShareIcon,
-} from "@/components/app/icons";
 import FeaturedRecipeHeroCta from "@/components/app/FeaturedRecipeHeroCta";
 import { recipeFeaturedDescription } from "@/components/app/FeaturedRecipeDisplay";
 import InfiniteFeedSentinel from "@/components/app/InfiniteFeedSentinel";
-import RecipeThumbnail from "@/components/app/RecipeThumbnail";
-import UserAvatar from "@/components/app/UserAvatar";
-import UserNameLink from "@/components/app/UserNameLink";
-import { useLikedPosts } from "@/components/app/LikedPostsProvider";
-import {
-  CATALOG_RECIPES,
-  useSavedRecipes,
-  type CatalogRecipe,
-} from "@/components/recipes/SavedRecipesProvider";
-import { primaryCategory } from "@/components/recipes/recipesData";
+import { PostFeedCard, RecipeFeedCard } from "@/components/app/CommunityFeedCard";
+import { type CatalogRecipe } from "@/components/recipes/SavedRecipesProvider";
 import { useCreatedContent } from "@/components/app/CreatedContentProvider";
 import { CATALOG_POSTS } from "@/components/app/postsData";
 import { formatPublishAge } from "@/lib/publishVisibility";
 import { plainTextFromHtml } from "@/lib/postRichText";
-import { resolveAuthor, withLiveProfile } from "@/components/app/user/authors";
+import { resolveAuthor } from "@/components/app/user/authors";
 import { useCurrentFeedUser } from "@/components/app/user/useCurrentFeedUser";
 import type { FeedUser } from "@/components/app/user/types";
-import { absoluteAppUrl, shareContent } from "@/lib/share";
 import { useInfiniteFeed } from "@/lib/useInfiniteFeed";
-import { userProfilePath } from "@/lib/userProfile";
 
 const FEATURED_EVERY = 4;
 /** Roughly one viewport of feed cards per load. */
@@ -239,212 +222,6 @@ function buildCommunityFeed(): CommunityItem[] {
 
 const COMMUNITY_FEED = buildCommunityFeed();
 
-function Avatar({ user }: { user: FeedUser }) {
-  const me = useCurrentFeedUser();
-  const author = withLiveProfile(user, me);
-  return (
-    <Link
-      href={userProfilePath(author.handle, me.handle)}
-      aria-label={author.name}
-    >
-      <UserAvatar
-        initials={author.initials}
-        handle={author.handle}
-        src={author.avatarUrl}
-        me={author.handle === me.handle}
-      />
-    </Link>
-  );
-}
-
-function Handle({ handle, time }: { handle: string; time: string }) {
-  const me = useCurrentFeedUser();
-  const author = withLiveProfile(
-    { name: handle, handle, initials: handle.slice(0, 2).toUpperCase() },
-    me,
-  );
-  return (
-    <p className="mt-0.5 flex items-center gap-0.5 text-xs leading-3.5">
-      <span className="text-brand-soft">@</span>
-      <Link
-        href={userProfilePath(author.handle, me.handle)}
-        className="truncate text-placeholder"
-      >
-        {author.handle}
-      </Link>
-      <span className="text-muted"> · {time}</span>
-    </p>
-  );
-}
-
-function AuthorLabel({ user }: { user: FeedUser }) {
-  const me = useCurrentFeedUser();
-  const author = withLiveProfile(user, me);
-  return (
-    <UserNameLink name={author.name} handle={author.handle} />
-  );
-}
-
-function RecipeFeedCard({ item }: { item: Extract<CommunityItem, { kind: "recipe" }> }) {
-  const { publicRecipes } = useCreatedContent();
-  const recipe =
-    publicRecipes.find((r) => r.id === item.recipeId) ??
-    CATALOG_RECIPES.find((r) => r.id === item.recipeId) ??
-    CATALOG_RECIPES[0];
-  const { isSaved, toggleSave } = useSavedRecipes();
-  const saved = isSaved(recipe.id);
-  const likes = item.likes + (saved ? 1 : 0);
-
-  const onShare = () => {
-    void shareContent({
-      title: item.recipeName,
-      text: item.preview,
-      url: absoluteAppUrl(`/recipe/${item.recipeId}`),
-    });
-  };
-
-  return (
-    <article className="feed-card flex flex-col gap-2">
-      <div className="flex gap-3">
-        <Avatar user={item.user} />
-        <div className="min-w-0 flex-1">
-          <p className="text-sm leading-5 text-ink">
-            <AuthorLabel user={item.user} />{" "}
-            shared a recipe
-          </p>
-          <Handle handle={item.user.handle} time={item.time} />
-        </div>
-      </div>
-
-      <Link
-        href={`/recipe/${item.recipeId}`}
-        className="block overflow-hidden rounded border border-line"
-      >
-          <RecipeThumbnail
-            className="aspect-square w-full"
-            iconClassName="h-12 w-14"
-            src={recipe.thumbnailUrl}
-            category={primaryCategory(recipe)}
-            alt={recipe.name}
-          />
-          <div className="px-3 py-2.5">
-            <p className="truncate text-sm font-bold text-ink">{item.recipeName}</p>
-            <p className="mt-0.5 line-clamp-2 text-xs leading-4 text-muted">
-              {item.preview}
-            </p>
-          </div>
-        </Link>
-
-      <div className="flex items-center gap-4 text-xs text-muted">
-        <button
-          type="button"
-          aria-label={
-            saved ? `Unsave ${item.recipeName}` : `Save ${item.recipeName}`
-          }
-          aria-pressed={saved}
-          onClick={() => toggleSave(recipe)}
-          className="inline-flex items-center gap-1"
-        >
-          {saved ? (
-            <HeartFillIcon className="size-3.5 text-brand" />
-          ) : (
-            <HeartIcon className="size-3.5 text-brand" />
-          )}
-          {likes}
-        </button>
-        <span className="inline-flex items-center gap-1">
-          <CommentIcon className="size-3.5 text-brand" />
-          {item.comments}
-        </span>
-        <button
-          type="button"
-          aria-label={`Share ${item.recipeName}`}
-          onClick={onShare}
-          className="ms-auto inline-flex items-center text-brand"
-        >
-          <ShareIcon className="size-3.5" />
-        </button>
-      </div>
-    </article>
-  );
-}
-
-function PostFeedCard({ item }: { item: Extract<CommunityItem, { kind: "post" }> }) {
-  const { isLiked, likeCount, toggleLike } = useLikedPosts();
-  const liked = isLiked(item.postId);
-  const likes = likeCount(item.postId, item.likes);
-
-  const onShare = () => {
-    void shareContent({
-      title: item.title,
-      text: item.preview,
-      url: absoluteAppUrl(`/post/${item.postId}`),
-    });
-  };
-
-  return (
-    <article className="feed-card flex flex-col gap-2">
-      <div className="flex gap-3">
-        <Avatar user={item.user} />
-        <div className="min-w-0 flex-1">
-          <p className="text-sm leading-5 text-ink">
-            <AuthorLabel user={item.user} />{" "}
-            shared a post
-          </p>
-          <Handle handle={item.user.handle} time={item.time} />
-        </div>
-      </div>
-
-      <Link
-        href={`/post/${item.postId}`}
-        className="block overflow-hidden rounded border border-line"
-      >
-        <RecipeThumbnail
-          className="aspect-square w-full"
-          iconClassName="h-12 w-14"
-          src={item.thumbnailUrl}
-          alt={item.title}
-        />
-        <div className="px-3 py-2.5">
-          <p className="text-sm font-bold text-ink">{item.title}</p>
-          <p className="mt-1 line-clamp-3 text-xs leading-4 text-ink-secondary">
-            {item.preview}
-          </p>
-        </div>
-      </Link>
-
-      <div className="flex items-center gap-4 text-xs text-muted">
-        <button
-          type="button"
-          aria-label={liked ? `Unlike ${item.title}` : `Like ${item.title}`}
-          aria-pressed={liked}
-          onClick={() => toggleLike({ id: item.postId, title: item.title })}
-          className="inline-flex items-center gap-1"
-        >
-          {liked ? (
-            <HeartFillIcon className="size-3.5 text-brand" />
-          ) : (
-            <HeartIcon className="size-3.5 text-brand" />
-          )}
-          {likes}
-        </button>
-        <span className="inline-flex items-center gap-1">
-          <CommentIcon className="size-3.5 text-brand" />
-          {item.comments}
-        </span>
-        <button
-          type="button"
-          aria-label={`Share ${item.title}`}
-          onClick={onShare}
-          className="ms-auto inline-flex items-center text-brand"
-        >
-          <ShareIcon className="size-3.5" />
-        </button>
-      </div>
-    </article>
-  );
-}
-
 export default function DiscoverScreen() {
   const me = useCurrentFeedUser();
   const { visiblePosts, visibleRecipes, publicRecipes } = useCreatedContent();
@@ -539,9 +316,26 @@ export default function DiscoverScreen() {
           return (
             <Fragment key={key}>
               {item.kind === "recipe" ? (
-                <RecipeFeedCard item={item} />
+                <RecipeFeedCard
+                  user={item.user}
+                  time={item.time}
+                  recipeId={item.recipeId}
+                  recipeName={item.recipeName}
+                  preview={item.preview}
+                  likes={item.likes}
+                  comments={item.comments}
+                />
               ) : (
-                <PostFeedCard item={item} />
+                <PostFeedCard
+                  user={item.user}
+                  time={item.time}
+                  postId={item.postId}
+                  title={item.title}
+                  preview={item.preview}
+                  thumbnailUrl={item.thumbnailUrl}
+                  likes={item.likes}
+                  comments={item.comments}
+                />
               )}
               {featured ? (
                 <FeaturedRecipeHeroCta

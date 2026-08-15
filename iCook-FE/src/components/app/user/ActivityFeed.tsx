@@ -8,13 +8,10 @@ import {
   CommentIcon,
 } from "@/components/app/icons";
 import InfiniteFeedSentinel from "@/components/app/InfiniteFeedSentinel";
-import RecipeThumbnail from "@/components/app/RecipeThumbnail";
+import { PostFeedCard, RecipeFeedCard } from "@/components/app/CommunityFeedCard";
 import UserAvatar from "@/components/app/UserAvatar";
 import UserNameLink from "@/components/app/UserNameLink";
 import { useLikedPosts } from "@/components/app/LikedPostsProvider";
-import { useCreatedContent } from "@/components/app/CreatedContentProvider";
-import { CATALOG_POSTS } from "@/components/app/postsData";
-import { primaryCategory } from "@/components/recipes/recipesData";
 import type { FeedItem, FeedUser } from "./types";
 import { filterActivityItems, searchActivityItems } from "./activityFilters";
 import { useActivityFilters } from "./ActivityFiltersProvider";
@@ -57,7 +54,6 @@ function FeedCard({
   item: FeedItem;
   me: FeedUser;
 }) {
-  const { resolveRecipe, getPost } = useCreatedContent();
   const unread = Boolean(item.unread);
   const unreadDot = unread ? (
     <span
@@ -94,111 +90,29 @@ function FeedCard({
   }
 
   if (item.kind === "recipe") {
-    const user = withLiveProfile(item.user, me);
-    const recipe = resolveRecipe(item.recipeId);
     return (
-      <article className="feed-card flex flex-col gap-2">
-        <div className="flex gap-3">
-          <Avatar user={user} selfHandle={me.handle} />
-          <div className="min-w-0 flex-1">
-            <div className="flex items-start gap-2">
-              <p className="min-w-0 flex-1 text-sm leading-5 text-ink">
-                <UserNameLink name={user.name} handle={user.handle} />{" "}
-                posted {unread ? "a new recipe" : "a recipe"}
-              </p>
-              {unreadDot}
-            </div>
-            <p className="mt-0.5 flex items-center gap-0.5 text-xs leading-3.5">
-              <span className="text-brand-soft">@</span>
-              <Link
-                href={userProfilePath(user.handle, me.handle)}
-                className="truncate text-placeholder"
-              >
-                {user.handle}
-              </Link>
-              <span className="text-muted"> · {item.time}</span>
-            </p>
-          </div>
-        </div>
-        <Link
-          href={`/recipe/${item.recipeId}`}
-          className="ms-14 block overflow-hidden rounded border border-line"
-        >
-          <RecipeThumbnail
-            className="aspect-square w-full"
-            iconClassName="h-10 w-11"
-            src={recipe?.thumbnailUrl}
-            category={recipe ? primaryCategory(recipe) : undefined}
-            alt={item.recipeName}
-          />
-          <div className="px-3 py-2">
-            <p className="truncate text-sm font-bold text-ink">
-              {item.recipeName}
-            </p>
-            <p className="mt-0.5 line-clamp-2 text-xs leading-4 text-muted">
-              {item.preview}
-            </p>
-          </div>
-        </Link>
-      </article>
+      <RecipeFeedCard
+        user={item.user}
+        time={item.time}
+        recipeId={item.recipeId}
+        recipeName={item.recipeName}
+        preview={item.preview}
+        unread={unread}
+      />
     );
   }
 
   if (item.kind === "post") {
-    const user = withLiveProfile(item.user, me);
-    const createdPost = getPost(item.postId);
-    const linkedRecipeId = createdPost?.linkedRecipeId;
-    const linkedRecipe = linkedRecipeId
-      ? resolveRecipe(linkedRecipeId)
-      : undefined;
-    const thumbnailUrl =
-      linkedRecipe?.thumbnailUrl ??
-      item.thumbnailUrl ??
-      createdPost?.thumbnailUrl ??
-      CATALOG_POSTS[item.postId]?.thumbnailUrl;
     return (
-      <article className="feed-card flex flex-col gap-2">
-        <div className="flex gap-3">
-          <Avatar user={user} selfHandle={me.handle} />
-          <div className="min-w-0 flex-1">
-            <div className="flex items-start gap-2">
-              <p className="min-w-0 flex-1 text-sm leading-5 text-ink">
-                <UserNameLink name={user.name} handle={user.handle} />{" "}
-                shared a post
-              </p>
-              {unreadDot}
-            </div>
-            <p className="mt-0.5 flex items-center gap-0.5 text-xs leading-3.5">
-              <span className="text-brand-soft">@</span>
-              <Link
-                href={userProfilePath(user.handle, me.handle)}
-                className="truncate text-placeholder"
-              >
-                {user.handle}
-              </Link>
-              <span className="text-muted"> · {item.time}</span>
-            </p>
-          </div>
-        </div>
-        <Link
-          href={`/post/${item.postId}`}
-          className="ms-14 block overflow-hidden rounded border border-line"
-        >
-          <RecipeThumbnail
-            className="aspect-square w-full"
-            iconClassName="h-10 w-11"
-            src={thumbnailUrl}
-            category={linkedRecipe ? primaryCategory(linkedRecipe) : undefined}
-            alt={item.title}
-          />
-          <div className="px-3 py-2">
-            <p className="text-sm font-bold text-ink">{item.title}</p>
-            <p className="mt-1 line-clamp-3 text-xs leading-4 text-ink-secondary">
-              {item.preview}
-            </p>
-          </div>
-        </Link>
-      </article>
+      <PostFeedCard
+        user={item.user}
+        time={item.time}
+        postId={item.postId}
+        title={item.title}
+        preview={item.preview}
+        thumbnailUrl={item.thumbnailUrl}
+        unread={unread}
+      />
     );
   }
 
