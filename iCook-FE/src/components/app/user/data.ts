@@ -43,6 +43,56 @@ const sam: FeedUser = {
   handle: "snacksam",
   initials: "SS",
 };
+const jacob: FeedUser = {
+  name: "Jacob Jones",
+  handle: "jacobjones",
+  initials: "JJ",
+};
+const arlene: FeedUser = {
+  name: "Arlene McCoy",
+  handle: "arlenemccoy",
+  initials: "AM",
+};
+const brooklyn: FeedUser = {
+  name: "Brooklyn Simmons",
+  handle: "brooklynsimmons",
+  initials: "BS",
+};
+const leslie: FeedUser = {
+  name: "Leslie Alexander",
+  handle: "lesliealexander",
+  initials: "LA",
+};
+const kristin: FeedUser = {
+  name: "Kristin Watson",
+  handle: "kristinwatson",
+  initials: "KW",
+};
+const jenny: FeedUser = {
+  name: "Jenny Wilson",
+  handle: "jennywilson",
+  initials: "JW",
+};
+const robert: FeedUser = {
+  name: "Robert Fox",
+  handle: "robertfox",
+  initials: "RF",
+};
+const darlene: FeedUser = {
+  name: "Darlene Robertson",
+  handle: "darlenerobertson",
+  initials: "DR",
+};
+const theresa: FeedUser = {
+  name: "Theresa Webb",
+  handle: "theresawebb",
+  initials: "TW",
+};
+const eleanor: FeedUser = {
+  name: "Eleanor Pena",
+  handle: "eleanorpena",
+  initials: "EP",
+};
 
 const MIN = 60 * 1000;
 const HOUR = 60 * MIN;
@@ -466,6 +516,104 @@ export const ACTIVITY_FEED: FeedItem[] = [
     preview: "Made a snack plate while these boiled. 10/10 pairing.",
     createdAt: seededAt - 13 * DAY,
   },
+  {
+    id: "f-jacob-follow",
+    kind: "follow",
+    user: jacob,
+    time: "18min ago",
+    createdAt: seededAt - 18 * MIN,
+  },
+  {
+    id: "f-brooklyn-follow",
+    kind: "follow",
+    user: brooklyn,
+    time: "6hr ago",
+    createdAt: seededAt - 6 * HOUR,
+  },
+  {
+    id: "f-arlene-follow",
+    kind: "follow",
+    user: arlene,
+    time: "Yesterday",
+    createdAt: seededAt - DAY - 3 * HOUR,
+  },
+  {
+    id: "f-ben-follow",
+    kind: "follow",
+    user: ben,
+    time: "2d ago",
+    createdAt: seededAt - 2 * DAY - 5 * HOUR,
+  },
+  {
+    id: "f-leslie-follow",
+    kind: "follow",
+    user: leslie,
+    time: "2d ago",
+    createdAt: seededAt - 2 * DAY - 10 * HOUR,
+  },
+  {
+    id: "f-fish-follow",
+    kind: "follow",
+    user: fish,
+    time: "4d ago",
+    createdAt: seededAt - 4 * DAY - 2 * HOUR,
+  },
+  {
+    id: "f-darlene-follow",
+    kind: "follow",
+    user: darlene,
+    time: "5d ago",
+    createdAt: seededAt - 5 * DAY - 1 * HOUR,
+  },
+  {
+    id: "f-kristin-follow",
+    kind: "follow",
+    user: kristin,
+    time: "6d ago",
+    createdAt: seededAt - 6 * DAY,
+  },
+  {
+    id: "f-paula-follow",
+    kind: "follow",
+    user: paula,
+    time: "6d ago",
+    createdAt: seededAt - 6 * DAY - 6 * HOUR,
+  },
+  {
+    id: "f-jenny-follow",
+    kind: "follow",
+    user: jenny,
+    time: "8d ago",
+    createdAt: seededAt - 8 * DAY,
+  },
+  {
+    id: "f-theresa-follow",
+    kind: "follow",
+    user: theresa,
+    time: "9d ago",
+    createdAt: seededAt - 9 * DAY - 2 * HOUR,
+  },
+  {
+    id: "f-robert-follow",
+    kind: "follow",
+    user: robert,
+    time: "10d ago",
+    createdAt: seededAt - 10 * DAY,
+  },
+  {
+    id: "f-sam-follow",
+    kind: "follow",
+    user: sam,
+    time: "11d ago",
+    createdAt: seededAt - 11 * DAY - 4 * HOUR,
+  },
+  {
+    id: "f-eleanor-follow",
+    kind: "follow",
+    user: eleanor,
+    time: "12d ago",
+    createdAt: seededAt - 12 * DAY,
+  },
 ];
 
 export const INITIAL_FOLLOWERS = [
@@ -473,6 +621,23 @@ export const INITIAL_FOLLOWERS = [
   "Darlene Robertson",
   "Theresa Webb",
   "Arlene McCoy",
+  "Chef Amy",
+  "Baker Ben",
+  "Sweet Sue",
+  "Grill Guy",
+  "Pasta Paula",
+  "Fish Fan",
+  "Snack Sam",
+  "Brooklyn Simmons",
+  "Leslie Alexander",
+  "Kristin Watson",
+  "Jenny Wilson",
+  "Robert Fox",
+  "Cameron Williamson",
+  "Jane Cooper",
+  "Annette Black",
+  "Eleanor Pena",
+  "Marvin McKinney",
 ];
 
 export const INITIAL_FOLLOWING = [

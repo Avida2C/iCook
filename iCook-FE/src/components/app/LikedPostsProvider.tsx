@@ -21,6 +21,7 @@ import { useCreatedContent } from "@/components/app/CreatedContentProvider";
 import { useComments } from "@/components/app/CommentsProvider";
 import {
   FOLLOWING_CHANGED_EVENT,
+  ensureDemoSocialLists,
   isProfileSeedEnabled,
   readFollowing,
 } from "@/lib/accountData";
@@ -178,6 +179,7 @@ export function LikedPostsProvider({ children }: { children: ReactNode }) {
   const [nowTick, setNowTick] = useState(() => Date.now());
 
   useEffect(() => {
+    ensureDemoSocialLists();
     setLikedPosts(readLikedPosts());
     setSeeded(isProfileSeedEnabled());
     setFollowing(readFollowing());
@@ -185,7 +187,10 @@ export function LikedPostsProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const syncFollowing = () => setFollowing(readFollowing());
+    const syncFollowing = () => {
+      const names = readFollowing();
+      queueMicrotask(() => setFollowing(names));
+    };
     window.addEventListener("focus", syncFollowing);
     window.addEventListener(FOLLOWING_CHANGED_EVENT, syncFollowing);
     return () => {

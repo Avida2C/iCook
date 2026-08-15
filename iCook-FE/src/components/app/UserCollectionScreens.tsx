@@ -39,7 +39,7 @@ function RecipeCard({
   const saved = isSaved(recipe.id);
 
   return (
-    <div className="flex min-w-0 w-full flex-col items-center rounded">
+    <div className="flex min-w-0 w-full flex-col items-stretch rounded">
       <div className="relative w-full">
         <Link
           href={`/recipe/${recipe.id}`}
@@ -115,7 +115,7 @@ export function MyRecipesPanel() {
 
   if (recipes.length === 0) {
     return (
-      <div className="flex w-full flex-col items-center gap-3 bg-surface px-2 py-8">
+      <div className="flex w-full flex-col items-center gap-3 bg-surface px-3 py-8">
         <p className="text-center text-base text-muted">
           No recipes yet — create your first one.
         </p>
@@ -130,7 +130,7 @@ export function MyRecipesPanel() {
   }
 
   return (
-    <div className="grid w-full grid-cols-3 gap-x-2 gap-y-2 bg-surface px-2 pt-2 pb-2">
+    <div className="grid w-full min-w-0 grid-cols-3 gap-x-2 gap-y-2 bg-surface px-3 pt-4 pb-2">
       {recipes.map((recipe) => (
         <RecipeCard
           key={recipe.id}
@@ -150,7 +150,7 @@ export function SavedRecipesPanel() {
     .filter((r): r is NonNullable<typeof r> => Boolean(r));
 
   return (
-    <div className="grid w-full grid-cols-3 gap-x-2 gap-y-2 bg-surface px-2 pt-2 pb-2">
+    <div className="grid w-full min-w-0 grid-cols-3 gap-x-2 gap-y-2 bg-surface px-3 pt-4 pb-2">
       {savedRecipes.length === 0 ? (
         <p className="col-span-3 py-8 text-center text-base text-muted">
           No saved recipes yet. Like a recipe from Discover or Recipes to save

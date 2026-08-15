@@ -29,7 +29,7 @@ function MoreRecipeCard({ recipe }: { recipe: CatalogRecipe }) {
   const saved = isSaved(recipe.id);
 
   return (
-    <div className="flex min-w-0 flex-col items-center rounded">
+    <div className="flex min-w-0 w-full flex-col items-stretch rounded">
       <div className="relative w-full">
         <Link
           href={`/recipe/${recipe.id}`}

@@ -22,6 +22,7 @@ import { filterActivityItems } from "@/components/app/user/activityFilters";
 import { useActivityFilters } from "@/components/app/user/ActivityFiltersProvider";
 import type { MeTab } from "@/components/app/user/types";
 import {
+  ensureDemoSocialLists,
   isProfileSeedEnabled,
   readFollowers,
   readFollowing,
@@ -42,6 +43,7 @@ export default function UserScreen() {
   const { prefs } = useActivityFilters();
 
   useEffect(() => {
+    ensureDemoSocialLists();
     setFollowers(readFollowers());
     setFollowing(readFollowing());
     setSeededRecipes(isProfileSeedEnabled());
@@ -64,13 +66,11 @@ export default function UserScreen() {
   };
 
   const toggleFollow = (name: string) => {
-    setFollowing((prev) => {
-      const next = prev.includes(name)
-        ? prev.filter((n) => n !== name)
-        : [...prev, name];
-      writeFollowing(next);
-      return next;
-    });
+    const next = following.includes(name)
+      ? following.filter((n) => n !== name)
+      : [...following, name];
+    setFollowing(next);
+    writeFollowing(next);
   };
 
   const onSelectTab = (next: MeTab) => {
@@ -82,13 +82,13 @@ export default function UserScreen() {
   };
 
   return (
-    <div className="page-fill">
+    <div className="page-fill w-full min-w-0">
       <div className="surface-block shrink-0">
         <UserProfileHeader />
         <UserTabBar tab={tab} counts={tabCounts} onSelect={onSelectTab} />
       </div>
 
-      <div className="feed-stack touch-pan-y">
+      <div className="feed-stack w-full min-w-0 touch-pan-y">
         <div className="flex items-center justify-between px-3">
           <h2 className="section-title">{PANEL_TITLE[tab]}</h2>
           {tab === "activity" ? (
@@ -131,9 +131,13 @@ export default function UserScreen() {
         {tab === "activity" ? (
           <ActivityFeed searchQuery={activityQuery} />
         ) : tab === "recipes" ? (
-          <MyRecipesPanel />
+          <div className="w-full min-w-0">
+            <MyRecipesPanel />
+          </div>
         ) : tab === "saved" ? (
-          <SavedRecipesPanel />
+          <div className="w-full min-w-0">
+            <SavedRecipesPanel />
+          </div>
         ) : tab === "followers" ? (
           <PeoplePanel
             key="followers"

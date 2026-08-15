@@ -1,11 +1,14 @@
 import { CURRENT_USER } from "@/components/app/user/data";
+import { normalizeAuthorKey } from "@/components/app/user/authors";
 
 /** Hub URL for the signed-in user (`/user`). */
 export function userProfilePath(
   handle: string,
   selfHandle: string = CURRENT_USER.handle,
 ): string {
-  if (handle === selfHandle) return "/user";
+  if (normalizeAuthorKey(handle) === normalizeAuthorKey(selfHandle)) {
+    return "/user";
+  }
   return publicProfilePath(handle);
 }
 

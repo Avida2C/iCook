@@ -306,7 +306,7 @@ export default function PublicProfileScreen({ handle }: { handle: string }) {
         ) : null}
 
         {moreRecipes.length > 0 ? (
-          <section className="feed-card flex flex-col gap-3">
+          <section className="feed-card flex w-full flex-col gap-3">
             <div className="flex items-center gap-2">
               <h2 className="section-title min-w-0 flex-1 text-lg">
                 My Recipes ({profileRecipes.length})
@@ -321,7 +321,7 @@ export default function PublicProfileScreen({ handle }: { handle: string }) {
                 </button>
               ) : null}
             </div>
-            <div className="grid grid-cols-3 justify-items-start gap-3">
+            <div className="grid w-full grid-cols-3 gap-2">
               {moreRecipes.map((recipe) => (
                 <ProfileRecipeCard key={recipe.id} recipe={recipe} />
               ))}

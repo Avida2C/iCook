@@ -27,18 +27,44 @@ const FOLLOWING_KEY = "icook.following";
 const SEEDED_PROFILE_KEY = "icook.seededProfile";
 export const FOLLOWING_CHANGED_EVENT = "icook-following-changed";
 
-function readNameList(key: string, fallback: string[]): string[] {
+function readStoredNames(key: string): string[] {
   try {
     const raw = localStorage.getItem(key);
-    if (raw !== null) {
-      const parsed = JSON.parse(raw);
-      if (!Array.isArray(parsed)) return [];
-      return parsed.filter((n): n is string => typeof n === "string");
-    }
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((n): n is string => typeof n === "string");
   } catch {
-    // fall through
+    return [];
   }
-  return isProfileSeedEnabled() ? [...fallback] : [];
+}
+
+function persistNames(key: string, names: string[]) {
+  try {
+    localStorage.setItem(key, JSON.stringify(names));
+  } catch {
+    // ignore
+  }
+}
+
+/** Fill empty follower/following storage with demo names. Safe to call from effects only. */
+export function ensureDemoSocialLists() {
+  if (readStoredNames(FOLLOWERS_KEY).length === 0) {
+    persistNames(FOLLOWERS_KEY, INITIAL_FOLLOWERS);
+  }
+  if (readStoredNames(FOLLOWING_KEY).length === 0) {
+    persistNames(FOLLOWING_KEY, INITIAL_FOLLOWING);
+  }
+}
+
+export function readFollowers(): string[] {
+  const names = readStoredNames(FOLLOWERS_KEY);
+  return names.length > 0 ? names : [...INITIAL_FOLLOWERS];
+}
+
+export function readFollowing(): string[] {
+  const names = readStoredNames(FOLLOWING_KEY);
+  return names.length > 0 ? names : [...INITIAL_FOLLOWING];
 }
 
 /** Demo feed, starter recipes, and default followers/following until reset. */
@@ -50,21 +76,15 @@ export function isProfileSeedEnabled(): boolean {
   }
 }
 
-export function readFollowers(): string[] {
-  return readNameList(FOLLOWERS_KEY, INITIAL_FOLLOWERS);
-}
-
-export function readFollowing(): string[] {
-  return readNameList(FOLLOWING_KEY, INITIAL_FOLLOWING);
-}
-
 export function writeFollowers(names: string[]) {
-  localStorage.setItem(FOLLOWERS_KEY, JSON.stringify(names));
+  persistNames(FOLLOWERS_KEY, names);
 }
 
 export function writeFollowing(names: string[]) {
-  localStorage.setItem(FOLLOWING_KEY, JSON.stringify(names));
-  window.dispatchEvent(new Event(FOLLOWING_CHANGED_EVENT));
+  persistNames(FOLLOWING_KEY, names);
+  queueMicrotask(() => {
+    window.dispatchEvent(new Event(FOLLOWING_CHANGED_EVENT));
+  });
 }
 
 type FollowPerson = { name: string; handle: string };

@@ -44,11 +44,9 @@ export default function ContentCreatorCard({
 
   const onToggleFollow = () => {
     if (isSelf) return;
-    setFollowing((prev) => {
-      const next = !prev;
-      writeFollowing(setFollowingPerson(readFollowing(), author, next));
-      return next;
-    });
+    const next = !following;
+    setFollowing(next);
+    writeFollowing(setFollowingPerson(readFollowing(), author, next));
   };
 
   const followLabel = following

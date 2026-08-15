@@ -71,6 +71,66 @@ export const COMMUNITY_AUTHORS: Record<string, FeedUser> = {
     initials: "DR",
     about: "Meal prep Sundays and leftover magic.",
   },
+  brooklynsimmons: {
+    name: "Brooklyn Simmons",
+    handle: "brooklynsimmons",
+    initials: "BS",
+    about: "Farmers-market hauls and one-pan dinners.",
+  },
+  lesliealexander: {
+    name: "Leslie Alexander",
+    handle: "lesliealexander",
+    initials: "LA",
+    about: "Sourdough, soups, and Sunday gravy.",
+  },
+  kristinwatson: {
+    name: "Kristin Watson",
+    handle: "kristinwatson",
+    initials: "KW",
+    about: "Vegetarian weeknights that still feel like a treat.",
+  },
+  jennywilson: {
+    name: "Jenny Wilson",
+    handle: "jennywilson",
+    initials: "JW",
+    about: "Baking with kids and a lot of chocolate chips.",
+  },
+  robertfox: {
+    name: "Robert Fox",
+    handle: "robertfox",
+    initials: "RF",
+    about: "Cast-iron steaks and a well-seasoned pan.",
+  },
+  cameronwilliamson: {
+    name: "Cameron Williamson",
+    handle: "cameronwilliamson",
+    initials: "CW",
+    about: "Meal-prep bowls and fridge-door sauces.",
+  },
+  janecooper: {
+    name: "Jane Cooper",
+    handle: "janecooper",
+    initials: "JC",
+    about: "Host dinners, never stress the table.",
+  },
+  annetteblack: {
+    name: "Annette Black",
+    handle: "annetteblack",
+    initials: "AB",
+    about: "Pickles, ferments, and crunchy toppings.",
+  },
+  eleanorpena: {
+    name: "Eleanor Pena",
+    handle: "eleanorpena",
+    initials: "EP",
+    about: "Bright salads and citrus on everything.",
+  },
+  marvinmckinney: {
+    name: "Marvin McKinney",
+    handle: "marvinmckinney",
+    initials: "MM",
+    about: "Slow cooker Sundays and leftover tacos.",
+  },
 };
 
 const SELF_ALIASES = new Set(["you", "username", "me"]);

@@ -27,8 +27,8 @@ function DiscoverRecipeCard({ recipe }: { recipe: CatalogRecipe }) {
   const saved = isSaved(recipe.id);
 
   return (
-    <div className="flex min-w-0 flex-1 flex-col items-center rounded">
-      <div className="relative w-full max-w-33.75">
+    <div className="flex min-w-0 w-full flex-col items-stretch rounded">
+      <div className="relative w-full">
         <Link
           href={`/recipe/${recipe.id}`}
           className="relative block aspect-square w-full overflow-hidden rounded border-2 border-line-soft"
@@ -56,7 +56,7 @@ function DiscoverRecipeCard({ recipe }: { recipe: CatalogRecipe }) {
         </button>
       </div>
 
-      <div className="w-full max-w-33.75 p-1">
+      <div className="w-full p-1">
         <Link
           href={`/recipe/${recipe.id}`}
           className="block truncate text-sm leading-[16.8px] text-ink-secondary"
@@ -91,7 +91,7 @@ function RecipeSection({
           more
         </Link>
       </div>
-      <div className="flex items-start gap-2">
+      <div className="grid w-full grid-cols-3 gap-2">
         {recipes.map((recipe) => (
           <DiscoverRecipeCard key={recipe.id} recipe={recipe} />
         ))}

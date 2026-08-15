@@ -15,7 +15,7 @@ export default function PeoplePanel({
   onToggleFollow: (name: string) => void;
 }) {
   return (
-    <ul className="list-stack">
+    <ul className="list-stack w-full min-w-0">
       {names.length === 0 ? (
         <li className="feed-card px-3 py-8 text-center text-sm text-muted">
           No one here yet.
