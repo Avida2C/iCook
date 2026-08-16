@@ -8,9 +8,11 @@ import { useMessages } from "@/components/app/MessagesProvider";
 import { messageFriends, messagePath } from "@/components/app/messagesData";
 
 export default function MessagesScreen() {
-  const { inbox } = useMessages();
+  const { inbox, previewUi } = useMessages();
   const [query, setQuery] = useState("");
   const friends = messageFriends();
+  const typingHandle =
+    previewUi?.themTyping ? previewUi.handle : null;
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -23,8 +25,8 @@ export default function MessagesScreen() {
 
   return (
     <div className="page">
-      <div className="flex flex-col gap-2 py-2">
-        <div className="px-3">
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 bg-surface px-2 pt-2 pb-4">
           <div className="search-field">
             <SearchIcon className="size-5 shrink-0 text-brand" />
             <input
@@ -37,31 +39,32 @@ export default function MessagesScreen() {
               aria-label="Search messages"
             />
           </div>
-        </div>
 
-        <div className="flex gap-1 overflow-x-auto px-3 pb-1">
-          {friends.map(({ user, online }) => (
-            <Link
-              key={user.handle}
-              href={messagePath(user.handle)}
-              className="flex w-20 shrink-0 flex-col items-center gap-1.5"
-            >
-              <div className="relative">
-                <UserAvatar
-                  initials={user.initials}
-                  handle={user.handle}
-                  src={user.avatarUrl}
-                  size="lg"
-                />
-                {online ? (
-                  <span className="absolute right-0 bottom-0 size-2.5 rounded-full border-2 border-surface bg-success" />
-                ) : null}
-              </div>
-              <span className="w-full truncate text-center text-xs text-ink">
-                {user.name.split(" ")[0]}
-              </span>
-            </Link>
-          ))}
+          <div className="flex gap-1 overflow-x-auto">
+            {friends.map(({ user, online }) => (
+              <Link
+                key={user.handle}
+                href={messagePath(user.handle)}
+                className="flex w-20 shrink-0 flex-col items-center gap-1 p-1"
+              >
+                <div className="relative">
+                  <UserAvatar
+                    initials={user.initials}
+                    handle={user.handle}
+                    src={user.avatarUrl}
+                    size="lg"
+                    className="size-[50px] bg-brand/40 text-xl"
+                  />
+                  {online ? (
+                    <span className="absolute right-0 bottom-0 size-2.5 rounded-full border-2 border-surface bg-success" />
+                  ) : null}
+                </div>
+                <span className="w-full truncate text-center text-xs leading-[14px] text-ink-secondary">
+                  {user.name.split(" ")[0]}
+                </span>
+              </Link>
+            ))}
+          </div>
         </div>
 
         <div className="flex items-center justify-between px-3">
@@ -109,15 +112,29 @@ export default function MessagesScreen() {
                         {c.handle}
                       </span>
                     </p>
-                    <p
-                      className={`mt-1 line-clamp-2 text-xs leading-4 ${
-                        c.unread
-                          ? "font-bold text-accent-soft"
-                          : "text-muted"
-                      }`}
-                    >
-                      {c.lastFrom === "you" ? `You: ${c.last}` : c.last}
-                    </p>
+                    {typingHandle === c.handle ? (
+                      <p
+                        className="mt-1 flex items-center gap-1.5 text-xs italic leading-4 text-online"
+                        aria-label={`${c.user.name} is typing`}
+                      >
+                        typing
+                        <span className="typing-dots" aria-hidden>
+                          <span className="typing-dot" />
+                          <span className="typing-dot" />
+                          <span className="typing-dot" />
+                        </span>
+                      </p>
+                    ) : (
+                      <p
+                        className={`mt-1 line-clamp-2 text-xs leading-4 ${
+                          c.unread
+                            ? "font-bold text-accent-soft"
+                            : "text-muted"
+                        }`}
+                      >
+                        {c.lastFrom === "you" ? `You: ${c.last}` : c.last}
+                      </p>
+                    )}
                   </div>
                   {c.unread ? (
                     <span

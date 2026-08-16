@@ -93,11 +93,20 @@ export default function CreatedLibraryScreen() {
       ? featuredPrefs.recipeId
       : "";
 
+  const tabCounts: Record<Filter, number> = {
+    all: items.length,
+    recipes: items.filter((item) => item.kind === "recipe").length,
+    posts: items.filter((item) => item.kind === "post").length,
+  };
+
   const visible = items.filter((item) => {
     if (filter === "all") return true;
     if (filter === "recipes") return item.kind === "recipe";
     return item.kind === "post";
   });
+
+  const panelTitle =
+    filter === "recipes" ? "Recipes" : filter === "posts" ? "Posts" : "All";
 
   const onDelete = (kind: "recipe" | "post", id: string) => {
     if (confirmId !== id) {
@@ -122,16 +131,20 @@ export default function CreatedLibraryScreen() {
     }
   };
 
+  const libraryTabs = [
+    ["all", "All"],
+    ["recipes", "Recipes"],
+    ["posts", "Posts"],
+  ] as const;
+
   return (
-    <div className="page">
-      <div className="list-stack py-2">
-        <section className="feed-card flex flex-col gap-3">
+    <div className="page-fill w-full min-w-0">
+      <div className="surface-block shrink-0">
+        <div className="flex flex-col gap-3 px-4 pt-4 pb-3">
           <div>
             <h1 className="section-title">My Creations</h1>
             <p className="mt-1 text-sm text-ink-secondary">
-              Preview, edit, or delete your recipes and posts, or keep an item
-              private. Choose one public recipe to feature on your profile.
-              New items stay hidden from others until the public timer ends.
+              You can preview, edit, delete, or privatize your recipes and posts, and feature your favorite public recipe on your profile. New items remain hidden from others until the public timer expires, giving you time to make any final changes.
             </p>
           </div>
 
@@ -158,45 +171,48 @@ export default function CreatedLibraryScreen() {
                 </option>
               ))}
             </select>
-            {featureableRecipes.length === 0 ? (
-              <span className="text-xs text-muted">
-                Create a public recipe to feature it on your profile.
-              </span>
-            ) : null}
           </label>
 
-          <div
-            className="grid grid-cols-3 gap-1 rounded border border-line p-1"
-            role="tablist"
-            aria-label="Filter your content"
-          >
-            {(
-              [
-                ["all", "All"],
-                ["recipes", "Recipes"],
-                ["posts", "Posts"],
-              ] as const
-            ).map(([id, label]) => {
-              const selected = filter === id;
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  role="tab"
-                  aria-selected={selected}
-                  onClick={() => setFilter(id)}
-                  className={`rounded px-2 py-1.5 text-sm font-bold ${
-                    selected
-                      ? "bg-brand text-white"
-                      : "text-ink-secondary hover:bg-brand/10"
+        </div>
+
+        <div
+          className="grid grid-cols-3 border-t border-line"
+          role="tablist"
+          aria-label="Filter your content"
+        >
+          {libraryTabs.map(([id, label]) => {
+            const active = filter === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => setFilter(id)}
+                className={`flex flex-col items-center justify-center gap-0.5 px-0.5 py-2.5 ${
+                  active ? "tab-underline" : "tab-underline-idle"
+                }`}
+              >
+                <span className="text-base font-bold text-brand">
+                  {tabCounts[id]}
+                </span>
+                <span
+                  className={`text-center text-[10px] leading-tight ${
+                    active ? "font-bold text-brand" : "text-muted"
                   }`}
                 >
                   {label}
-                </button>
-              );
-            })}
-          </div>
-        </section>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="feed-stack w-full min-w-0 touch-pan-y">
+        <div className="px-3">
+          <h2 className="section-title">{panelTitle}</h2>
+        </div>
 
         {visible.length === 0 ? (
           <section className="feed-card flex flex-col items-center gap-3 py-10">

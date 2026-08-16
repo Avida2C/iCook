@@ -54,6 +54,7 @@ type MessagesContextValue = {
   markPreviewPlayed: (handle: string) => void;
   setActiveChat: (handle: string | null) => void;
   interruptPreview: (handle: string) => void;
+  scheduleThemReply: (handle: string, text: string) => void;
 };
 
 const MessagesContext = createContext<MessagesContextValue | null>(null);
@@ -210,6 +211,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
   const runningRef = useRef<Record<string, boolean>>({});
   const controllersRef = useRef<Record<string, AbortController>>({});
   const playedRef = useRef(new Set<string>());
+  const replyTimersRef = useRef<Record<string, number>>({});
 
   const clearPreviewUi = useCallback((handle: string) => {
     setPreviewUi((prev) => (prev?.handle === handle ? null : prev));
@@ -283,15 +285,12 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
           sendYouRef.current(handle, turn.text);
           youTypingRef.current = null;
         } else {
-          const onPage = activeChatRef.current === handle;
-          if (onPage) {
-            setPreviewUi({
-              handle,
-              youDraft: "",
-              autoTyping: false,
-              themTyping: true,
-            });
-          }
+          setPreviewUi({
+            handle,
+            youDraft: "",
+            autoTyping: false,
+            themTyping: true,
+          });
           await sleep(
             1000 + Math.min(turn.text.length * 16, 1600),
             signal,
@@ -389,11 +388,48 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
       playedRef.current.add(key);
       controllersRef.current[key]?.abort();
       delete controllersRef.current[key];
+      window.clearTimeout(replyTimersRef.current[key]);
+      delete replyTimersRef.current[key];
       markPlayedRef.current(key);
       clearPreviewUi(key);
     },
     [clearPreviewUi],
   );
+
+  const scheduleThemReply = useCallback(
+    (handle: string, text: string) => {
+      const key = handle.trim().replace(/^@+/, "").toLowerCase();
+      const trimmed = text.trim();
+      if (!trimmed) return;
+      window.clearTimeout(replyTimersRef.current[key]);
+      setPreviewUi({
+        handle: key,
+        youDraft: "",
+        autoTyping: false,
+        themTyping: true,
+      });
+      const delay = 800 + Math.min(trimmed.length * 20, 2000);
+      replyTimersRef.current[key] = window.setTimeout(() => {
+        delete replyTimersRef.current[key];
+        setPreviewUi((prev) =>
+          prev?.handle === key
+            ? { ...prev, themTyping: false, autoTyping: false, youDraft: "" }
+            : prev,
+        );
+        sendThemRef.current(key, trimmed, {
+          keepRead: activeChatRef.current === key,
+        });
+      }, delay);
+    },
+    [],
+  );
+
+  useEffect(() => {
+    const timers = replyTimersRef.current;
+    return () => {
+      Object.values(timers).forEach((id) => window.clearTimeout(id));
+    };
+  }, []);
 
   const pathname = usePathname();
   useEffect(() => {
@@ -412,6 +448,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
       markPreviewPlayed,
       setActiveChat,
       interruptPreview,
+      scheduleThemReply,
     }),
     [
       inbox,
@@ -424,6 +461,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
       markPreviewPlayed,
       setActiveChat,
       interruptPreview,
+      scheduleThemReply,
     ],
   );
 

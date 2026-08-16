@@ -92,12 +92,21 @@ export function messageDayKey(createdAt: number) {
 export function inboxTimeLabel(createdAt: number, now = Date.now()) {
   const age = Math.max(0, now - createdAt);
   if (age < 60_000) return "NOW";
-  if (age < 60 * 60 * 1000) return `${Math.max(1, Math.floor(age / 60_000))}m`;
-  if (age < DAY_MS) return `${Math.max(1, Math.floor(age / 3_600_000))}h`;
-  if (age < 2 * DAY_MS) return "Yesterday";
-  return new Date(createdAt).toLocaleDateString([], {
+  if (age < 60 * 60_000) return `${Math.floor(age / 60_000)}min`;
+  if (age < 2 * 60 * 60_000) return "1hr";
+
+  const startToday = new Date(now);
+  startToday.setHours(0, 0, 0, 0);
+  if (createdAt >= startToday.getTime()) {
+    return formatMessageClock(new Date(createdAt));
+  }
+
+  const d = new Date(createdAt);
+  const sameYear = d.getFullYear() === new Date(now).getFullYear();
+  return d.toLocaleDateString([], {
     month: "short",
     day: "numeric",
+    ...(sameYear ? {} : { year: "numeric" }),
   });
 }
 

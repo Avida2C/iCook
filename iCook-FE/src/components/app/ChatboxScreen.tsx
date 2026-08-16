@@ -10,9 +10,8 @@ import {
   type FormEvent,
 } from "react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import {
-  BackIcon,
   CloseIcon,
   EmojiIcon,
   ImageIcon,
@@ -58,7 +57,6 @@ function TypingDots({ name }: { name: string }) {
 }
 
 export default function ChatboxScreen() {
-  const router = useRouter();
   const params = useParams<{ id: string }>();
   const raw = decodeURIComponent(params.id ?? PREVIEW_HANDLE).toLowerCase();
   const handle = raw === "1" ? PREVIEW_HANDLE : raw;
@@ -67,10 +65,10 @@ export default function ChatboxScreen() {
   const {
     threadFor,
     sendFromYou,
-    sendFromThem,
     markRead,
     previewUi,
     interruptPreview,
+    scheduleThemReply,
   } = useMessages();
   const thread = threadFor(handle);
   const fileInputId = useId();
@@ -79,11 +77,9 @@ export default function ChatboxScreen() {
   const [imageError, setImageError] = useState("");
   const [uploading, setUploading] = useState(false);
   const [emojiOpen, setEmojiOpen] = useState(false);
-  const [localThemTyping, setLocalThemTyping] = useState(false);
   const autoTyping =
     previewUi?.handle === handle && previewUi.autoTyping;
-  const themTyping =
-    (previewUi?.handle === handle && previewUi.themTyping) || localThemTyping;
+  const themTyping = previewUi?.handle === handle && previewUi.themTyping;
   const composerDraft = autoTyping && previewUi ? previewUi.youDraft : draft;
   const [revealedOlder, setRevealedOlder] = useState(0);
   const [loadingHistory, setLoadingHistory] = useState(false);
@@ -91,7 +87,6 @@ export default function ChatboxScreen() {
   const topSentinelRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
-  const replyTimer = useRef<number>(0);
   const historyTimer = useRef<number>(0);
 
   const olderMessages = useMemo(
@@ -174,14 +169,8 @@ export default function ChatboxScreen() {
   }
 
   function scheduleReply(userText: string, history: ChatMessage[], hasImage?: boolean) {
-    window.clearTimeout(replyTimer.current);
     const reply = pickAutoReply(handle, userText, history, { hasImage });
-    setLocalThemTyping(true);
-    const delay = 800 + Math.min(reply.length * 20, 2000);
-    replyTimer.current = window.setTimeout(() => {
-      setLocalThemTyping(false);
-      sendFromThem(handle, reply, { keepRead: true });
-    }, delay);
+    scheduleThemReply(handle, reply);
   }
 
   const canSend = Boolean(draft.trim() || imageUrl) && !uploading && !autoTyping;
@@ -232,7 +221,6 @@ export default function ChatboxScreen() {
 
   useEffect(() => {
     return () => {
-      window.clearTimeout(replyTimer.current);
       window.clearTimeout(historyTimer.current);
     };
   }, []);
@@ -240,18 +228,19 @@ export default function ChatboxScreen() {
   return (
     <div className="page-fill">
       <div className="subhead gap-3">
-        <button type="button" onClick={() => router.back()} aria-label="Back">
-          <BackIcon className="size-6 text-ink" />
-        </button>
         <Link
           href={userProfilePath(them.handle, me.handle)}
           aria-label={them.name}
+          className="relative shrink-0"
         >
           <UserAvatar
             initials={them.initials}
             handle={them.handle}
             src={them.avatarUrl}
           />
+          {thread.online ? (
+            <span className="absolute right-0 bottom-0 size-2.5 rounded-full border-2 border-surface bg-success" />
+          ) : null}
         </Link>
         <div className="min-w-0 flex-1 leading-tight">
           <UserNameLink
@@ -267,29 +256,27 @@ export default function ChatboxScreen() {
             >
               {them.handle}
             </Link>
-            <span className="text-muted"> · </span>
-            <span
-              className={`inline-flex items-center gap-1 italic ${
-                thread.online || themTyping ? "text-online" : "text-muted"
-              }`}
-            >
-              {themTyping ? (
-                <>
+            {themTyping ? (
+              <>
+                <span className="text-muted"> · </span>
+                <span className="inline-flex items-center gap-1 italic text-online">
                   typing
                   <span className="typing-dots" aria-hidden>
                     <span className="typing-dot" />
                     <span className="typing-dot" />
                     <span className="typing-dot" />
                   </span>
-                </>
-              ) : thread.online ? (
-                "Online"
-              ) : (
-                "Last seen recently"
-              )}
-            </span>
+                </span>
+              </>
+            ) : null}
           </p>
         </div>
+        <Link
+          href={userProfilePath(them.handle, me.handle)}
+          className="inline-flex shrink-0 items-center justify-center rounded border-2 border-brand bg-surface px-2 py-1.5 text-xs font-bold text-brand"
+        >
+          View profile
+        </Link>
       </div>
 
       <div
