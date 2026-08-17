@@ -74,7 +74,7 @@ import {
 import { BiCommentDots, BiCommentEdit } from "react-icons/bi";
 import { FcGoogle } from "react-icons/fc";
 import { FaFacebook } from "react-icons/fa6";
-import { LuCookingPot, LuChefHat, LuEggFried, LuMessageSquareText, LuNotepadText, LuSalad, LuCookie } from "react-icons/lu";
+import { LuCookingPot, LuChefHat, LuEggFried, LuMessageSquareText, LuNotepadText, LuSalad, LuCookie, LuImageOff } from "react-icons/lu";
 
 
 
@@ -134,6 +134,7 @@ export const EditIcon = FiEdit2;
 export const MinusCircleIcon = FaMinusCircle;
 export const UploadIcon = FiUploadCloud;
 export const ImageIcon = FiImage;
+export const ImageOffIcon = LuImageOff;
 export const MicIcon = FiMic;
 export const ClockIcon = FiClock;
 export const CalendarIcon = FiCalendar;

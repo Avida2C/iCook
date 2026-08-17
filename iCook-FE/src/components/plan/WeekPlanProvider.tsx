@@ -28,7 +28,6 @@ const STORAGE_KEY = "icook.weekPlan";
 export type AddToWeekTarget = {
   recipeId: string;
   recipeName: string;
-  categories?: string[];
 };
 
 type WeekPlanContextValue = {

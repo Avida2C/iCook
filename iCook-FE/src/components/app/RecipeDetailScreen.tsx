@@ -243,7 +243,6 @@ export default function RecipeDetailScreen({
               <p className="mt-2 text-sm leading-5 text-ink-secondary">
                 {recipe.description}
               </p>
-              
             ) : null}
                         <button
               type="button"
@@ -251,7 +250,6 @@ export default function RecipeDetailScreen({
                 openAddToWeek({
                   recipeId: recipe.id,
                   recipeName: recipe.name,
-                  categories: recipe.categories,
                 })
               }
               className="btn-secondary mt-2 w-full text-sm"
@@ -268,7 +266,6 @@ export default function RecipeDetailScreen({
                   {recipe.categories.map((c) => getCategoryLabel(c)).join(", ")}
                 </span>
               </p>
-              
               <p className="flex gap-2 text-sm text-ink">
                 <span className="font-bold text-ink-secondary">Created date</span>
                 <span className="italic text-muted">

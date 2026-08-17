@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { CloseIcon, PlusIcon, SearchIcon } from "@/components/app/icons";
-import { COOK_ICONS } from "@/components/plan/mealIcons";
 import RecipeThumbnail from "@/components/app/RecipeThumbnail";
 import { useCreatedContent } from "@/components/app/CreatedContentProvider";
 import { isOwnAuthor } from "@/components/app/user/authors";
@@ -14,10 +13,8 @@ import {
 } from "@/components/recipes/recipesData";
 import { searchRecipes } from "@/lib/recipeSearch";
 import {
-  HOUSEHOLD_COOKS,
   MEAL_LABELS,
   suggestedMealForCategories,
-  type HouseholdCook,
   type MealSlot,
 } from "@/lib/weekPlan";
 
@@ -67,18 +64,16 @@ export default function RecipePickSheet({
   dateLabel: string;
   meal: MealSlot;
   onClose: () => void;
-  onChoose: (recipeId: string, cook: HouseholdCook) => void;
+  onChoose: (recipeId: string) => void;
 }) {
   const me = useCurrentFeedUser();
   const { savedRecipes } = useSavedRecipes();
   const { recipes: createdRecipes, publicRecipes } = useCreatedContent();
   const [query, setQuery] = useState("");
-  const [cook, setCook] = useState<HouseholdCook>("Me");
 
   useEffect(() => {
     if (!open) return;
     setQuery("");
-    setCook("Me");
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
@@ -153,32 +148,7 @@ export default function RecipePickSheet({
         </header>
 
         <div className="shrink-0 px-3 pt-2">
-          <p className="mb-1.5 text-xs font-bold text-muted">Who’s cooking</p>
-          <div className="flex gap-1.5" role="radiogroup" aria-label="Who is cooking">
-            {HOUSEHOLD_COOKS.map((name) => {
-              const selected = cook === name;
-              const CookIcon = COOK_ICONS[name];
-              return (
-                <button
-                  key={name}
-                  type="button"
-                  role="radio"
-                  aria-checked={selected}
-                  tabIndex={open ? 0 : -1}
-                  onClick={() => setCook(name)}
-                  className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold ${
-                    selected
-                      ? "bg-brand text-white"
-                      : "bg-surface-muted text-ink-secondary"
-                  }`}
-                >
-                  <CookIcon className="size-3.5" aria-hidden />
-                  {name}
-                </button>
-              );
-            })}
-          </div>
-          <label className="relative mt-2 block">
+          <label className="relative block">
             <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted" />
             <input
               type="search"
@@ -202,7 +172,7 @@ export default function RecipePickSheet({
                 <RecipeRow
                   key={recipe.id}
                   recipe={recipe}
-                  onPick={() => onChoose(recipe.id, cook)}
+                  onPick={() => onChoose(recipe.id)}
                 />
               ))}
             </div>

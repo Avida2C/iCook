@@ -72,6 +72,14 @@ export function weekdayShort(date: Date): string {
   return date.toLocaleDateString(undefined, { weekday: "short" });
 }
 
+export function formatDayHeading(date: Date): string {
+  return date.toLocaleDateString(undefined, {
+    weekday: "long",
+    month: "short",
+    day: "numeric",
+  });
+}
+
 export function isSameDay(a: Date, b: Date): boolean {
   return toISODate(a) === toISODate(b);
 }

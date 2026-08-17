@@ -73,7 +73,6 @@ export default function AppShell({ children }: { children: ReactNode }) {
               open={addToWeekTarget != null}
               recipeId={addToWeekTarget?.recipeId ?? ""}
               recipeName={addToWeekTarget?.recipeName ?? ""}
-              categories={addToWeekTarget?.categories}
               onClose={closeAddToWeek}
             />
           </>

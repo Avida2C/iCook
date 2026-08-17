@@ -4,28 +4,27 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
   CalendarIcon,
+  CheckIcon,
   ChevronRightIcon,
   CopyIcon,
   PlusIcon,
   TrashIcon,
 } from "@/components/app/icons";
-import RecipeThumbnail from "@/components/app/RecipeThumbnail";
 import { useCreatedContent } from "@/components/app/CreatedContentProvider";
-import { MEAL_ICONS } from "@/components/plan/mealIcons";
+import PlanSlotThumb from "@/components/plan/PlanSlotThumb";
 import RecipePickSheet from "@/components/plan/RecipePickSheet";
 import { useWeekPlan } from "@/components/plan/WeekPlanProvider";
-import { primaryCategory, type Recipe } from "@/components/recipes/recipesData";
+import { type Recipe } from "@/components/recipes/recipesData";
 import {
-  HOUSEHOLD_COOKS,
   MEAL_LABELS,
   MEAL_SLOTS,
+  formatDayHeading,
   formatWeekRange,
   isSameDay,
   mondayOf,
   toISODate,
   weekdayShort,
   weekDates,
-  type HouseholdCook,
   type MealSlot,
 } from "@/lib/weekPlan";
 
@@ -35,110 +34,48 @@ function SlotRow({
   meal,
   recipe,
   planned,
-  cook,
   onAdd,
-  onRemove,
-  onCook,
 }: {
   meal: MealSlot;
   recipe: Recipe | undefined;
   planned: boolean;
-  cook?: HouseholdCook;
   onAdd: () => void;
-  onRemove: () => void;
-  onCook: (cook: HouseholdCook) => void;
 }) {
-  if (!planned) {
-    const MealIcon = MEAL_ICONS[meal];
-    return (
+  const taken = planned;
+
+  return (
+    <div className="flex items-center gap-2.5 rounded border border-line bg-surface px-3 py-2.5">
+      <PlanSlotThumb recipe={recipe} />
+      <span className="min-w-0 flex-1">
+        <span className="text-sm font-bold text-ink">{MEAL_LABELS[meal]}</span>
+        {recipe ? (
+          <Link
+            href={`/recipe/${recipe.id}`}
+            className="mt-0.5 block truncate text-xs text-muted"
+          >
+            {recipe.name}
+          </Link>
+        ) : (
+          <span className="mt-0.5 block truncate text-xs text-muted">
+            {taken ? "Recipe unavailable" : "No Recipe"}
+          </span>
+        )}
+      </span>
       <button
         type="button"
         onClick={onAdd}
-        className="flex w-full items-center gap-2 rounded border border-dashed border-line px-2 py-1.5 text-left"
+        className={`inline-flex shrink-0 items-center gap-1 rounded px-2.5 py-1 text-[11px] font-bold ${
+          taken
+            ? "border-2 border-brand bg-surface text-brand"
+            : "bg-brand text-white"
+        }`}
       >
-        <MealIcon className="size-4 shrink-0 text-muted" aria-hidden />
-        <span className="w-16 shrink-0 text-[11px] font-bold text-muted">
-          {MEAL_LABELS[meal]}
-        </span>
-        <span className="min-w-0 flex-1 text-xs text-muted">Tap to plan</span>
-        <PlusIcon className="size-4 shrink-0 text-brand" />
-      </button>
-    );
-  }
-
-  const MealIcon = MEAL_ICONS[meal];
-
-  if (!recipe) {
-    return (
-      <div className="flex w-full items-center gap-2 rounded border border-line px-2 py-1.5">
-        <MealIcon className="size-4 shrink-0 text-brand" aria-hidden />
-        <span className="w-16 shrink-0 text-[11px] font-bold text-brand">
-          {MEAL_LABELS[meal]}
-        </span>
-        <span className="min-w-0 flex-1 text-xs text-muted">
-          Recipe unavailable
-        </span>
-        <button
-          type="button"
-          aria-label={`Remove ${MEAL_LABELS[meal]}`}
-          onClick={onRemove}
-          className="shrink-0 text-muted hover:text-brand"
-        >
-          <TrashIcon className="size-3.5" />
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex items-center gap-2 rounded border border-line bg-app px-2 py-1.5">
-      <MealIcon className="size-4 shrink-0 text-brand" aria-hidden />
-      <span className="w-16 shrink-0 text-[11px] font-bold text-brand">
-        {MEAL_LABELS[meal]}
-      </span>
-      <Link
-        href={`/recipe/${recipe.id}`}
-        className="flex min-w-0 flex-1 items-center gap-2"
-      >
-        <div className="size-8 shrink-0 overflow-hidden rounded">
-          <RecipeThumbnail
-            className="size-full"
-            iconClassName="h-4 w-5"
-            src={recipe.thumbnailUrl}
-            category={primaryCategory(recipe)}
-            alt=""
-          />
-        </div>
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-xs font-bold text-ink">
-            {recipe.name}
-          </span>
-          {cook ? (
-            <span className="block truncate text-[10px] text-muted">
-              {cook}
-            </span>
-          ) : null}
-        </span>
-      </Link>
-      <select
-        aria-label={`Who cooks ${MEAL_LABELS[meal]}`}
-        value={cook ?? "Me"}
-        onChange={(e) => onCook(e.target.value as HouseholdCook)}
-        className="max-w-[4.5rem] shrink-0 rounded border border-line bg-surface px-1 py-0.5 text-[10px] text-ink-secondary"
-      >
-        {HOUSEHOLD_COOKS.map((name) => (
-          <option key={name} value={name}>
-            {name}
-          </option>
-        ))}
-      </select>
-      <button
-        type="button"
-        aria-label={`Remove ${MEAL_LABELS[meal]}`}
-        onClick={onRemove}
-        className="shrink-0 text-muted hover:text-brand"
-      >
-        <TrashIcon className="size-3.5" />
+        {taken ? (
+          <CheckIcon className="size-3" aria-hidden />
+        ) : (
+          <PlusIcon className="size-3" aria-hidden />
+        )}
+        {taken ? "Replace" : "Add"}
       </button>
     </div>
   );
@@ -151,7 +88,6 @@ export default function WeekPlanScreen() {
     goToThisWeek,
     getMeal,
     setMeal,
-    setCook,
     clearWeek,
     copyPreviousWeek,
     mealsThisWeek,
@@ -180,31 +116,33 @@ export default function WeekPlanScreen() {
 
   return (
     <div className="page-fill relative">
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <header className="shrink-0 bg-surface px-3 py-2.5 shadow-bar">
-          <div className="flex items-center gap-2">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-app">
+        <header className="shrink-0 border-b border-line bg-surface px-2 py-2.5">
+          <div className="flex items-center gap-1">
             <button
               type="button"
               aria-label="Previous week"
               onClick={() => shiftWeek(-1)}
-              className="grid size-8 place-items-center text-brand"
+              className="grid size-8 shrink-0 place-items-center rounded-full text-brand hover:bg-brand/10"
             >
               <ChevronRightIcon className="size-5 rotate-180" />
             </button>
             <div className="min-w-0 flex-1 text-center">
-              <h1 className="text-base font-bold text-brand">This week</h1>
-              <p className="text-xs text-muted">{formatWeekRange(weekStart)}</p>
+              <p className="text-xs font-bold text-brand-soft">Weekly planner</p>
+              <h1 className="text-base font-bold text-ink">
+                {formatWeekRange(weekStart)}
+              </h1>
             </div>
             <button
               type="button"
               aria-label="Next week"
               onClick={() => shiftWeek(1)}
-              className="grid size-8 place-items-center text-brand"
+              className="grid size-8 shrink-0 place-items-center rounded-full text-brand hover:bg-brand/10"
             >
               <ChevronRightIcon className="size-5" />
             </button>
           </div>
-          <div className="mt-1.5 flex items-center justify-between">
+          <div className="mt-2 flex items-center justify-between px-1">
             <p className="text-xs text-muted">
               {mealsThisWeek} meal{mealsThisWeek === 1 ? "" : "s"} planned
             </p>
@@ -218,62 +156,52 @@ export default function WeekPlanScreen() {
                 Jump to today
               </button>
             ) : (
-              <span className="text-xs font-bold text-brand">Household calendar</span>
+              <span className="text-xs font-bold text-brand">This week</span>
             )}
           </div>
         </header>
 
-        <div className="list-stack min-h-0 flex-1 overflow-y-auto overscroll-contain py-2">
-          {days.map((date) => {
-            const iso = toISODate(date);
-            const todayDay = isSameDay(date, today);
-            return (
-              <section
-                key={iso}
-                className={`feed-card flex flex-col gap-1.5 ${
-                  todayDay ? "ring-1 ring-brand/40" : ""
-                }`}
-              >
-                <div className="flex items-baseline justify-between">
-                  <h2 className="text-sm font-bold text-ink">
-                    {weekdayShort(date)} {date.getDate()}
+        <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
+          <div className="flex flex-col gap-4">
+            {days.map((date) => {
+              const iso = toISODate(date);
+              const todayDay = isSameDay(date, today);
+              return (
+                <section key={iso} className="flex flex-col gap-1.5">
+                  <h2 className="px-0.5 text-sm font-bold text-ink">
+                    {formatDayHeading(date)}
+                    {todayDay ? (
+                      <span className="font-bold text-brand"> · Today</span>
+                    ) : null}
                   </h2>
-                  {todayDay ? (
-                    <span className="text-[10px] font-bold tracking-wide text-brand uppercase">
-                      Today
-                    </span>
-                  ) : null}
-                </div>
-                {MEAL_SLOTS.map((meal) => {
-                  const planned = getMeal(iso, meal);
-                  const recipe = planned
-                    ? resolveVisibleRecipe(planned.recipeId)
-                    : undefined;
-                  return (
-                    <SlotRow
-                      key={meal}
-                      meal={meal}
-                      recipe={recipe}
-                      planned={Boolean(planned)}
-                      cook={planned?.cook}
-                      onAdd={() =>
-                        setPicker({
-                          date: iso,
-                          meal,
-                          label: `${weekdayShort(date)} ${date.getDate()}`,
-                        })
-                      }
-                      onRemove={() => setMeal(iso, meal, null)}
-                      onCook={(next) => setCook(iso, meal, next)}
-                    />
-                  );
-                })}
-              </section>
-            );
-          })}
+                  {MEAL_SLOTS.map((meal) => {
+                    const planned = getMeal(iso, meal);
+                    const recipe = planned
+                      ? resolveVisibleRecipe(planned.recipeId)
+                      : undefined;
+                    return (
+                      <SlotRow
+                        key={meal}
+                        meal={meal}
+                        recipe={recipe}
+                        planned={Boolean(planned)}
+                        onAdd={() =>
+                          setPicker({
+                            date: iso,
+                            meal,
+                            label: `${weekdayShort(date)} ${date.getDate()}`,
+                          })
+                        }
+                      />
+                    );
+                  })}
+                </section>
+              );
+            })}
+          </div>
         </div>
 
-        <div className="flex shrink-0 flex-col gap-1.5 bg-surface px-3 py-2 shadow-nav">
+        <div className="flex shrink-0 flex-col gap-1.5 border-t border-line bg-surface px-3 py-2">
           <div className="flex gap-2">
             <button type="button" onClick={onCopy} className="btn-secondary flex-1">
               <CopyIcon className="size-4" aria-hidden />
@@ -305,9 +233,9 @@ export default function WeekPlanScreen() {
         dateLabel={picker?.label ?? ""}
         meal={picker?.meal ?? "dinner"}
         onClose={() => setPicker(null)}
-        onChoose={(recipeId, cook) => {
+        onChoose={(recipeId) => {
           if (!picker) return;
-          setMeal(picker.date, picker.meal, { recipeId, cook });
+          setMeal(picker.date, picker.meal, { recipeId });
           setPicker(null);
         }}
       />
