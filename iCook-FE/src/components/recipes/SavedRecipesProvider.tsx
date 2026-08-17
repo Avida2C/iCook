@@ -11,6 +11,8 @@ import {
 } from "react";
 import {
   CATALOG_RECIPES,
+  isQuickToMake,
+  recipeTotalMinutes,
   type CatalogRecipe,
   type Recipe,
   type RecipeCategorySlug,
@@ -72,6 +74,24 @@ export function sortByMostBookmarked(
     if (diff !== 0) return diff;
     return a.name.localeCompare(b.name);
   });
+}
+
+/** Rank recipes shortest → longest total time (unknown times last). */
+export function sortByTotalTime(recipes: Recipe[]): Recipe[] {
+  return [...recipes].sort((a, b) => {
+    const aMin = recipeTotalMinutes(a);
+    const bMin = recipeTotalMinutes(b);
+    if (aMin == null && bMin == null) return a.name.localeCompare(b.name);
+    if (aMin == null) return 1;
+    if (bMin == null) return -1;
+    if (aMin !== bMin) return aMin - bMin;
+    return a.name.localeCompare(b.name);
+  });
+}
+
+/** Recipes ready in 30 minutes or less, fastest first. */
+export function sortByQuickToMake(recipes: Recipe[]): Recipe[] {
+  return sortByTotalTime(recipes.filter(isQuickToMake));
 }
 
 const STORAGE_KEY = "icook.savedRecipes";

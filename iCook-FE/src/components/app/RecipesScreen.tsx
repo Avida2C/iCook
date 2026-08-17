@@ -9,6 +9,7 @@ import {
   RECIPE_CATEGORIES,
   categoryHref,
   sortByMostBookmarked,
+  sortByQuickToMake,
   useSavedRecipes,
   type CatalogRecipe,
 } from "@/components/recipes/SavedRecipesProvider";
@@ -104,6 +105,7 @@ export default function RecipesScreen() {
   const { savedIds } = useSavedRecipes();
   const { publicRecipes } = useCreatedContent();
   const mostLoved = sortByMostBookmarked(publicRecipes, savedIds);
+  const quickToMake = sortByQuickToMake(publicRecipes);
   const heroRecipe =
     publicRecipes.find((r) => r.id === "1") ?? mostLoved[0] ?? publicRecipes[0];
   const compactRecipe =
@@ -113,6 +115,7 @@ export default function RecipesScreen() {
     heroRecipe;
   const topLoved = mostLoved.slice(0, 3);
   const moreLoved = mostLoved.slice(3, 6);
+  const topQuick = quickToMake.slice(0, 3);
 
   return (
     <div className="flex flex-col gap-1.5 pb-2">
@@ -140,7 +143,13 @@ export default function RecipesScreen() {
           ))}
         </div>
       </div>
-
+{topQuick.length > 0 ? (
+        <RecipeSection
+          title="Quickest Meals"
+          recipes={topQuick}
+          moreHref="/recipes/more?sort=quick"
+        />
+      ) : null}
       <FeaturedRecipeHeroCta
         recipe={heroRecipe}
         description={featuredDescription(heroRecipe)}
@@ -166,6 +175,8 @@ export default function RecipesScreen() {
           moreHref="/recipes/more?sort=loved"
         />
       ) : null}
+
+      
     </div>
   );
 }

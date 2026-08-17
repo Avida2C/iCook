@@ -168,6 +168,22 @@ export function recipeThumbnailSrc(
   return CATEGORY_THUMBNAILS[primaryCategory(recipe)];
 }
 
+/** Recipes at or under this total time appear in Quick To Make. */
+export const QUICK_TO_MAKE_MAX_MINUTES = 30;
+
+export function recipeTotalMinutes(
+  recipe: Pick<Recipe, "totalTime"> | { totalTime?: string },
+): number | null {
+  return parseMinutes(recipe.totalTime);
+}
+
+export function isQuickToMake(
+  recipe: Pick<Recipe, "totalTime"> | { totalTime?: string },
+): boolean {
+  const minutes = recipeTotalMinutes(recipe);
+  return minutes != null && minutes <= QUICK_TO_MAKE_MAX_MINUTES;
+}
+
 /** Parse a time string into whole minutes (supports legacy "1 hour 30 minutes"). */
 export function parseMinutes(value: string | undefined | null): number | null {
   if (value == null) return null;

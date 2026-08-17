@@ -14,6 +14,7 @@ import {
   filterRecipesByCategory,
   getCategoryLabel,
   sortByMostBookmarked,
+  sortByQuickToMake,
   useSavedRecipes,
   type CatalogRecipe,
 } from "@/components/recipes/SavedRecipesProvider";
@@ -88,6 +89,7 @@ export default function MoreRecipesScreen({
   const { items: pantryItems } = usePantry();
   const byLoved = sort === "loved";
   const byPantry = sort === "pantry";
+  const byQuick = sort === "quick";
 
   const pantryNames = pantryItems.map((i) => i.name).filter((n) => n.trim());
   const scoped = filterRecipesByCategory(publicRecipes, category);
@@ -96,7 +98,9 @@ export default function MoreRecipesScreen({
     ? rankRecipesByPantry(publicRecipes, pantryNames)
     : byLoved
       ? sortByMostBookmarked(scoped, savedIds)
-      : scoped;
+      : byQuick
+        ? sortByQuickToMake(scoped)
+        : scoped;
 
   const title = byPantry
     ? "Recipes from my pantry"
@@ -104,12 +108,18 @@ export default function MoreRecipesScreen({
       ? category && category !== "all"
         ? `More to Love · ${getCategoryLabel(category)}`
         : "More to Love!"
+      : byQuick
+        ? category && category !== "all"
+          ? `Quick To Make · ${getCategoryLabel(category)}`
+          : "Quick To Make!"
       : getCategoryLabel(category);
 
   const emptyMessage = byPantry
     ? pantryNames.length === 0
       ? "Your pantry is empty — add ingredients to find matching recipes."
       : "No recipes match your pantry ingredients yet."
+    : byQuick
+      ? "No quick recipes in this list yet."
     : "No recipes in this category yet.";
 
   const recipePoolKey = `${category ?? ""}|${sort ?? ""}|${recipes

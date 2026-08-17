@@ -14,9 +14,16 @@ import {
   type RecipeCategory,
 } from "@/components/recipes/recipesData";
 import { rankRecipesByPantry } from "@/lib/pantryMatch";
+import { searchRecipes } from "@/lib/recipeSearch";
 import { userProfilePath } from "@/lib/userProfile";
 
-const recentSearches = ["Ravioli", "Pancakes", "Courtney Henry", "Quick dinners"];
+const recentSearches = [
+  "Gluten-free dinner",
+  "Quick dinners",
+  "Ravioli",
+  "Pancakes",
+  "Courtney Henry",
+];
 
 type SearchHit =
   | {
@@ -109,17 +116,17 @@ export default function SearchOverlay({
     const q = query.trim().toLowerCase();
     if (!q) return [];
 
-    const recipes: SearchHit[] = publicRecipes
-      .filter((r) => r.name.toLowerCase().includes(q))
-      .map((r) => ({
-      kind: "recipe" as const,
-      id: r.id,
-      name: r.name,
-      href: `/recipe/${r.id}`,
-      subtitle: "Recipe",
-      thumbnailUrl: r.thumbnailUrl,
-      category: primaryCategory(r),
-    }));
+    const recipes: SearchHit[] = searchRecipes(publicRecipes, query).map(
+      (r) => ({
+        kind: "recipe" as const,
+        id: r.id,
+        name: r.name,
+        href: `/recipe/${r.id}`,
+        subtitle: "Recipe",
+        thumbnailUrl: r.thumbnailUrl,
+        category: primaryCategory(r),
+      }),
+    );
 
     const catalogPostHits: SearchHit[] = Object.entries(CATALOG_POSTS)
       .filter(([, p]) => p.title.toLowerCase().includes(q))
