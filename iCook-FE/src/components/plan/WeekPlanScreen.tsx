@@ -12,7 +12,6 @@ import {
 } from "@/components/app/icons";
 import { useCreatedContent } from "@/components/app/CreatedContentProvider";
 import PlanSlotThumb from "@/components/plan/PlanSlotThumb";
-import RecipePickSheet from "@/components/plan/RecipePickSheet";
 import { useWeekPlan } from "@/components/plan/WeekPlanProvider";
 import { type Recipe } from "@/components/recipes/recipesData";
 import {
@@ -27,8 +26,6 @@ import {
   weekDates,
   type MealSlot,
 } from "@/lib/weekPlan";
-
-type PickerTarget = { date: string; meal: MealSlot; label: string };
 
 function SlotRow({
   meal,
@@ -87,13 +84,12 @@ export default function WeekPlanScreen() {
     shiftWeek,
     goToThisWeek,
     getMeal,
-    setMeal,
     clearWeek,
     copyPreviousWeek,
     mealsThisWeek,
+    openRecipePick,
   } = useWeekPlan();
   const { resolveVisibleRecipe } = useCreatedContent();
-  const [picker, setPicker] = useState<PickerTarget | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
   const today = useMemo(() => new Date(), []);
@@ -186,7 +182,7 @@ export default function WeekPlanScreen() {
                         recipe={recipe}
                         planned={Boolean(planned)}
                         onAdd={() =>
-                          setPicker({
+                          openRecipePick({
                             date: iso,
                             meal,
                             label: `${weekdayShort(date)} ${date.getDate()}`,
@@ -227,18 +223,6 @@ export default function WeekPlanScreen() {
           ) : null}
         </div>
       </div>
-
-      <RecipePickSheet
-        open={picker != null}
-        dateLabel={picker?.label ?? ""}
-        meal={picker?.meal ?? "dinner"}
-        onClose={() => setPicker(null)}
-        onChoose={(recipeId) => {
-          if (!picker) return;
-          setMeal(picker.date, picker.meal, { recipeId });
-          setPicker(null);
-        }}
-      />
     </div>
   );
 }

@@ -9,6 +9,7 @@ import SearchOverlay from "@/components/app/SearchOverlay";
 import PhoneFrame from "@/components/PhoneFrame";
 import { useAuth } from "@/components/auth/AuthProvider";
 import AddToWeekSheet from "@/components/plan/AddToWeekSheet";
+import RecipePickSheet from "@/components/plan/RecipePickSheet";
 import { useWeekPlan } from "@/components/plan/WeekPlanProvider";
 
 /**
@@ -20,7 +21,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { user, loading } = useAuth();
-  const { addToWeekTarget, closeAddToWeek } = useWeekPlan();
+  const { addToWeekTarget, closeAddToWeek, closeRecipePick } = useWeekPlan();
   const [searchOpen, setSearchOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
@@ -40,7 +41,8 @@ export default function AppShell({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     closeAddToWeek();
-  }, [pathname, closeAddToWeek]);
+    closeRecipePick();
+  }, [pathname, closeAddToWeek, closeRecipePick]);
 
   return (
     <PhoneFrame>
@@ -75,6 +77,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
               recipeName={addToWeekTarget?.recipeName ?? ""}
               onClose={closeAddToWeek}
             />
+            <RecipePickSheet />
           </>
         )}
       </div>

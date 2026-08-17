@@ -30,6 +30,12 @@ export type AddToWeekTarget = {
   recipeName: string;
 };
 
+export type RecipePickTarget = {
+  date: string;
+  meal: MealSlot;
+  label: string;
+};
+
 type WeekPlanContextValue = {
   plan: WeekPlanMap;
   weekStart: Date;
@@ -50,6 +56,9 @@ type WeekPlanContextValue = {
   addToWeekTarget: AddToWeekTarget | null;
   openAddToWeek: (target: AddToWeekTarget) => void;
   closeAddToWeek: () => void;
+  recipePickTarget: RecipePickTarget | null;
+  openRecipePick: (target: RecipePickTarget) => void;
+  closeRecipePick: () => void;
 };
 
 const WeekPlanContext = createContext<WeekPlanContextValue | null>(null);
@@ -71,6 +80,8 @@ export function WeekPlanProvider({ children }: { children: ReactNode }) {
   const [addToWeekTarget, setAddToWeekTarget] = useState<AddToWeekTarget | null>(
     null,
   );
+  const [recipePickTarget, setRecipePickTarget] =
+    useState<RecipePickTarget | null>(null);
 
   useEffect(() => {
     setPlan(readPlan());
@@ -182,6 +193,14 @@ export function WeekPlanProvider({ children }: { children: ReactNode }) {
     setAddToWeekTarget(null);
   }, []);
 
+  const openRecipePick = useCallback((target: RecipePickTarget) => {
+    setRecipePickTarget(target);
+  }, []);
+
+  const closeRecipePick = useCallback(() => {
+    setRecipePickTarget(null);
+  }, []);
+
   const value = useMemo(
     () => ({
       plan,
@@ -199,6 +218,9 @@ export function WeekPlanProvider({ children }: { children: ReactNode }) {
       addToWeekTarget,
       openAddToWeek,
       closeAddToWeek,
+      recipePickTarget,
+      openRecipePick,
+      closeRecipePick,
     }),
     [
       plan,
@@ -216,6 +238,9 @@ export function WeekPlanProvider({ children }: { children: ReactNode }) {
       addToWeekTarget,
       openAddToWeek,
       closeAddToWeek,
+      recipePickTarget,
+      openRecipePick,
+      closeRecipePick,
     ],
   );
 
