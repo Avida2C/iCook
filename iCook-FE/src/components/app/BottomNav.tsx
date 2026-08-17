@@ -54,6 +54,7 @@ const NEUTRAL_PATHS = [
   /^\/recipe(\/|$)/,
   /^\/post(\/|$)/,
   /^\/recipes\/more(\/|$)/,
+  /^\/plan(\/|$)/,
 ];
 
 function isNeutralPath(pathname: string | null) {

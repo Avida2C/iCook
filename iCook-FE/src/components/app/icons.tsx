@@ -32,6 +32,7 @@ import {
   FiUploadCloud,
   FiImage,
   FiMic,
+  FiCalendar,
   FiClock,
   FiChevronRight,
   FiChevronUp,
@@ -73,7 +74,7 @@ import {
 import { BiCommentDots, BiCommentEdit } from "react-icons/bi";
 import { FcGoogle } from "react-icons/fc";
 import { FaFacebook } from "react-icons/fa6";
-import { LuCookingPot, LuChefHat, LuEggFried, LuMessageSquareText, LuNotepadText } from "react-icons/lu";
+import { LuCookingPot, LuChefHat, LuEggFried, LuMessageSquareText, LuNotepadText, LuSalad, LuCookie } from "react-icons/lu";
 
 
 
@@ -135,6 +136,7 @@ export const UploadIcon = FiUploadCloud;
 export const ImageIcon = FiImage;
 export const MicIcon = FiMic;
 export const ClockIcon = FiClock;
+export const CalendarIcon = FiCalendar;
 export const ServingIcon = FaUtensils;
 export const PlayIcon = FaPlay;
 export const ApproveIcon = FaCheckCircle;
@@ -161,3 +163,9 @@ export const FacebookIcon = FaFacebook;
 export const ChefHat = LuChefHat;
 export const CookingPot = LuCookingPot;
 export const EggFried = LuEggFried;
+
+// Week plan meals
+export const BreakfastIcon = LuEggFried;
+export const LunchIcon = LuSalad;
+export const DinnerIcon = LuCookingPot;
+export const SnackIcon = LuCookie;

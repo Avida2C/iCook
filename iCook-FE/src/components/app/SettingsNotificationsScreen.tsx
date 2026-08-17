@@ -33,7 +33,7 @@ const groups: Group[] = [
       {
         id: "cooking",
         label: "Cooking reminders",
-        hint: "Timers and planned meals",
+        hint: "Meals on your household week plan",
       },
       {
         id: "saved",

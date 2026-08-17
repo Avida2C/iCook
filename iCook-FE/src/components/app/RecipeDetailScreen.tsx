@@ -11,7 +11,9 @@ import {
   ServingIcon,
   EditIcon,
   TrashIcon,
+  CalendarIcon,
 } from "@/components/app/icons";
+import { useWeekPlan } from "@/components/plan/WeekPlanProvider";
 import RecipeAuthor from "@/components/app/RecipeAuthor";
 import CommentsSection from "@/components/app/CommentsSection";
 import ContentCreatorCard from "@/components/app/ContentCreatorCard";
@@ -118,6 +120,7 @@ export default function RecipeDetailScreen({
   } = useCreatedContent();
   const recipe = resolveVisibleRecipe(recipeId);
   const { isSaved, toggleSave } = useSavedRecipes();
+  const { openAddToWeek } = useWeekPlan();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [ingredientsFeatured, setIngredientsFeatured] =
     useState<CatalogRecipe | null>(null);
@@ -194,7 +197,7 @@ export default function RecipeDetailScreen({
   };
 
   return (
-    <div className="page">
+    <div className="page relative">
       <div className="list-stack py-2">
         {/* Hero */}
         <div className="relative h-56 w-full overflow-hidden">
@@ -240,7 +243,22 @@ export default function RecipeDetailScreen({
               <p className="mt-2 text-sm leading-5 text-ink-secondary">
                 {recipe.description}
               </p>
+              
             ) : null}
+                        <button
+              type="button"
+              onClick={() =>
+                openAddToWeek({
+                  recipeId: recipe.id,
+                  recipeName: recipe.name,
+                  categories: recipe.categories,
+                })
+              }
+              className="btn-secondary mt-2 w-full text-sm"
+            >
+              <CalendarIcon className="size-4" />
+              Add to Weekly Planner
+            </button>
             <div className="mt-2 flex flex-col gap-1">
               <p className="flex gap-2 text-sm text-ink">
                 <span className="font-bold text-ink-secondary">
@@ -250,6 +268,7 @@ export default function RecipeDetailScreen({
                   {recipe.categories.map((c) => getCategoryLabel(c)).join(", ")}
                 </span>
               </p>
+              
               <p className="flex gap-2 text-sm text-ink">
                 <span className="font-bold text-ink-secondary">Created date</span>
                 <span className="italic text-muted">

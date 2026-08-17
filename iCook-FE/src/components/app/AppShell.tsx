@@ -8,6 +8,8 @@ import MorePanel from "@/components/app/MorePanel";
 import SearchOverlay from "@/components/app/SearchOverlay";
 import PhoneFrame from "@/components/PhoneFrame";
 import { useAuth } from "@/components/auth/AuthProvider";
+import AddToWeekSheet from "@/components/plan/AddToWeekSheet";
+import { useWeekPlan } from "@/components/plan/WeekPlanProvider";
 
 /**
  * Logged-in app frame: protects the route (redirects to /login when there's no
@@ -18,6 +20,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { user, loading } = useAuth();
+  const { addToWeekTarget, closeAddToWeek } = useWeekPlan();
   const [searchOpen, setSearchOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
@@ -34,6 +37,10 @@ export default function AppShell({ children }: { children: ReactNode }) {
     if (chatThread) return;
     mainRef.current?.scrollTo({ top: 0 });
   }, [pathname, chatThread]);
+
+  useEffect(() => {
+    closeAddToWeek();
+  }, [pathname, closeAddToWeek]);
 
   return (
     <PhoneFrame>
@@ -62,6 +69,13 @@ export default function AppShell({ children }: { children: ReactNode }) {
               onClose={() => setSearchOpen(false)}
             />
             <MorePanel open={moreOpen} onClose={() => setMoreOpen(false)} />
+            <AddToWeekSheet
+              open={addToWeekTarget != null}
+              recipeId={addToWeekTarget?.recipeId ?? ""}
+              recipeName={addToWeekTarget?.recipeName ?? ""}
+              categories={addToWeekTarget?.categories}
+              onClose={closeAddToWeek}
+            />
           </>
         )}
       </div>

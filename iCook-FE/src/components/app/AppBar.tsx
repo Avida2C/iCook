@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Logo from "@/components/Logo";
-import { SearchIcon, MessageIcon } from "@/components/app/icons";
+import { usePathname } from "next/navigation";
+import { SearchIcon, MessageIcon, CalendarIcon } from "@/components/app/icons";
 import { useMessages } from "@/components/app/MessagesProvider";
 
 /** Top app bar shared across logged-in screens: logo + search/messages. */
@@ -12,6 +13,8 @@ export default function AppBar({
 }: {
   onSearchClick: () => void;
 }) {
+  const pathname = usePathname();
+  const planActive = pathname === "/plan" || pathname.startsWith("/plan/");
   const { unreadCount } = useMessages();
   const prevUnread = useRef(unreadCount);
   const [badgePop, setBadgePop] = useState(false);
@@ -35,6 +38,14 @@ export default function AppBar({
         <button type="button" onClick={onSearchClick} aria-label="Search">
           <SearchIcon className="size-7" />
         </button>
+        <Link
+          href="/plan"
+          aria-label="Household week plan"
+          aria-current={planActive ? "page" : undefined}
+          className={planActive ? "text-brand" : undefined}
+        >
+          <CalendarIcon className="size-7" />
+        </Link>
         <Link
           href="/messages"
           aria-label={

@@ -32,6 +32,10 @@ const sections: Section[] = [
     ],
   },
   {
+    title: "Kitchen",
+    rows: [{ kind: "link", label: "Week plan", href: "/plan" }],
+  },
+  {
     title: "Preferences",
     rows: [
       { kind: "theme", label: "Theme" },

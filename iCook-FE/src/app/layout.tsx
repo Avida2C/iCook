@@ -10,6 +10,7 @@ import { MessagesProvider } from "@/components/app/MessagesProvider";
 import { ActivityFiltersProvider } from "@/components/app/user/ActivityFiltersProvider";
 import { PantryProvider } from "@/components/pantry/PantryProvider";
 import { SavedRecipesProvider } from "@/components/recipes/SavedRecipesProvider";
+import { WeekPlanProvider } from "@/components/plan/WeekPlanProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -53,17 +54,19 @@ export default function RootLayout({
           <AuthProvider>
             <SavedRecipesProvider>
               <PantryProvider>
-                <CreatedContentProvider>
-                  <CommentsProvider>
-                    <MessagesProvider>
-                      <LikedPostsProvider>
-                        <ActivityFiltersProvider>
-                          {children}
-                        </ActivityFiltersProvider>
-                      </LikedPostsProvider>
-                    </MessagesProvider>
-                  </CommentsProvider>
-                </CreatedContentProvider>
+                <WeekPlanProvider>
+                  <CreatedContentProvider>
+                    <CommentsProvider>
+                      <MessagesProvider>
+                        <LikedPostsProvider>
+                          <ActivityFiltersProvider>
+                            {children}
+                          </ActivityFiltersProvider>
+                        </LikedPostsProvider>
+                      </MessagesProvider>
+                    </CommentsProvider>
+                  </CreatedContentProvider>
+                </WeekPlanProvider>
               </PantryProvider>
             </SavedRecipesProvider>
           </AuthProvider>
